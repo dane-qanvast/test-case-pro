@@ -5459,7 +5459,7 @@ function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToP
 var TESTER_STATUSES = [
   {
     value: "Not Tested",
-    label: "Not Tested",
+    label: "Not run",
     dot: "bg-gray-500",
     badge: "bg-gray-700 text-gray-300 border-gray-600",
   },
@@ -5489,6 +5489,51 @@ var TESTER_STATUSES = [
   },
 ];
 var PRIORITIES = ["P0", "P1", "P2"];
+// Bug severity (stored in findings.bug_severity). Older findings saved P0/P1/P2 are read as Blocker/Major/Minor.
+var SEVERITIES = [
+  {
+    value: "Blocker",
+    description: "Can't continue or wrong data.",
+    badge: "bg-red-900/40 text-red-300 border-red-700",
+  },
+  {
+    value: "Major",
+    description: "Works badly or confusingly.",
+    badge: "bg-orange-900/40 text-orange-300 border-orange-700",
+  },
+  {
+    value: "Minor",
+    description: "Noticeable rough edge.",
+    badge: "bg-amber-900/40 text-amber-300 border-amber-700",
+  },
+  {
+    value: "Cosmetic",
+    description: "Visual detail only.",
+    badge: "bg-sky-900/40 text-sky-300 border-sky-700",
+  },
+];
+var LEGACY_SEVERITY = { P0: "Blocker", P1: "Major", P2: "Minor" };
+var getSeverity = (e) => {
+  if (!e) return null;
+  let t = LEGACY_SEVERITY[e] || e;
+  return SEVERITIES.find((a) => a.value.toLowerCase() === String(t).toLowerCase()) || null;
+};
+var severityRank = (e) => {
+  let t = getSeverity(e);
+  return t ? SEVERITIES.indexOf(t) : 99;
+};
+function SeverityBadge({ value: e, size: t = "sm" }) {
+  let a = getSeverity(e);
+  if (!a) return null;
+  return (
+    <span
+      className={`inline-flex items-center border rounded-sm font-bold flex-shrink-0 ${t === "xs" ? "text-[9px] px-1 tracking-wider" : "text-xs px-2.5 py-1"} ${a.badge}`}
+      title={`Severity: ${a.value} — ${a.description}`}
+    >
+      {a.value}
+    </span>
+  );
+}
 var PRO_CSV_PROMPT = `You are generating a User Acceptance Testing (UAT) test plan as a CSV that will be uploaded into a UAT collaboration tool.
 
 Fill these placeholders with your project context first, then proceed:
@@ -5749,9 +5794,6 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           }),
           ...G,
         };
-        if (G.status !== undefined && !isFailureStatus(G.status)) {
-          ce.bug_severity = "";
-        }
         ce.tested_by ||= t;
         ce.updated_by = t;
         ce.updated_at = new Date().toISOString();
@@ -6645,55 +6687,55 @@ function TesterTestDetail({
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Status</div>
               <div className="flex flex-wrap gap-1.5">
-                {TESTER_STATUSES.filter((f) => f.value !== "Not Tested").map((f) => (
-                  <button
-                    onClick={() =>
-                      l({
-                        status: f.value,
-                      })
-                    }
-                    className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${p.status === f.value ? f.badge : "bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200 hover:border-gray-700"}`}
-                    key={f.value}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-                {p.status && p.status !== "Not Tested" && (
-                  <button
-                    onClick={() =>
-                      l({
-                        status: "Not Tested",
-                      })
-                    }
-                    className="px-2 py-1.5 text-xs text-gray-500 hover:text-gray-300"
-                  >
-                    Clear
-                  </button>
-                )}
+                {TESTER_STATUSES.map((f) => {
+                  let w = (p.status || "Not Tested") === f.value;
+                  return (
+                    <button
+                      onClick={() =>
+                        !w &&
+                        l({
+                          status: f.value,
+                        })
+                      }
+                      aria-pressed={w}
+                      className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${w ? f.badge : "bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200 hover:border-gray-700"}`}
+                      key={f.value}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            {v && (
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                  Bug Severity
-                </div>
-                <div className="flex gap-1.5">
-                  {PRIORITIES.map((f) => (
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Severity</div>
+              <div className="flex flex-wrap gap-1.5">
+                {SEVERITIES.map((f) => {
+                  let w = getSeverity(p.bug_severity)?.value === f.value;
+                  return (
                     <button
                       onClick={() =>
                         l({
-                          bug_severity: p.bug_severity === f ? "" : f,
+                          bug_severity: w ? "" : f.value,
                         })
                       }
-                      className={`px-3 py-1.5 text-xs font-bold border rounded-sm ${p.bug_severity === f ? priorityBadgeClass(f) : "bg-gray-900 border-gray-800 text-gray-400 hover:text-gray-200"}`}
-                      key={f}
+                      aria-pressed={w}
+                      title={w ? "Click to clear" : f.description}
+                      className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${w ? f.badge : "bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200 hover:border-gray-700"}`}
+                      key={f.value}
                     >
-                      {f}
+                      {f.value}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
+              {getSeverity(p.bug_severity) && (
+                <div className="mt-2 text-xs text-gray-400">
+                  <span className="text-gray-200 font-medium">{getSeverity(p.bug_severity).value}</span> ={" "}
+                  {getSeverity(p.bug_severity).description.replace(/^./, (f) => f.toLowerCase())}
+                </div>
+              )}
+            </div>
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
                 Tester Notes
@@ -7431,12 +7473,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
       });
     }, 600);
   };
-  let he = ($) =>
-    ({
-      P0: 0,
-      P1: 1,
-      P2: 2,
-    })[$] ?? 99;
+  let he = ($) => severityRank($);
   let ie = (() => {
     let $ = r.filter((H) => {
       if (j && !j.has(H.id)) {
@@ -7766,11 +7803,9 @@ function DevSidebar({
                     <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-0.5">
                       <span className="font-mono text-emerald-400">{D.test_id || "—"}</span>
                       {D.module && <span className="truncate">· {D.module}</span>}
-                      {O?.bug_severity && isFailureStatus(B) && (
-                        <span
-                          className={`ml-auto border rounded-sm px-1 text-[9px] font-bold tracking-wider ${priorityBadgeClass(O.bug_severity)}`}
-                        >
-                          {O.bug_severity}
+                      {getSeverity(O?.bug_severity) && (
+                        <span className="ml-auto">
+                          <SeverityBadge value={O.bug_severity} size="xs" />
                         </span>
                       )}
                     </div>
@@ -8964,13 +8999,7 @@ function DevTestDetail({
             >
               {p}
             </span>
-            {h && c.bug_severity && (
-              <span
-                className={`px-2.5 py-1 text-xs font-bold border rounded-sm ${priorityBadgeClass(c.bug_severity)}`}
-              >
-                {c.bug_severity}
-              </span>
-            )}
+            {getSeverity(c.bug_severity) && <SeverityBadge value={c.bug_severity} />}
             <span className="self-stretch w-px bg-gray-800 mx-1" aria-hidden="true" />
             <button
               onClick={() => i(o === "in_progress" ? null : "in_progress")}
@@ -9061,6 +9090,17 @@ function DevTestDetail({
                   <div className="text-sm text-gray-200">{c.tested_by}</div>
                 </div>
               )}
+              <div className="mb-3">
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Severity</div>
+                {getSeverity(c.bug_severity) ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <SeverityBadge value={c.bug_severity} />
+                    <span className="text-xs text-gray-400">{getSeverity(c.bug_severity).description}</span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-600 italic">Not set</div>
+                )}
+              </div>
               <div className="mb-3">
                 <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Notes</div>
                 <div className="text-sm text-gray-200 whitespace-pre-wrap bg-gray-950 border border-gray-800 px-3 py-2 rounded-sm">
