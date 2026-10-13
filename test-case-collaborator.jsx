@@ -15,6 +15,7 @@ import React, {
 } from "react";
 import * as ReactDOM from "react-dom/client";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { createClient } from "@supabase/supabase-js";
 import {
   Clock,
@@ -360,6 +361,105 @@ ${i}`;
   }
   return l.filter((i) => i.length > 0);
 };
+// ---------------------------------------------------------------------------
+// Test case import: CSV files and multi-tab spreadsheets (.xlsx).
+// Column headers are matched loosely, so "Test" works as "Title",
+// "Preconditions" as "Pre-conditions", "Expected result" as "Expected Result", etc.
+// ---------------------------------------------------------------------------
+var normalizeHeader = (e) => String(e ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+var HEADER_ALIASES = {
+  testId: ["id", "testid", "testcaseid", "tcid", "caseid", "testno", "no"],
+  module: ["module", "epic"],
+  feature: ["feature", "featurearea", "subfeature", "area"],
+  title: ["title", "test", "testcase", "testtitle", "testcasetitle", "testname", "scenario", "testscenario"],
+  preConditions: ["preconditions", "precondition", "prerequisites", "prerequisite", "setup"],
+  testData: ["testdata", "data"],
+  steps: ["steps", "teststeps", "stepstoreproduce", "procedure"],
+  expectedResult: ["expectedresult", "expectedresults", "expected", "expectedoutcome"],
+  downstreamCheck: ["downstreamcheck", "downstreamchecks", "downstream"],
+  edgeCase: ["edgecase", "edgecases"],
+  devBranchName: ["devbranchname", "devbranch", "branch", "branchname"],
+  focus: ["focus", "focusarea", "testfocus", "category", "testtype"],
+  priority: ["priority", "prio", "testpriority"],
+};
+var resolveColumns = (e) => {
+  let t = e.map((r) => String(r ?? "").trim());
+  let a = t.map(normalizeHeader);
+  let r = {};
+  for (let [o, l] of Object.entries(HEADER_ALIASES)) {
+    let i = a.findIndex((u) => u && l.includes(u));
+    if (i >= 0) {
+      r[o] = t[i];
+    }
+  }
+  let o =
+    t.find((l) => /^tester\s*\[/i.test(l)) ||
+    t.find((l, i) => ["tester", "testers", "assignee", "assignedto", "assignedtester"].includes(a[i]));
+  if (o) {
+    r.tester = o;
+  }
+  return r;
+};
+var fileBaseName = (e) =>
+  String(e || "")
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[_]/g, " ")
+    .trim();
+// rows: array of objects keyed by header text, each with __rowNum (sheet/CSV row number)
+var rowsToTestCases = (e, t, a) => {
+  let r = resolveColumns(t);
+  let o = [];
+  if (!r.testId) o.push("ID");
+  if (!r.title && !r.steps) o.push("Title (or Test) / Steps");
+  if (o.length > 0) {
+    return {
+      error: `Missing required column(s): ${o.join(", ")}.`,
+    };
+  }
+  let l = parseTesterMap(r.tester);
+  let i = (d, c) => (r[c] ? String(d[r[c]] ?? "").trim() : "");
+  let u = e
+    .filter((d) => i(d, "title") || i(d, "steps"))
+    .map((d, c) => ({
+      position: c,
+      rowNum: d.__rowNum,
+      testId: i(d, "testId"),
+      module: i(d, "module") || a.fallbackModule || "",
+      feature: i(d, "feature"),
+      title: i(d, "title"),
+      preConditions: i(d, "preConditions"),
+      testData: i(d, "testData"),
+      steps: parseSteps(i(d, "steps")),
+      expectedResult: i(d, "expectedResult"),
+      downstreamCheck: i(d, "downstreamCheck"),
+      edgeCase: i(d, "edgeCase"),
+      devBranchName: i(d, "devBranchName"),
+      focus: i(d, "focus"),
+      priority: i(d, "priority"),
+      initialTester: (() => {
+        let p = i(d, "tester");
+        if (!p || p === "—") {
+          return "";
+        }
+        return l[p] || p;
+      })(),
+    }));
+  if (u.length === 0) {
+    return {
+      error: "No test case rows found (rows need a Title/Test or Steps value).",
+    };
+  }
+  let d = Object.values(l);
+  if (d.length === 0) {
+    // No "Tester [1 - Name, ...]" mapping: use names typed directly in the tester column.
+    d = Array.from(new Set(u.map((c) => c.initialTester).filter((c) => c && !/^\d+$/.test(c))));
+  }
+  return {
+    testCases: u,
+    testers: d,
+    testerColHeader: r.tester || "Tester",
+  };
+};
 var parseCsvFile = (e) =>
   new Promise((t) => {
     if (!e) {
@@ -384,60 +484,15 @@ var parseCsvFile = (e) =>
           return;
         }
         let o = (a.meta?.fields || []).map((p) => p.trim());
-        let l = ["Module", "ID", "Title", "Steps"].filter((p) => !o.includes(p));
-        if (l.length > 0) {
-          t({
-            error: `Missing required column(s): ${l.join(", ")}.`,
-          });
-          return;
-        }
-        let i = o.find((p) => /^Tester\s*\[/i.test(p)) || "Tester";
-        let u = parseTesterMap(i);
-        let d = Object.values(u);
-        let c = a.data
-          .map((p, h) => ({
-            ...p,
-            __rowNum: h + 2,
-          }))
-          .filter((p) => Object.entries(p).some(([h, b]) => !h.startsWith("__") && b && String(b).trim()))
-          .map((p) => ({
-            position: 0,
-            rowNum: p.__rowNum,
-            testId: p.ID || "",
-            module: p.Module || "",
-            feature: p.Feature || "",
-            title: p.Title || "",
-            preConditions: p["Pre-conditions"] || "",
-            testData: p["Test Data"] || "",
-            steps: parseSteps(p.Steps),
-            expectedResult: p["Expected Result"] || "",
-            downstreamCheck: p["Downstream Check"] || "",
-            edgeCase: p["Edge Case"] || "",
-            devBranchName: p["Dev Branch Name"] || "",
-            initialTester: (() => {
-              let h = p[i];
-              if (!h || String(h).trim() === "" || String(h).trim() === "—") {
-                return "";
-              } else {
-                return u[String(h).trim()] || String(h).trim();
-              }
-            })(),
-          }))
-          .map((p, h) => ({
-            ...p,
-            position: h,
-          }));
-        if (c.length === 0) {
-          t({
-            error: "No test case rows found in the CSV.",
-          });
-          return;
-        }
-        t({
-          testCases: c,
-          testers: d,
-          testerColHeader: i,
-        });
+        let l = a.data.map((p, h) => ({
+          ...p,
+          __rowNum: h + 2,
+        }));
+        t(
+          rowsToTestCases(l, o, {
+            fallbackModule: fileBaseName(e.name),
+          }),
+        );
       },
       error: (a) =>
         t({
@@ -445,6 +500,132 @@ var parseCsvFile = (e) =>
         }),
     });
   });
+// Tabs whose names look like instructions, overviews, issue logs or question lists start unticked
+// (the admin can still tick them).
+var NON_TEST_TAB_NAMES =
+  /(start\s*here|summary|overview|read\s*me|instruction|cover|guide|index|dashboard|issue|bug|question|not\s*built|\blog\b|changelog)/i;
+// Returns one entry per tab: { name, testCases, testers, testerColHeader } or { name, skipped }
+var parseWorkbookFile = async (e) => {
+  let t;
+  try {
+    let a = await e.arrayBuffer();
+    t = XLSX.read(a, {
+      type: "array",
+    });
+  } catch (a) {
+    return [
+      {
+        name: e.name,
+        skipped: `Couldn't open this file: ${a.message || "unknown error"}`,
+      },
+    ];
+  }
+  let a = t.Workbook?.Sheets || [];
+  return t.SheetNames.map((r) => {
+    let o = t.Sheets[r];
+    let l = a.find((h) => h.name === r)?.Hidden;
+    if (!o || !o["!ref"]) {
+      return {
+        name: r,
+        skipped: "Empty tab",
+      };
+    }
+    let i = XLSX.utils.decode_range(o["!ref"]).s.r;
+    let u = XLSX.utils.sheet_to_json(o, {
+      header: 1,
+      defval: "",
+      raw: false,
+      blankrows: true,
+    });
+    let d = u.slice(0, 25).findIndex((h) => {
+      let b = resolveColumns(h);
+      return b.testId && (b.title || b.steps);
+    });
+    if (d < 0) {
+      return {
+        name: r,
+        skipped: "No test table found",
+      };
+    }
+    let c = u[d].map((h) => String(h ?? "").trim());
+    let p = u.slice(d + 1).map((h, b) => {
+      let _ = {
+        __rowNum: i + d + 2 + b,
+      };
+      c.forEach((S, I) => {
+        if (S && !(S in _)) {
+          _[S] = h[I] ?? "";
+        }
+      });
+      return _;
+    });
+    let h = rowsToTestCases(p, c, {
+      fallbackModule: r.trim(),
+    });
+    if (h.error) {
+      return {
+        name: r,
+        skipped: h.error,
+      };
+    }
+    return {
+      name: r,
+      ...h,
+      hidden: !!l,
+      defaultOff: !!l || NON_TEST_TAB_NAMES.test(r.trim()),
+    };
+  });
+};
+// Turns a list of dropped files into import "sources" (one per CSV file or spreadsheet tab).
+var parseImportFiles = async (e) => {
+  let t = [];
+  for (let a of e) {
+    if (/\.(xlsx|xlsm|xls|ods)$/i.test(a.name)) {
+      t.push(...(await parseWorkbookFile(a)));
+    } else {
+      let r = await parseCsvFile(a);
+      t.push(
+        r.error
+          ? {
+              name: a.name,
+              skipped: r.error,
+            }
+          : {
+              name: a.name,
+              ...r,
+            },
+      );
+    }
+  }
+  return t.map((a, r) => ({
+    ...a,
+    key: `${r}:${a.name}`,
+    include: !a.skipped && !a.defaultOff,
+  }));
+};
+// Combines the ticked sources into one list of test cases for the session.
+var combineImportSources = (e) => {
+  let t = e.filter((l) => l.include && l.testCases);
+  if (t.length === 0) {
+    return null;
+  }
+  let a = t.flatMap((l) => l.testCases).map((l, i) => ({
+    ...l,
+    position: i,
+  }));
+  let r = Array.from(new Set(t.flatMap((l) => l.testers || [])));
+  let o = t.find((l) => l.testerColHeader && l.testerColHeader !== "Tester")?.testerColHeader || "Tester";
+  let l = {};
+  a.forEach((i) => {
+    if (i.testId) l[i.testId] = (l[i.testId] || 0) + 1;
+  });
+  return {
+    testCases: a,
+    testers: r,
+    testerColHeader: o,
+    duplicateIds: Object.keys(l).filter((i) => l[i] > 1),
+  };
+};
 function LightApp() {
   let [e, t] = useState([]);
   let [a, r] = useState({});
@@ -4039,6 +4220,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
   let [w, T] = useState(false);
   let [A, j] = useState("");
   let [M, W] = useState(false);
+  let [Q, setImportSources] = useState([]);
   let V = useRef(null);
   let F = async () => {
     let P = false;
@@ -4141,27 +4323,54 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
     if (l) {
       if (!a && o) {
         let P = o.name
-          .replace(/\.csv$/i, "")
+          .replace(/\.[a-z0-9]+$/i, "")
           .replace(/[_-]/g, " ")
           .trim();
         r(P);
       }
-      p(l.testers || []);
+      p((P) => Array.from(new Set([...P, ...(l.testers || [])])));
     }
   }, [l]);
+  // Accepts one or more CSV files and/or spreadsheets (.xlsx). Each CSV file and each
+  // spreadsheet tab becomes a "source" the admin can tick on or off.
   let xe = async (P) => {
-    if (!P) {
+    let X = Array.from(P || []);
+    if (X.length === 0) {
       return;
     }
-    s(P);
+    s({
+      name: X.length === 1 ? X[0].name : `${X.length} files`,
+    });
     d("");
     i(null);
-    let X = await parseCsvFile(P);
-    if (X.error) {
-      d(X.error);
+    setImportSources([]);
+    let ve = await parseImportFiles(X);
+    if (X.length === 1) {
+      s(X[0]);
     } else {
-      i(X);
+      s({
+        name: X[0].name,
+        label: `${X.length} files`,
+      });
     }
+    setImportSources(ve);
+    let de = combineImportSources(ve);
+    if (de) {
+      i(de);
+    } else if (ve.length === 1 && ve[0].skipped) {
+      d(ve[0].skipped);
+    } else if (ve.every((N) => N.skipped)) {
+      d("None of the tabs or files contained a test table. Each needs a header row with at least an ID column and a Title/Test or Steps column.");
+    } else {
+      d("Tick at least one tab below to import.");
+    }
+  };
+  let toggleImportSource = (P) => {
+    let X = Q.map((de) => (de.key === P ? { ...de, include: !de.include } : de));
+    setImportSources(X);
+    let ve = combineImportSources(X);
+    i(ve);
+    d(ve ? "" : "Tick at least one tab below to import.");
   };
   let $ = () => {
     let P = _.trim();
@@ -4214,8 +4423,17 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
         edge_case: N.edgeCase,
         dev_branch_name: N.devBranchName,
         initial_tester: N.initialTester,
+        focus: N.focus || null,
+        priority: N.priority || null,
       }));
       let { error: de } = await supabase.from("test_cases").insert(ve);
+      if (de && /focus|priority/i.test(de.message || "")) {
+        // Database hasn't had the focus/priority migration yet: save without those two fields.
+        console.warn("focus/priority columns missing — run the latest SQL migration. Saving without them.");
+        ({ error: de } = await supabase
+          .from("test_cases")
+          .insert(ve.map(({ focus: N, priority: G, ...Q }) => Q)));
+      }
       if (de) {
         throw de;
       }
@@ -4255,7 +4473,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Test cases CSV
+              Test cases
             </label>
             <button
               type="button"
@@ -4286,45 +4504,89 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
             onDrop={(P) => {
               P.preventDefault();
               P.currentTarget.classList.remove("border-emerald-500", "bg-emerald-950/20");
-              let X = P.dataTransfer.files[0];
-              if (X) {
-                xe(X);
-              }
+              xe(P.dataTransfer.files);
             }}
             className="border-2 border-dashed border-gray-700 rounded-sm p-6 text-center cursor-pointer hover:border-gray-600 transition-colors"
           >
             <Upload className="w-7 h-7 text-gray-500 mx-auto mb-2" />
             {l ? (
               <div className="text-sm">
-                <div className="text-emerald-300 font-medium">{o?.name}</div>
+                <div className="text-emerald-300 font-medium">{o?.label || o?.name}</div>
                 <div className="text-xs text-gray-500 mt-1">
                   {l.testCases.length} test case{l.testCases.length === 1 ? "" : "s"} parsed ·{" "}
                   {l.testers.length} tester{l.testers.length === 1 ? "" : "s"} detected
                 </div>
               </div>
-            ) : o ? (
-              <div className="text-sm text-gray-400">{o.name} — parsing…</div>
+            ) : o && Q.length === 0 && !u ? (
+              <div className="text-sm text-gray-400">{o.label || o.name} — parsing…</div>
             ) : (
-              <div className="text-sm text-gray-400">Drop CSV here or click to choose</div>
+              <div className="text-sm">
+                <div className="text-gray-400">Drop files here or click to choose</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  A CSV, several CSVs, or a whole Google Sheet downloaded as .xlsx (every tab is read)
+                </div>
+              </div>
             )}
             <input
               ref={V}
               type="file"
-              accept=".csv"
-              onChange={(P) => P.target.files[0] && xe(P.target.files[0])}
+              multiple
+              accept=".csv,.xlsx,.xlsm,.xls,.ods"
+              onChange={(P) => {
+                xe(P.target.files);
+                P.target.value = "";
+              }}
               className="hidden"
             />
           </div>
+          {(Q.length > 1 || Q.some((P) => P.skipped)) && (
+            <div className="mt-2 border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 bg-gray-900/60 text-[11px] text-gray-400">
+                <span>
+                  {Q.filter((P) => P.include).length} of {Q.filter((P) => !P.skipped).length} tab
+                  {Q.filter((P) => !P.skipped).length === 1 ? "" : "s"} included
+                </span>
+                <span className="text-gray-500">Tab name is used as the Module when there's no Module column</span>
+              </div>
+              {Q.map((P) => (
+                <label
+                  key={P.key}
+                  className={`flex items-center gap-3 px-3 py-2 text-sm ${P.skipped ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/50"}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!P.include}
+                    disabled={!!P.skipped}
+                    onChange={() => toggleImportSource(P.key)}
+                    className="accent-emerald-500 w-4 h-4 flex-shrink-0"
+                  />
+                  <span className={`flex-1 truncate ${P.include ? "text-gray-100" : "text-gray-400"}`}>{P.name}</span>
+                  <span className="text-xs text-gray-500 flex-shrink-0 text-right">
+                    {P.skipped
+                      ? P.skipped
+                      : `${P.testCases.length} test${P.testCases.length === 1 ? "" : "s"}${P.hidden ? " · hidden tab" : ""}`}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+          {l?.duplicateIds?.length > 0 && (
+            <div className="mt-2 p-2.5 bg-amber-950/30 border border-amber-800/60 rounded-sm text-xs text-amber-200">
+              Heads up: {l.duplicateIds.length} test ID{l.duplicateIds.length === 1 ? " appears" : "s appear"} more
+              than once ({l.duplicateIds.slice(0, 5).join(", ")}
+              {l.duplicateIds.length > 5 ? ", …" : ""}). They'll still import, but may be confusing for testers.
+            </div>
+          )}
           <div className="mt-2 text-[11px] leading-relaxed space-y-1">
             <div className="text-gray-500">
               <span className="font-semibold text-emerald-400">Required: </span>
-              <span className="font-mono text-gray-300">Module, ID, Title, Steps</span>
+              <span className="font-mono text-gray-300">ID, Title (or Test), Steps</span>
             </div>
             <div className="text-gray-500">
               <span className="font-semibold text-gray-400">Recommended: </span>
               <span className="font-mono text-gray-400">
-                Feature, Pre-conditions, Test Data, Expected Result, Downstream Check, Edge Case, Dev Branch
-                Name, Tester
+                Module (otherwise the tab or file name is used), Feature, Pre-conditions, Test Data, Expected
+                Result, Downstream Check, Edge Case, Dev Branch Name, Tester
               </span>
             </div>
             <div className="text-gray-500">
@@ -5297,6 +5559,8 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   let [j, M] = useState(true);
   let [W, V] = useState(null);
   let [F, se] = useState(false);
+  let [filterPriority, setFilterPriority] = useState("All");
+  let [filterFocusArea, setFilterFocusArea] = useState("All");
   let E = `uat-pro-tester-focus-${e.id}-${t}`;
   useEffect(() => {
     try {
@@ -5709,6 +5973,12 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     if (f !== "All" && Q !== f) {
       return false;
     }
+    if (filterPriority !== "All" && (N.priority || "") !== filterPriority) {
+      return false;
+    }
+    if (filterFocusArea !== "All" && (N.focus || "") !== filterFocusArea) {
+      return false;
+    }
     if (!v) {
       return true;
     }
@@ -5717,7 +5987,9 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
       (N.test_id || "").toLowerCase().includes(z) ||
       (N.title || "").toLowerCase().includes(z) ||
       (N.module || "").toLowerCase().includes(z) ||
-      (N.feature || "").toLowerCase().includes(z)
+      (N.feature || "").toLowerCase().includes(z) ||
+      (N.focus || "").toLowerCase().includes(z) ||
+      (N.priority || "").toLowerCase().includes(z)
     );
   });
   let K = new Set();
@@ -5819,6 +6091,10 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           setSearchOpen={m}
           filterStatus={f}
           setFilterStatus={w}
+          filterPriority={filterPriority}
+          setFilterPriority={setFilterPriority}
+          filterFocusArea={filterFocusArea}
+          setFilterFocusArea={setFilterFocusArea}
           scope={T}
           setScope={A}
           focusedIds={W}
@@ -5896,6 +6172,10 @@ function TesterSidebar({
   setSearchOpen: x,
   filterStatus: g,
   setFilterStatus: v,
+  filterPriority: fp = "All",
+  setFilterPriority: setFp = () => {},
+  filterFocusArea: ff = "All",
+  setFilterFocusArea: setFf = () => {},
   scope: k,
   setScope: C,
   focusedIds: m,
@@ -5909,6 +6189,10 @@ function TesterSidebar({
   let [W, V] = useState(false);
   let [F, se] = useState(false);
   let [E, D] = useState(false);
+  let priorityOptions = sortPriorities(Array.from(new Set(l.map((O) => O.priority).filter(Boolean))));
+  let focusOptions = Array.from(new Set(l.map((O) => O.focus).filter(Boolean))).sort((O, B) => O.localeCompare(B));
+  let hasNoPriority = priorityOptions.length > 0 && l.some((O) => !O.priority);
+  let hasNoFocus = focusOptions.length > 0 && l.some((O) => !O.focus);
   if (e) {
     return (
       <aside className="w-80 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
@@ -6000,6 +6284,32 @@ function TesterSidebar({
               ))}
             </select>
           </div>
+          {(priorityOptions.length > 0 || focusOptions.length > 0) && (
+            <div className="flex gap-1.5 mb-2">
+              {priorityOptions.length > 0 && (
+                <FilterSelect value={fp} onChange={setFp} active={fp !== "All"}>
+                  <option value="All">All priorities</option>
+                  {priorityOptions.map((O) => (
+                    <option value={O} key={O}>
+                      {O} ({l.filter((B) => B.priority === O).length})
+                    </option>
+                  ))}
+                  {hasNoPriority && <option value="">No priority</option>}
+                </FilterSelect>
+              )}
+              {focusOptions.length > 0 && (
+                <FilterSelect value={ff} onChange={setFf} active={ff !== "All"}>
+                  <option value="All">All focus areas</option>
+                  {focusOptions.map((O) => (
+                    <option value={O} key={O}>
+                      {O} ({l.filter((B) => B.focus === O).length})
+                    </option>
+                  ))}
+                  {hasNoFocus && <option value="">No focus area</option>}
+                </FilterSelect>
+              )}
+            </div>
+          )}
           {m && (
             <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 bg-emerald-950/40 border border-emerald-800/50 rounded-sm text-xs">
               <Filter className="w-3 h-3 text-emerald-400 flex-shrink-0" />
@@ -6034,6 +6344,14 @@ function TesterSidebar({
                   label: "Clear status filter",
                   onClick: () => v("All"),
                 },
+                fp !== "All" && {
+                  label: "Clear priority filter",
+                  onClick: () => setFp("All"),
+                },
+                ff !== "All" && {
+                  label: "Clear focus area filter",
+                  onClick: () => setFf("All"),
+                },
                 _ && {
                   label: "Clear search",
                   onClick: () => S(""),
@@ -6066,7 +6384,9 @@ function TesterSidebar({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-0.5">
                       <span className="font-mono text-emerald-400">{O.test_id || "—"}</span>
+                      {O.priority && <PriorityBadge value={O.priority} size="xs" />}
                       {O.module && <span className="truncate">· {O.module}</span>}
+                      {O.focus && <span className="truncate text-gray-600">· {O.focus}</span>}
                     </div>
                     <div
                       className={`text-sm leading-tight ${ie ? "text-gray-100 font-semibold" : "text-gray-300"}`}
@@ -7454,6 +7774,47 @@ function summarizeDevMarks(e) {
   }
   return r.join(" · ");
 }
+// Priority / focus-area helpers (values come straight from the imported sheet, e.g. "P0", "Security").
+var priorityRank = (e) => {
+  let t = String(e || "").match(/\d+/);
+  return t ? parseInt(t[0], 10) : 99;
+};
+var sortPriorities = (e) => [...e].sort((t, a) => priorityRank(t) - priorityRank(a) || t.localeCompare(a));
+var priorityBadgeClass = (e) => {
+  let t = priorityRank(e);
+  if (t === 0) return "bg-red-950/60 text-red-300 border-red-800";
+  if (t === 1) return "bg-amber-950/50 text-amber-300 border-amber-800";
+  if (t === 2) return "bg-sky-950/50 text-sky-300 border-sky-800";
+  return "bg-gray-800 text-gray-300 border-gray-700";
+};
+function PriorityBadge({ value: e, size: t = "sm" }) {
+  if (!e) return null;
+  return (
+    <span
+      className={`inline-flex items-center border rounded-sm font-mono font-bold flex-shrink-0 ${t === "xs" ? "text-[9px] px-1 py-px" : "text-[10px] px-1.5 py-0.5"} ${priorityBadgeClass(e)}`}
+      title={`Priority: ${e}`}
+    >
+      {e}
+    </span>
+  );
+}
+function FilterSelect({ value: e, onChange: t, children: a, active: r }) {
+  return (
+    <select
+      value={e}
+      onChange={(o) => t(o.target.value)}
+      className={`flex-1 min-w-0 px-2 py-1.5 text-xs bg-gray-800 border text-gray-100 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 appearance-none ${r ? "border-emerald-600" : "border-gray-700"}`}
+      style={{
+        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%239ca3af' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>")`,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "right 8px center",
+        paddingRight: "28px",
+      }}
+    >
+      {a}
+    </select>
+  );
+}
 function Breadcrumb({ tc: e }) {
   return (
     <div className="flex items-center gap-2 text-xs text-gray-400 font-mono mb-1.5">
@@ -7474,6 +7835,15 @@ function Breadcrumb({ tc: e }) {
           <ChevronRight className="w-3 h-3 text-gray-700 flex-shrink-0" />
           <span>{e.feature}</span>
         </Fragment>
+      )}
+      {e.priority && <PriorityBadge value={e.priority} />}
+      {e.focus && (
+        <span
+          className="bg-gray-800 text-gray-300 border border-gray-700 px-1.5 py-0.5 rounded-sm text-[10px] font-sans"
+          title={`Focus area: ${e.focus}`}
+        >
+          {e.focus}
+        </span>
       )}
       {e.dev_branch_name && (
         <span

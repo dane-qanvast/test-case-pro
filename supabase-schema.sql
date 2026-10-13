@@ -37,12 +37,19 @@ create table if not exists test_cases (
   downstream_check text,
   edge_case text,
   dev_branch_name text,                     -- optional: git branch where the fix lives, from CSV's "Dev Branch Name" column
-  initial_tester text                       -- pre-assigned tester from the CSV's tester column
+  initial_tester text,                      -- pre-assigned tester from the CSV's tester column
+  focus text,                               -- optional focus area from the sheet (e.g. Security, Data)
+  priority text                             -- optional priority from the sheet (e.g. P0, P1, P2)
 );
 
 -- Idempotent migration for existing deploys that pre-date the dev_branch_name
 -- column (the create-table above only fires on fresh installs).
 alter table test_cases add column if not exists dev_branch_name text;
+
+-- Idempotent migration: Focus area (e.g. Security, Data) and Priority (e.g. P0, P1)
+-- imported from the test sheet, used as tester filters.
+alter table test_cases add column if not exists focus text;
+alter table test_cases add column if not exists priority text;
 
 -- 3. Findings: testers fill these in. One row per test case (upserted as they edit).
 create table if not exists findings (
