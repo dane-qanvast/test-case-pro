@@ -242,8 +242,10 @@ var parseRecordingUrl = (e) => {
 };
 var CSV_GENERATION_PROMPT =
   'You are generating a User Acceptance Testing (UAT) plan as a CSV file. The CSV will be reviewed by non-technical stakeholders (product owners, QA, business users) and executed manually by testers. Follow the rules below exactly. Consistency across UAT sheets matters more than cleverness — these conventions exist so any tester on any team can pick up the sheet and execute it without translation.\n\n## OUTPUT FORMAT\n\nOutput ONE CSV file and nothing else — no preamble, no explanation, no markdown fences. The first row is the header, exactly:\n\nID,Module,Feature,Title,Tester [1- <Name1>, 2- <Name2>, 3- <Name3>],Pre-conditions,Test Data,Steps,Expected Result,Downstream Check,Edge Case,Pass/Fail,Tester Notes,Bug Severity (P0/ P1 / P2),Other Observations\n\nSubstitute the real tester names supplied in APP CONTEXT into the Tester column header. If no testers are supplied, leave the placeholders.\n\nEvery subsequent row is one test case. CSV rules:\n- Comma-separated. Quote any field that contains a comma, newline, or double quote.\n- Inside quoted fields, escape double quotes by doubling them (`""`).\n- Newlines inside Steps / Test Data / Expected Result / Pre-conditions cells are real newline characters inside the quoted field. Multi-line cells are normal — Steps almost always spans multiple lines.\n- Leave Pass/Fail, Tester Notes, Bug Severity, and Other Observations EMPTY. Tester gets the assigned tester\'s NUMBER (1, 2, 3...) — author-assigned, not filled in by the tester. These are reviewed and updated by testers during execution.\n- For optional columns where no value applies, write `—` (em-dash) rather than leaving completely empty — keeps cell counts consistent for spreadsheet review.\n\n## COLUMN DEFINITIONS\n\n**ID** — `<phase-code>-<area-code><nn>` format. Phase code identifies the testing phase or release (`T1`, `T2`, `T3` for sequenced UAT cycles, or `R4` for a release). Area code is a **1–3 letter** shortcode for the feature area — examples seen in real sheets: `L` (Leads), `Q` (Quotes), `P` (Projects), `PO` (Purchase Orders), `ME` (Multi-entity), `AB` (mAIson Bot), `PCH` (Portal Config Homeowner). `nn` is a two-digit sequence within that area, starting at `01`. Examples: `T1-L03`, `T2-PO07`, `T3-PCH02`. Sequence within an area; do not reset across modules. Use the same phase code for an entire test cycle. Same letter may mean different things in different phases — that\'s fine, area codes are scoped to phase.\n\n**Module** — A high-level feature/epic name, usually a single word in Title Case (`Finance`, `Projects`, `Customization`, `Leads`, `Quotes`, `Homeowner`, `Notifications`, `Integration`, `Tools`). Hyphenated compounds are fine (`Multi-entity`), as is product-native capitalization (`mAIson Bot`, `Portal Config`). Group related tests under the same Module value across consecutive rows; do not skip back and forth. A typical UAT sheet has 10–20 modules.\n\n**Feature** — A sub-area inside the Module, sentence case. Mix of styles is fine and reflects what testers will see:\n- Imperative verb phrase: `Create ticket`, `Edit line item`, `Approve invoice`, `Reject with comment`\n- Noun phrase naming a UI surface or workflow: `Status lifecycle`, `Bell drawer`, `Settings page`, `Activity tab`, `AR Aging`\n- UI variant in parens to disambiguate two paths to the same thing: `Create lead (drawer)` vs `Create lead (page)`\n- Colon for sub-action or function call: `Tool call: overdue tasks`, `Write tool: create_lead`\n- Named product component: `EntityPicker reports`, `Composer milestone`, `Gantt drag-resize`\nUse `—` when the test spans the whole module or isn\'t scoped to a single sub-feature (e.g. an end-to-end integration test).\n\n**Title** — A one-line description (no period at the end) that names WHAT is being verified, not how. Be specific and dense:\n- Good: `Create escalation via /escalations/new`\n- Good: `Move escalation through statuses`\n- Good: `Record commission payout`\n- Bad: `Test that creating an escalation works` (verbose, says "test that")\n- Use `→` for sequence, `+` to join multiple verified things in one test, `—` (em-dash) to attach a qualifier or scope.\n\n**Tester [1- <Name1>, 2- <Name2>, ...]** — The header lists each tester\'s number→name mapping. Each row\'s cell contains just the NUMBER (`1`, `2`, `3`) of the assigned tester. Distribute load roughly evenly across testers, but cluster related cases (same Module/Feature) under the same tester so they keep context.\n\n**Pre-conditions** — Compact. Name accounts/data/feature flags needed. Examples:\n- `On /escalations page`\n- `Ticket from E01 exists`\n- `Admin account. Commission entry accrued.`\n- `Feature flag "new_checkout" enabled.`\nUse `—` if no setup is required beyond a logged-in user.\n\n**Test Data** — Concrete sample inputs the tester should use. Multi-line if multiple fields. Examples:\n- `Subject: T1 - Test escalation\\nPriority: Medium\\nCategory: Timeline`\n- `Amount: $500\\nDate: today\\nReference: TEST-001`\nUse `—` if the test doesn\'t require seeded data.\n\n**Steps** — A numbered list, one step per line, beginning each line with `<n>. ` (digit, period, space). Style rules:\n- Imperative voice: `Click`, `Open`, `Navigate to`, `Confirm`. Never `You should click`.\n- Concrete UI paths: `/escalations → \'New Ticket\'`, `Settings → Team → "Invite"`.\n- Quote literal UI text in single quotes inside steps (which avoid the need to double-escape inside the CSV).\n- Inline edge-case probes count as steps: `Try to save without required fields. Confirm BLOCKED with field-level errors.`\n\n**Expected Result** — Prose, not a list. Describe the observable outcome in 1–3 sentences. Style rules:\n- Lead with the success state, then qualifying detail.\n- Mention IDs/formats that should appear: `Ticket created. Auto-generated ticket_id (T-YYYY-NNNNNN). Toast confirms.`\n- Quote literal UI strings the tester should see (banner copy, button text, toast text, error messages).\n- Use SHOUTY caps sparingly for invariants: `BLOCKED`, `ALWAYS`, `regardless of toggle`.\n\n**Downstream Check** — What to verify outside the immediate flow once the action succeeds. Examples: a DB column, an audit log entry, an email sent, a downstream system updated, an ID format conformance. Use `—` if there\'s nothing to verify downstream.\n\n**Edge Case** — Specific edge cases or boundary conditions worth probing in this test. Short note, not a step. Examples: `empty cart`, `max length input`, `cleared on reopen`. Use `—` if no edge case applies.\n\n**Pass/Fail, Tester Notes, Bug Severity (P0/ P1 / P2), Other Observations** — Always blank in the authored CSV. Testers fill these in during execution.\n\nReference (for the AUTHOR\'s awareness only — do not pre-fill these):\n- **Pass/Fail** values testers use in practice: `Pass`, `Fail`, `Blocked`, `Fail/ Blocked` (when a failure also blocks downstream tests), `Partial Pass` (some sub-checks pass), or empty (untested). Authors leave it empty.\n- **Bug Severity** values: `P0` (critical / blocker / data corruption), `P1` (major functional break), `P2` (minor / cosmetic). Only filled when status is `Fail` or `Blocked`, and even then frequently left empty — only ~1% of rows tend to carry a severity in observed sheets.\n- **Tester Notes** captures the main observation when something fails or behaves unexpectedly.\n- **Other Observations** is for side-channel notes the tester wants to flag — UX issues, performance hiccups, unrelated bugs spotted during testing.\n\n## CONTENT RULES\n\n1. **One test = one verifiable behavior.** If you\'re tempted to write `and also verify X` for an unrelated check, that\'s a second test case. Combining is allowed when checks share setup and flow.\n\n2. **Cover the negative path.** When a feature has a guard (refusal, disabled button, hidden control, validation error), add a step that probes it and an Expected Result that names the guard.\n\n3. **Cover the toggle/branch matrix.** When a feature has variants (ON/OFF, role-gated, default/non-default), write steps for each within the same test if they share setup, otherwise as adjacent tests.\n\n4. **Cross-surface verification when relevant.** For features touching multiple surfaces (in-app + email + public page + API), list each surface as a step and require Expected Result to confirm consistency.\n\n5. **Reference ticket/spec codes inline** when the test maps to a known spec item — in the Title or as a Steps prefix.\n\n6. **Sequence tests logically.** Setup tests come before tests that depend on them. Use Pre-conditions to make dependencies explicit (`Ticket from E01 exists`).\n\n## TONE\n\nTerse, technical, no fluff. Read like an engineer wrote it for another engineer to execute. No "please", no "make sure to", no marketing adjectives. UI strings get quotes; everything else is bare.\n\n## WHAT YOU WILL RECEIVE\n\nBelow this prompt the requester will paste two sections:\n\n**APP CONTEXT** — info about the product so you can ground the tests:\n- What the app does (one paragraph)\n- Tester names and their number assignment for the Tester column header (e.g. "Testers: 1-Ruchit, 2-Oliva, 3-Dane")\n- Any standing concepts (multi-tenant? feature flags? environments?) that recur across tests\n- Module/Feature label conventions if continuing an existing sheet (e.g. "use Module=Finance, starting T2-C04")\n\n**FEATURE SCOPE** — what to generate tests for. Any of these work:\n- A feature spec / PRD section\n- A list of tickets or PRs with brief descriptions\n- A bullet list of changes shipped\n- Release notes / changelog entries\n- A raw `git diff`, PR diff, or commit-range summary\n- Source code of changed files\n- A mix of the above\n\nWhen given code or a diff, treat it as the source of truth for behavior. Read what changed, infer the user-visible outcome, and write tests for the outcome — not for the code structure.\n\nYour job: derive Module + Feature labels, enumerate test cases that fully cover the behavior (happy path + negative paths + toggle branches + cross-surface consistency), assign each to a tester by number, and output the CSV.\n\nIf APP CONTEXT is missing details:\n- Default Pre-conditions to the minimum realistic setup — never write `N/A` or `None`. Use `—` only when truly nothing is required.\n- Default Test Data to `—` when the test action doesn\'t need seeded inputs.\n- Pick sensible Module/Feature labels from the feature scope wording.\n- Distribute testers round-robin if no assignment guidance is given.\n\nDo not invent features the input doesn\'t describe — but DO add the standard guard/negative-path checks any responsible UAT plan would include for the described feature.\n\nAfter the CSV, output nothing.\n\n---\n\n# APP CONTEXT (paste below)\n\n<one-paragraph app description>\n<list of personas / test accounts>\n<recurring concepts: multi-tenant, feature flags, environments>\n<starting TC number and module label conventions, if continuing an existing sheet>\n\n# FEATURE SCOPE (paste below)\n\n<paste ANY of: spec / tickets / PR notes / release notes / git diff / PR diff / source code of changed files>';
+// Matches app paths like /quotes/<id>/preview or /tools/x?leadId=<lead id>.
+// Placeholders in angle brackets may contain spaces (e.g. <lead id>) and stay inside the chip.
 var PATH_TOKEN_RE =
-  /(?<![a-zA-Z0-9_])\/[a-zA-Z][a-zA-Z0-9_-]*(?:\/(?:[a-zA-Z0-9_-]+|<[a-zA-Z0-9_-]+>))*(?:\?[a-zA-Z0-9_=&<>\-]+)?/g;
+  /(?<![a-zA-Z0-9_])\/[a-zA-Z][a-zA-Z0-9_-]*(?:\/(?:[a-zA-Z0-9_.-]|<[a-zA-Z0-9_][a-zA-Z0-9_ .-]{0,38}>)+)*\/?(?:\?(?:[a-zA-Z0-9_=&.%\-]|<[a-zA-Z0-9_][a-zA-Z0-9_ .-]{0,38}>)+)?/g;
 var BaseUrlContext = createContext("");
 function PathChipText({ text: e }) {
   let t = useContext(BaseUrlContext);
@@ -6616,7 +6618,11 @@ function TesterTestDetail({
               </div>
             )}
             {c.expected_result && c.expected_result !== "—" && (
-              <DetailField label="Expected Result" value={c.expected_result} highlight={true} />
+              <ExpectedResultChecklist
+                value={c.expected_result}
+                checks={p.step_checks}
+                onToggle={(f) => k(expectedCheckKey(f))}
+              />
             )}
             {c.downstream_check && c.downstream_check !== "—" && (
               <DetailField label="Downstream Check" value={c.downstream_check} />
@@ -6878,6 +6884,87 @@ function TesterTestDetail({
           }}
         />
       )}
+    </div>
+  );
+}
+// Expected results written as "✓ ..." lines become a checklist. Each item's tick is saved in
+// the finding's step_checks under keys "exp-0", "exp-1"… (no database change needed).
+var CHECK_LINE = /^\s*(?:✓|✔|☑|☐|\[\s?[xX✓]?\s?\])\s*/;
+var parseExpectedChecklist = (e) => {
+  if (!e || typeof e != "string") return null;
+  let t = e.split(/\n/);
+  if (!t.some((o) => CHECK_LINE.test(o))) return null;
+  let a = [];
+  let r = [];
+  for (let o of t) {
+    if (CHECK_LINE.test(o)) {
+      a.push(o.replace(CHECK_LINE, "").trim());
+    } else if (o.trim()) {
+      if (a.length > 0) a[a.length - 1] += `\n${o.trim()}`;
+      else r.push(o.trim());
+    }
+  }
+  return { intro: r.join("\n"), items: a.filter(Boolean) };
+};
+var expectedCheckKey = (e) => `exp-${e}`;
+function ExpectedResultChecklist({ value: e, checks: t, onToggle: a }) {
+  let r = parseExpectedChecklist(e);
+  if (!r) {
+    return <DetailField label="Expected Result" value={e} highlight={true} />;
+  }
+  let o = t || {};
+  let l = r.items.filter((i, u) => o[expectedCheckKey(u)] === "done").length;
+  let i = r.items.filter((u, d) => o[expectedCheckKey(d)] === "blocked").length;
+  return (
+    <div>
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
+        Expected Result
+        <span className="normal-case tracking-normal font-normal text-gray-500">
+          {l} of {r.items.length} met{i > 0 ? ` · ${i} not met` : ""}
+        </span>
+      </div>
+      <div className="bg-amber-950/30 border-l-4 border-amber-500 rounded-sm py-1.5">
+        {r.intro && <div className="px-3 pb-1 text-sm text-amber-100 whitespace-pre-wrap">{normalizePath(r.intro)}</div>}
+        {r.items.map((u, d) => {
+          let c = o[expectedCheckKey(d)];
+          let p = c === "done";
+          let h = c === "blocked";
+          let b = p ? "Mark as not met" : h ? "Clear" : "Mark as met";
+          let _ = (
+            <span
+              className={`w-4 h-4 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 transition-colors ${p ? "bg-green-600 border-2 border-green-600" : h ? "bg-red-600 border-2 border-red-600" : `border-2 border-amber-700/70 ${a ? "group-hover:border-amber-500" : ""}`}`}
+            >
+              {p && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+              {h && <X className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+            </span>
+          );
+          let S = (
+            <span className={`flex-1 min-w-0 text-sm whitespace-pre-wrap ${p ? "text-green-200" : h ? "text-red-200" : "text-amber-100"}`}>
+              {normalizePath(u)}
+              {h && (
+                <span className="ml-2 text-[10px] uppercase tracking-wider text-red-400 font-bold">Not as expected</span>
+              )}
+            </span>
+          );
+          return a ? (
+            <button
+              type="button"
+              onClick={() => a(d)}
+              title={b}
+              className="group w-full flex items-start gap-2.5 px-3 py-1 text-left transition-colors hover:bg-amber-900/20"
+              key={d}
+            >
+              {_}
+              {S}
+            </button>
+          ) : (
+            <div className="flex items-start gap-2.5 px-3 py-1" key={d}>
+              {_}
+              {S}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -8956,7 +9043,7 @@ function DevTestDetail({
               </div>
             )}
             {d.expected_result && d.expected_result !== "—" && (
-              <DetailField label="Expected Result" value={d.expected_result} highlight={true} />
+              <ExpectedResultChecklist value={d.expected_result} checks={c.step_checks} />
             )}
             {d.downstream_check && d.downstream_check !== "—" && (
               <DetailField label="Downstream Check" value={d.downstream_check} />
