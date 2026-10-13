@@ -6213,7 +6213,7 @@ function TesterSidebar({
             </button>
           </div>
           <div className="text-xs text-gray-400 mb-2">
-            Signed in as <span className="text-gray-100 font-medium">{r}</span>
+            Signed in as <span className="text-gray-100 font-medium">{r}</span> <span className="text-gray-500">(Tester)</span>
           </div>
           <div className="text-xs text-gray-500 mb-1">
             {u} / {l.length} done
@@ -6243,7 +6243,9 @@ function TesterSidebar({
               All tests <span className="tabular-nums opacity-60">({l.length})</span>
             </button>
           </div>
-          {I && <SidebarSearch value={_} onChange={S} onClose={() => x(false)} />}
+          {I ? (
+            <SidebarSearch value={_} onChange={S} onClose={() => x(false)} className="mb-2" />
+          ) : (
           <div className="flex gap-1.5 mb-2">
             <button
               onClick={() => {
@@ -6284,6 +6286,7 @@ function TesterSidebar({
               ))}
             </select>
           </div>
+          )}
           {(priorityOptions.length > 0 || focusOptions.length > 0) && (
             <div className="flex gap-1.5 mb-2">
               {priorityOptions.length > 0 && (
@@ -7560,7 +7563,7 @@ function DevSidebar({
             </button>
           </div>
           <div className="text-xs text-gray-400 mb-2">
-            Reviewing as <span className="text-gray-100 font-medium">{r}</span>
+            Signed in as <span className="text-gray-100 font-medium">{r}</span> <span className="text-gray-500">(Developer)</span>
           </div>
           <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
             <span>
@@ -7590,7 +7593,9 @@ function DevSidebar({
               Fixed ({c})
             </TabButton>
           </div>
-          {x && <SidebarSearch value={S} onChange={I} onClose={() => g(false)} />}
+          {x ? (
+            <SidebarSearch value={S} onChange={I} onClose={() => g(false)} />
+          ) : (
           <div className="flex gap-1.5">
             <button
               onClick={() => {
@@ -7614,6 +7619,7 @@ function DevSidebar({
               <span className="truncate">{C ? `Focused (${C.size})` : "Focus tests"}</span>
             </button>
           </div>
+          )}
           {C && (
             <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 bg-emerald-950/40 border border-emerald-800/50 rounded-sm text-xs">
               <Filter className="w-3 h-3 text-emerald-400 flex-shrink-0" />
@@ -8069,41 +8075,39 @@ function SettingsModal({
     </div>
   );
 }
-function SidebarSearch({ value: e, onChange: t, onClose: a }) {
+// Search bar that takes over the sidebar's search/filter row while open.
+// The X button (or Escape) clears the search and brings the row back.
+function SidebarSearch({ value: e, onChange: t, onClose: a, className: r = "" }) {
+  let o = () => {
+    t("");
+    a();
+  };
   return (
-    <div className="relative mb-2">
-      <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
-      <input
-        autoFocus={true}
-        type="text"
-        placeholder="Search ID, title, module, feature…"
-        value={e}
-        onChange={(r) => t(r.target.value)}
-        onKeyDown={(r) => {
-          if (r.key === "Escape") {
-            t("");
-            a();
-          }
-        }}
-        onBlur={() => {
-          if (!e) {
-            a();
-          }
-        }}
-        className="w-full pl-8 pr-7 py-1.5 text-xs bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-      />
-      {e && (
-        <button
-          onClick={() => {
-            t("");
-            a();
+    <div className={`flex gap-1.5 ${r}`}>
+      <div className="relative flex-1 min-w-0">
+        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+        <input
+          autoFocus={true}
+          type="text"
+          placeholder="Search ID, title, module, feature…"
+          value={e}
+          onChange={(l) => t(l.target.value)}
+          onKeyDown={(l) => {
+            if (l.key === "Escape") {
+              o();
+            }
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-200"
-          title="Clear and close"
-        >
-          <X className="w-3 h-3" />
-        </button>
-      )}
+          className="w-full h-8 pl-8 pr-2 text-base sm:text-xs bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+        />
+      </div>
+      <button
+        onClick={o}
+        className="flex-shrink-0 flex items-center justify-center w-8 h-8 border border-gray-700 bg-gray-800 text-gray-400 rounded-sm transition-colors hover:text-gray-100 hover:bg-gray-700"
+        title="Close search"
+        aria-label="Close search"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 }
