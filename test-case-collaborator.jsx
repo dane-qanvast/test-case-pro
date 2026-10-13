@@ -6570,9 +6570,12 @@ function TesterTestDetail({
     let T = {
       ...(p.step_checks || {}),
     };
+    let ee = String(f).startsWith("exp-");
     if (w === "done") {
       T[f] = "blocked";
-    } else if (w === "blocked") {
+    } else if (w === "blocked" && ee) {
+      T[f] = "unsure";
+    } else if (w === "blocked" || w === "unsure") {
       delete T[f];
     } else {
       T[f] = "done";
@@ -6664,6 +6667,8 @@ function TesterTestDetail({
                 value={c.expected_result}
                 checks={p.step_checks}
                 onToggle={(f) => k(expectedCheckKey(f))}
+                notes={p.step_notes}
+                onNote={(f, w) => C(f, w)}
               />
             )}
             {c.downstream_check && c.downstream_check !== "—" && (
@@ -6949,7 +6954,39 @@ var parseExpectedChecklist = (e) => {
   return { intro: r.join("\n"), items: a.filter(Boolean) };
 };
 var expectedCheckKey = (e) => `exp-${e}`;
-function ExpectedResultChecklist({ value: e, checks: t, onToggle: a }) {
+// Per-item note under an expected-result checklist item (saved in step_notes under "exp-<n>").
+function ExpectedItemNote({ note: e, onNote: t }) {
+  let [a, r] = useState(false);
+  if (!t) {
+    return e ? (
+      <div className="ml-[26px] mt-1 mb-0.5 px-2 py-1 bg-gray-950/70 border-l-2 border-amber-600 text-xs text-gray-200 whitespace-pre-wrap rounded-sm">
+        {normalizePath(e)}
+      </div>
+    ) : null;
+  }
+  return a || e ? (
+    <div className="ml-[26px] mt-1 mb-0.5">
+      <textarea
+        autoFocus={a}
+        value={e || ""}
+        onChange={(o) => t(prettyArrows(o.target.value))}
+        onBlur={() => r(false)}
+        rows={2}
+        placeholder="Note for this item…"
+        className="w-full px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-sm text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
+      />
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={() => r(true)}
+      className="ml-[26px] text-[11px] text-gray-500 hover:text-gray-300"
+    >
+      + Add note
+    </button>
+  );
+}
+function ExpectedResultChecklist({ value: e, checks: t, onToggle: a, notes: nt, onNote: on }) {
   let r = parseExpectedChecklist(e);
   if (!r) {
     return <DetailField label="Expected Result" value={e} highlight={true} />;
@@ -6957,12 +6994,14 @@ function ExpectedResultChecklist({ value: e, checks: t, onToggle: a }) {
   let o = t || {};
   let l = r.items.filter((i, u) => o[expectedCheckKey(u)] === "done").length;
   let i = r.items.filter((u, d) => o[expectedCheckKey(d)] === "blocked").length;
+  let n = r.items.filter((u, d) => o[expectedCheckKey(d)] === "unsure").length;
   return (
     <div>
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
         Expected Result
         <span className="normal-case tracking-normal font-normal text-gray-500">
           {l} of {r.items.length} met{i > 0 ? ` · ${i} not met` : ""}
+          {n > 0 ? ` · ${n} unsure` : ""}
         </span>
       </div>
       <div className="bg-amber-950/30 border-l-4 border-amber-500 rounded-sm py-1.5">
@@ -6971,38 +7010,46 @@ function ExpectedResultChecklist({ value: e, checks: t, onToggle: a }) {
           let c = o[expectedCheckKey(d)];
           let p = c === "done";
           let h = c === "blocked";
-          let b = p ? "Mark as not met" : h ? "Clear" : "Mark as met";
+          let q = c === "unsure";
+          let b = p ? "Mark as not met" : h ? "Mark as unsure" : q ? "Clear" : "Mark as met";
           let _ = (
             <span
-              className={`w-4 h-4 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 transition-colors ${p ? "bg-green-600 border-2 border-green-600" : h ? "bg-red-600 border-2 border-red-600" : `border-2 border-amber-700/70 ${a ? "group-hover:border-amber-500" : ""}`}`}
+              className={`w-4 h-4 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 transition-colors ${p ? "bg-green-600 border-2 border-green-600" : h ? "bg-red-600 border-2 border-red-600" : q ? "bg-orange-500 border-2 border-orange-500" : `border-2 border-amber-700/70 ${a ? "group-hover:border-amber-500" : ""}`}`}
             >
               {p && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
               {h && <X className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+              {q && <span className="text-[10px] leading-none font-black text-white">?</span>}
             </span>
           );
           let S = (
-            <span className={`flex-1 min-w-0 text-sm whitespace-pre-wrap ${p ? "text-green-200" : h ? "text-red-200" : "text-amber-100"}`}>
+            <span className={`flex-1 min-w-0 text-sm whitespace-pre-wrap ${p ? "text-green-200" : h ? "text-red-200" : q ? "text-orange-200" : "text-amber-100"}`}>
               {normalizePath(u)}
               {h && (
                 <span className="ml-2 text-[10px] uppercase tracking-wider text-red-400 font-bold">Not as expected</span>
               )}
+              {q && <span className="ml-2 text-[10px] uppercase tracking-wider text-orange-400 font-bold">Unsure</span>}
             </span>
           );
-          return a ? (
-            <button
-              type="button"
-              onClick={() => a(d)}
-              title={b}
-              className="group w-full flex items-start gap-2.5 px-3 py-1 text-left transition-colors hover:bg-amber-900/20"
-              key={d}
-            >
-              {_}
-              {S}
-            </button>
-          ) : (
-            <div className="flex items-start gap-2.5 px-3 py-1" key={d}>
-              {_}
-              {S}
+          let m = (nt || {})[expectedCheckKey(d)];
+          return (
+            <div className="px-3 py-1" key={d}>
+              {a ? (
+                <button
+                  type="button"
+                  onClick={() => a(d)}
+                  title={b}
+                  className="group w-full flex items-start gap-2.5 text-left rounded-sm transition-colors hover:bg-amber-900/20"
+                >
+                  {_}
+                  {S}
+                </button>
+              ) : (
+                <div className="flex items-start gap-2.5">
+                  {_}
+                  {S}
+                </div>
+              )}
+              <ExpectedItemNote note={m} onNote={on ? (w) => on(expectedCheckKey(d), w) : null} />
             </div>
           );
         })}
@@ -9072,7 +9119,7 @@ function DevTestDetail({
               </div>
             )}
             {d.expected_result && d.expected_result !== "—" && (
-              <ExpectedResultChecklist value={d.expected_result} checks={c.step_checks} />
+              <ExpectedResultChecklist value={d.expected_result} checks={c.step_checks} notes={c.step_notes} />
             )}
             {d.downstream_check && d.downstream_check !== "—" && (
               <DetailField label="Downstream Check" value={d.downstream_check} />
