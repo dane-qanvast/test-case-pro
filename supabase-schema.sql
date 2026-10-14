@@ -39,7 +39,9 @@ create table if not exists test_cases (
   dev_branch_name text,                     -- optional: git branch where the fix lives, from CSV's "Dev Branch Name" column
   initial_tester text,                      -- pre-assigned tester from the CSV's tester column
   focus text,                               -- optional focus area from the sheet (e.g. Security, Data)
-  priority text                             -- optional priority from the sheet (e.g. P0, P1, P2)
+  priority text,                            -- optional priority from the sheet (e.g. P0, P1, P2)
+  removed_at timestamptz,                   -- hidden because it was removed from the sheet (results kept)
+  content_updated_at timestamptz            -- steps/expected result reworded by a sheet re-upload
 );
 
 -- Idempotent migration for existing deploys that pre-date the dev_branch_name
@@ -50,6 +52,12 @@ alter table test_cases add column if not exists dev_branch_name text;
 -- imported from the test sheet, used as tester filters.
 alter table test_cases add column if not exists focus text;
 alter table test_cases add column if not exists priority text;
+
+-- Idempotent migration: re-uploading an updated sheet into an existing session.
+-- removed_at: set when a test disappears from its tab (hidden, results kept; cleared if it comes back).
+-- content_updated_at: set when the sheet rewords steps/expected results of a test that already has results.
+alter table test_cases add column if not exists removed_at timestamptz;
+alter table test_cases add column if not exists content_updated_at timestamptz;
 
 -- 3. Findings: testers fill these in. One row per test case (upserted as they edit).
 create table if not exists findings (
@@ -158,3 +166,38 @@ end $$;
 update storage.buckets
    set file_size_limit = 10485760
  where id = 'screenshots';
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Sample files for testers (idempotent). Admins attach files (e.g. a zip) to a
+-- session; testers download them. Files live in the public "session-files"
+-- bucket under <session id>/; the list is stored in sessions.sample_files.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table sessions add column if not exists sample_files jsonb default '[]'::jsonb;
+
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('session-files', 'session-files', true, 52428800)
+on conflict (id) do nothing;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'session-files anon insert'
+  ) then
+    create policy "session-files anon insert"
+    on storage.objects for insert
+    to anon
+    with check (bucket_id = 'session-files');
+  end if;
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'session-files anon delete'
+  ) then
+    create policy "session-files anon delete"
+    on storage.objects for delete
+    to anon
+    using (bucket_id = 'session-files');
+  end if;
+end $$;

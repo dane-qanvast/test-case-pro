@@ -24,6 +24,7 @@ import {
   CircleX,
   CircleAlert,
   AlertTriangle,
+  Paperclip,
   RefreshCw,
   CircleHelp,
   ExternalLink,
@@ -4363,6 +4364,372 @@ function SheetLinkImport({ onFile: e, disabled: t }) {
     </div>
   );
 }
+// ---------------------------------------------------------------------------
+// Sample files: admins attach files (e.g. a zip) to a session; testers download them.
+// Files live in the public "session-files" storage bucket under <session id>/,
+// and the list is kept in sessions.sample_files.
+// ---------------------------------------------------------------------------
+var SAMPLE_BUCKET = "session-files";
+var SAMPLE_MAX_BYTES = 50 * 1024 * 1024;
+var SAMPLE_SETUP_SQL = `alter table sessions add column if not exists sample_files jsonb default '[]'::jsonb;
+
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('session-files', 'session-files', true, 52428800)
+on conflict (id) do nothing;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'session-files anon insert'
+  ) then
+    create policy "session-files anon insert"
+    on storage.objects for insert
+    to anon
+    with check (bucket_id = 'session-files');
+  end if;
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and policyname = 'session-files anon delete'
+  ) then
+    create policy "session-files anon delete"
+    on storage.objects for delete
+    to anon
+    using (bucket_id = 'session-files');
+  end if;
+end $$;`;
+var formatBytes = (e) => {
+  if (!e && e !== 0) return "";
+  if (e < 1024) return `${e} B`;
+  if (e < 1048576) return `${Math.round(e / 1024)} KB`;
+  return `${(e / 1048576).toFixed(e < 10485760 ? 1 : 0)} MB`;
+};
+var isSampleSetupError = (e) =>
+  /bucket not found|sample_files|row-level security|violates row-level/i.test(String(e?.message || e || ""));
+var SAMPLE_SETUP_MESSAGE =
+  "Sample files need a one-time Supabase setup. Run the SQL from the setup note (Edit session → Sample files), then try again.";
+var uploadSampleFiles = async (e, t) => {
+  let a = [];
+  for (let r of t) {
+    if (r.size > SAMPLE_MAX_BYTES) {
+      throw new Error(`${r.name} is ${formatBytes(r.size)}. Files must be under 50 MB. Split the zip or leave out the largest files.`);
+    }
+    let o = r.name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-");
+    let s = `${e}/${Date.now()}-${o}`;
+    let { error: l } = await supabase.storage.from(SAMPLE_BUCKET).upload(s, r, {
+      contentType: r.type || "application/octet-stream",
+      upsert: false,
+    });
+    if (l) {
+      throw isSampleSetupError(l) ? new Error(SAMPLE_SETUP_MESSAGE) : l;
+    }
+    let {
+      data: { publicUrl: i },
+    } = supabase.storage.from(SAMPLE_BUCKET).getPublicUrl(s, {
+      download: r.name,
+    });
+    a.push({
+      path: s,
+      name: r.name,
+      size: r.size,
+      url: i,
+      uploaded_at: new Date().toISOString(),
+    });
+  }
+  return a;
+};
+function SampleFileRow({ file: e, onRemove: t, removing: a }) {
+  return (
+    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-800/60 border border-gray-700 rounded-sm text-xs">
+      <Paperclip className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+      <span className="flex-1 min-w-0 truncate text-gray-200" title={e.name}>
+        {e.name}
+      </span>
+      <span className="text-gray-500 flex-shrink-0">{formatBytes(e.size)}</span>
+      {e.url && (
+        <a href={e.url} className="text-gray-400 hover:text-gray-100 flex-shrink-0" title="Download">
+          <Download className="w-3.5 h-3.5" />
+        </a>
+      )}
+      {t && (
+        <button
+          onClick={t}
+          disabled={a}
+          className="text-gray-500 hover:text-red-300 disabled:opacity-40 flex-shrink-0"
+          title="Remove"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+// Wizard: files are only uploaded when the session is created.
+function SampleFilesPicker({ files: e, setFiles: t }) {
+  let a = useRef(null);
+  let [r, o] = useState("");
+  let s = (l) => {
+    let i = Array.from(l || []);
+    let u = i.filter((d) => d.size > SAMPLE_MAX_BYTES);
+    o(u.length ? `${u.map((d) => d.name).join(", ")} ${u.length === 1 ? "is" : "are"} over 50 MB and can't be added.` : "");
+    t([...e, ...i.filter((d) => d.size <= SAMPLE_MAX_BYTES)]);
+  };
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Sample files for testers <span className="normal-case font-normal text-gray-500">(optional)</span>
+        </label>
+      </div>
+      {e.length > 0 && (
+        <div className="space-y-1 mb-2">
+          {e.map((l, i) => (
+            <SampleFileRow file={l} key={i} onRemove={() => t(e.filter((u, d) => d !== i))} />
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => a.current?.click()}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-sm transition-colors"
+      >
+        <Paperclip className="w-3.5 h-3.5" /> {e.length ? "Add more files" : "Attach files"}
+      </button>
+      <input
+        ref={a}
+        type="file"
+        multiple
+        onChange={(l) => {
+          s(l.target.files);
+          l.target.value = "";
+        }}
+        className="hidden"
+      />
+      <div className="text-[11px] text-gray-500 mt-1.5">
+        Files testers need, e.g. a zipped sample-files folder. Up to 50 MB each. Testers get a download prompt when
+        they open the session.
+      </div>
+      {r && <div className="text-[11px] text-red-300 mt-1">{r}</div>}
+    </div>
+  );
+}
+// Edit session: files upload/remove immediately.
+function SampleFilesManager({ session: e }) {
+  let [t, a] = useState(null);
+  let [r, o] = useState(false);
+  let [s, l] = useState("");
+  let [i, u] = useState(null);
+  let [d, c] = useState(false);
+  let p = useRef(null);
+  useEffect(() => {
+    let b = false;
+    (async () => {
+      let { data: _, error: S } = await supabase.from("sessions").select("sample_files").eq("id", e.id).single();
+      if (b) return;
+      if (S) {
+        a([]);
+        if (isSampleSetupError(S)) c(true);
+      } else {
+        a(_?.sample_files || []);
+      }
+    })();
+    return () => {
+      b = true;
+    };
+  }, [e.id]);
+  let h = async (b) => {
+    let { error: _ } = await supabase.from("sessions").update({ sample_files: b }).eq("id", e.id);
+    if (_) throw isSampleSetupError(_) ? new Error(SAMPLE_SETUP_MESSAGE) : _;
+    a(b);
+  };
+  let b = async (_) => {
+    let S = Array.from(_ || []);
+    if (!S.length) return;
+    o(true);
+    l("");
+    try {
+      let I = await uploadSampleFiles(e.id, S);
+      await h([...(t || []), ...I]);
+    } catch (I) {
+      l(I.message || "Upload failed");
+      if (/one-time Supabase setup/.test(I.message || "")) c(true);
+    }
+    o(false);
+  };
+  let _ = async (S) => {
+    u(S.path);
+    l("");
+    try {
+      await h((t || []).filter((I) => I.path !== S.path));
+      await supabase.storage.from(SAMPLE_BUCKET).remove([S.path]);
+    } catch (I) {
+      l(I.message || "Couldn't remove the file");
+    }
+    u(null);
+  };
+  return (
+    <div>
+      <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+        Sample files for testers{" "}
+        {t && t.length > 0 && <span className="normal-case font-normal text-gray-500">({t.length})</span>}
+      </div>
+      {d && (
+        <div className="mb-2 p-3 bg-amber-950/40 border border-amber-700 rounded-sm text-xs text-amber-100 space-y-2">
+          <div className="font-semibold">One-time Supabase setup needed</div>
+          <div>In Supabase, open the SQL Editor, paste this and click Run. Then close and reopen this window.</div>
+          <pre className="bg-gray-950 border border-gray-800 rounded-sm p-2 font-mono text-[10px] text-gray-200 overflow-x-auto whitespace-pre">
+            {SAMPLE_SETUP_SQL}
+          </pre>
+        </div>
+      )}
+      {t === null ? (
+        <div className="text-xs text-gray-500">Loading…</div>
+      ) : (
+        <>
+          {t.length > 0 && (
+            <div className="space-y-1 mb-2">
+              {t.map((S) => (
+                <SampleFileRow file={S} key={S.path} onRemove={() => _(S)} removing={i === S.path} />
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => p.current?.click()}
+            disabled={r}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-sm transition-colors disabled:opacity-60"
+          >
+            <Paperclip className="w-3.5 h-3.5" /> {r ? "Uploading…" : t.length ? "Add more files" : "Attach files"}
+          </button>
+          <input
+            ref={p}
+            type="file"
+            multiple
+            onChange={(S) => {
+              b(S.target.files);
+              S.target.value = "";
+            }}
+            className="hidden"
+          />
+          <div className="text-[11px] text-gray-500 mt-1.5">
+            Saved straight away. Up to 50 MB each, e.g. a zipped sample-files folder.
+          </div>
+        </>
+      )}
+      {s && <div className="text-[11px] text-red-300 mt-1">{s}</div>}
+    </div>
+  );
+}
+// Tester portal: floating prompt to download the session's sample files.
+function TesterSampleFilesBar({ sessionId: e, myName: t }) {
+  let [a, r] = useState([]);
+  let o = `uat-pro-samples-ack-${e}-${t}`;
+  let [s, l] = useState(() => {
+    try {
+      return localStorage.getItem(o) === "1";
+    } catch {
+      return false;
+    }
+  });
+  let [i, u] = useState(false);
+  let [d, c] = useState(false);
+  useEffect(() => {
+    let h = false;
+    (async () => {
+      let { data: b, error: _ } = await supabase.from("sessions").select("sample_files").eq("id", e).single();
+      if (h || _) return;
+      r(b?.sample_files || []);
+      if (!s) {
+        requestAnimationFrame(() => u(true));
+      }
+      c(true);
+    })();
+    return () => {
+      h = true;
+    };
+  }, [e]);
+  if (!d || a.length === 0) return null;
+  let p = () => {
+    l(true);
+    try {
+      localStorage.setItem(o, "1");
+    } catch {}
+  };
+  return (
+    <>
+      <div
+        className={`fixed z-40 bottom-4 right-4 left-4 sm:left-auto sm:w-96 transition-all duration-300 ease-out ${i ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0 pointer-events-none"}`}
+        role="dialog"
+        aria-label="Sample files"
+        aria-hidden={!i}
+      >
+        <div className="bg-gray-900 border border-amber-700/70 rounded-sm shadow-2xl">
+          <div className="flex items-start gap-2.5 px-4 pt-3 pb-2">
+            <Paperclip className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-gray-100">
+                {s ? "Sample files" : "Download the sample files first"}
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">
+                {s
+                  ? "Files you'll need for these tests."
+                  : `Some tests need ${a.length === 1 ? "this file" : "these files"}. Download ${a.length === 1 ? "it" : "them"} before you start${a.some((h) => /\.zip$/i.test(h.name)) ? ", then unzip" : ""}.`}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                u(false);
+                p();
+              }}
+              className="text-gray-500 hover:text-gray-200 p-0.5 flex-shrink-0"
+              title="Hide"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="px-4 pb-3 space-y-1 max-h-56 overflow-y-auto">
+            {a.map((h) => (
+              <a
+                href={h.url}
+                onClick={p}
+                key={h.path}
+                className="flex items-center gap-2 px-2.5 py-2 bg-gray-800/70 border border-gray-700 rounded-sm text-xs text-gray-200 transition-colors hover:border-amber-600 hover:bg-gray-800"
+              >
+                <Download className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span className="flex-1 min-w-0 truncate" title={h.name}>
+                  {h.name}
+                </span>
+                <span className="text-gray-500 flex-shrink-0">{formatBytes(h.size)}</span>
+              </a>
+            ))}
+          </div>
+          {!s && (
+            <div className="px-4 pb-3 flex justify-end">
+              <button
+                onClick={() => {
+                  u(false);
+                  p();
+                }}
+                className="text-xs text-gray-400 hover:text-gray-200"
+              >
+                I already have them
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={() => u(true)}
+        className={`fixed z-30 bottom-4 right-4 inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border border-gray-700 text-gray-300 rounded-sm shadow-lg transition-all duration-300 ease-out hover:text-gray-100 hover:border-gray-600 ${i ? "translate-y-6 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`}
+        title="Sample files for these tests"
+      >
+        <Paperclip className="w-3.5 h-3.5" /> Sample files ({a.length})
+      </button>
+    </>
+  );
+}
 // "Upload updated sheet" flow, opened from Edit session.
 function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
   let [r, o] = useState(true);
@@ -4920,6 +5287,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               </button>
             </div>
           </div>
+          <SampleFilesManager session={e} />
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Test cases</div>
             <button
@@ -5012,6 +5380,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
   let [A, j] = useState("");
   let [M, W] = useState(false);
   let [Q, setImportSources] = useState([]);
+  let [sampleFiles, setSampleFiles] = useState([]);
   let V = useRef(null);
   let F = async () => {
     let P = false;
@@ -5182,9 +5551,19 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
     T(true);
     j("");
     try {
+      // Upload sample files first (under a pre-made session id) so a failed upload never leaves a half-made session.
+      let sid = crypto.randomUUID ? crypto.randomUUID() : undefined;
+      let uploadedSamples = [];
+      if (sampleFiles.length > 0) {
+        if (!sid) {
+          throw new Error("This browser can't attach files here. Create the session, then add files from Edit.");
+        }
+        uploadedSamples = await uploadSampleFiles(sid, sampleFiles);
+      }
       let { data: P, error: X } = await supabase
         .from("sessions")
         .insert({
+          ...(sid ? { id: sid } : {}),
           name: a.trim(),
           testers: c,
           developers: h,
@@ -5192,10 +5571,15 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
           developer_code: k,
           tester_col_header: l.testerColHeader || "Tester",
           base_url: m.trim() || null,
+          ...(uploadedSamples.length ? { sample_files: uploadedSamples } : {}),
         })
         .select()
         .single();
       if (X) {
+        if (uploadedSamples.length) {
+          await supabase.storage.from(SAMPLE_BUCKET).remove(uploadedSamples.map((N) => N.path));
+          if (isSampleSetupError(X)) throw new Error(SAMPLE_SETUP_MESSAGE);
+        }
         throw X;
       }
       let ve = l.testCases.map((N) => ({
@@ -5483,6 +5867,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
           <CodeField label="Tester access code" value={g} onChange={v} onRegen={() => v(randomCode())} />
           <CodeField label="Developer access code" value={k} onChange={C} onRegen={() => C(randomCode())} />
         </div>
+        <SampleFilesPicker files={sampleFiles} setFiles={setSampleFiles} />
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
             Path chip prefix <span className="normal-case font-normal text-gray-500">(optional)</span>
@@ -6981,6 +7366,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           currentFocusedIds={W}
           onApply={(N) => V(N)}
         />
+        <TesterSampleFilesBar sessionId={e.id} myName={t} />
       </div>
     </BaseUrlContext.Provider>
   );
@@ -8336,6 +8722,8 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
     }, 600);
   };
   let he = ($) => severityRank($);
+  let [devSeverity, setDevSeverity] = useState("All");
+  let [devPriority, setDevPriority] = useState("All");
   let ie = (() => {
     let $ = r.filter((H) => {
       if (j && !j.has(H.id)) {
@@ -8348,6 +8736,12 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
         (f === "mywip" && ve !== "in_progress") ||
         (f === "myfixed" && ve !== "fixed")
       ) {
+        return false;
+      }
+      if (devSeverity !== "All" && (getSeverity(s[H.id]?.bug_severity)?.value || "") !== devSeverity) {
+        return false;
+      }
+      if (devPriority !== "All" && (H.priority || "") !== devPriority) {
         return false;
       }
       if (!v) {
@@ -8443,6 +8837,10 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           setSearchOpen={m}
           filter={f}
           setFilter={w}
+          severityFilter={devSeverity}
+          setSeverityFilter={setDevSeverity}
+          priorityFilter={devPriority}
+          setPriorityFilter={setDevPriority}
           focusedIds={j}
           onClearFocus={() => M(null)}
           onOpenFocusModal={() => V(true)}
@@ -8518,6 +8916,10 @@ function DevSidebar({
   setSearchOpen: g,
   filter: v,
   setFilter: k,
+  severityFilter: sevF = "All",
+  setSeverityFilter: setSevF = () => {},
+  priorityFilter: priF = "All",
+  setPriorityFilter: setPriF = () => {},
   focusedIds: C,
   onClearFocus: m,
   onOpenFocusModal: f,
@@ -8529,6 +8931,20 @@ function DevSidebar({
   let [M, W] = useState(false);
   let [V, F] = useState(false);
   let [se, E] = useState(false);
+  let sevOf = (D) => getSeverity(i[D.id]?.bug_severity)?.value || "";
+  let sevCounts = {};
+  l.forEach((D) => {
+    let O = sevOf(D);
+    sevCounts[O] = (sevCounts[O] || 0) + 1;
+  });
+  let priOptions = sortPriorities(Array.from(new Set(l.map((D) => D.priority).filter(Boolean))));
+  let priHasNone = priOptions.length > 0 && l.some((D) => !D.priority);
+  let devTabs = [
+    { key: "all", label: "All", count: l.length },
+    { key: "failed", label: "Failed", count: p, alert: p > 0 },
+    { key: "mywip", label: "Fixing", count: d, hint: "Tests you've marked In Progress" },
+    { key: "myfixed", label: "Fixed", count: c, hint: "Tests you've marked Fixed" },
+  ];
   if (e) {
     return (
       <aside className="w-80 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
@@ -8565,46 +8981,62 @@ function DevSidebar({
               }}
             />
           </div>
-          <div className="grid grid-cols-2 gap-1 mb-2">
-            <TabButton active={v === "all"} onClick={() => k("all")}>
-              All ({l.length})
-            </TabButton>
-            <TabButton active={v === "failed"} onClick={() => k("failed")}>
-              Failed ({p})
-            </TabButton>
-            <TabButton active={v === "mywip"} onClick={() => k("mywip")}>
-              In Progress ({d})
-            </TabButton>
-            <TabButton active={v === "myfixed"} onClick={() => k("myfixed")}>
-              Fixed ({c})
-            </TabButton>
+          <div className="grid grid-cols-4 border border-gray-700 rounded-sm overflow-hidden mb-2">
+            {devTabs.map((D, O) => {
+              let B = v === D.key;
+              return (
+                <button
+                  key={D.key}
+                  onClick={() => k(D.key)}
+                  title={D.hint}
+                  aria-pressed={B}
+                  className={`h-8 px-1 flex items-center justify-center gap-1 text-[11px] font-medium transition-colors ${O > 0 ? "border-l border-gray-700" : ""} ${B ? "bg-emerald-600 text-white" : "bg-gray-800/60 text-gray-400 hover:bg-gray-800 hover:text-gray-200"}`}
+                >
+                  <span className="truncate">{D.label}</span>
+                  <span className={B ? "text-emerald-100/80" : D.alert ? "text-red-400" : "text-gray-500"}>{D.count}</span>
+                </button>
+              );
+            })}
           </div>
           {x ? (
             <SidebarSearch value={S} onChange={I} onClose={() => g(false)} />
           ) : (
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => {
-                let D = !x;
-                g(D);
-                if (!D) {
-                  I("");
-                }
-              }}
-              className={`flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${x || S ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
-              title="Search test cases"
-            >
-              <Search className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={f}
-              className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 h-8 border rounded-sm transition-colors text-xs font-medium ${C ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
-              title={C ? `Focus filter active (${C.size} tests)` : "Focus on a subset of tests"}
-            >
-              <Filter className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="truncate">{C ? `Focused (${C.size})` : "Focus tests"}</span>
-            </button>
-          </div>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => g(true)}
+                className={`flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${S ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
+                title="Search test cases"
+              >
+                <Search className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={f}
+                className={`relative flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${C ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
+                title={C ? `Focus filter active (${C.size} tests)` : "Focus on a hand-picked set of tests"}
+              >
+                <Filter className="w-3.5 h-3.5" />
+              </button>
+              <FilterSelect value={sevF} onChange={setSevF} active={sevF !== "All"}>
+                <option value="All">Severity</option>
+                {SEVERITIES.map((D) => (
+                  <option value={D.value} key={D.value}>
+                    {D.value} ({sevCounts[D.value] || 0})
+                  </option>
+                ))}
+                <option value="">Not set ({sevCounts[""] || 0})</option>
+              </FilterSelect>
+              {priOptions.length > 0 && (
+                <FilterSelect value={priF} onChange={setPriF} active={priF !== "All"}>
+                  <option value="All">Priority</option>
+                  {priOptions.map((D) => (
+                    <option value={D} key={D}>
+                      {D} ({l.filter((O) => O.priority === D).length})
+                    </option>
+                  ))}
+                  {priHasNone && <option value="">No priority</option>}
+                </FilterSelect>
+              )}
+            </div>
           )}
           {C && (
             <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 bg-emerald-950/40 border border-emerald-800/50 rounded-sm text-xs">
@@ -8634,6 +9066,14 @@ function DevSidebar({
                 v !== "all" && {
                   label: "Show all tests",
                   onClick: () => k("all"),
+                },
+                sevF !== "All" && {
+                  label: "Clear severity filter",
+                  onClick: () => setSevF("All"),
+                },
+                priF !== "All" && {
+                  label: "Clear priority filter",
+                  onClick: () => setPriF("All"),
                 },
                 S && {
                   label: "Clear search",
