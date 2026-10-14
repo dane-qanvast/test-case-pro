@@ -6572,6 +6572,8 @@ function TesterTestDetail({
     };
     let ee = String(f).startsWith("exp-");
     if (w === "done") {
+      T[f] = ee ? "blocked" : "review";
+    } else if (w === "review") {
       T[f] = "blocked";
     } else if (w === "blocked" && ee) {
       T[f] = "unsure";
@@ -7073,10 +7075,11 @@ function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s })
   let [l, i] = useState(false);
   let u = a === "done";
   let d = a === "blocked";
-  let c = u ? "Mark as blocked" : d ? "Clear check" : "Mark as done";
+  let v = a === "review";
+  let c = u ? "Mark as works but needs review" : v ? "Mark as unable to proceed" : d ? "Clear check" : "Mark as done";
   return (
     <div
-      className={`p-2.5 border rounded-sm ${u ? "bg-green-900/15 border-green-800" : d ? "bg-red-900/15 border-red-800" : "bg-gray-900 border-gray-800"}`}
+      className={`p-2.5 border rounded-sm ${u ? "bg-green-900/15 border-green-800" : v ? "bg-orange-900/15 border-orange-800" : d ? "bg-red-900/15 border-red-800" : "bg-gray-900 border-gray-800"}`}
     >
       <div className="flex items-start gap-2.5">
         <div className="text-[11px] font-bold text-emerald-400 mt-1 font-mono w-5 flex-shrink-0 text-right">
@@ -7088,6 +7091,11 @@ function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s })
             {d && (
               <span className="ml-2 text-[10px] uppercase tracking-wider text-red-400 font-bold">
                 Unable to proceed
+              </span>
+            )}
+            {v && (
+              <span className="ml-2 text-[10px] uppercase tracking-wider text-orange-400 font-bold">
+                Works but needs review
               </span>
             )}
           </div>
@@ -7110,9 +7118,9 @@ function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s })
         <div className="relative group flex-shrink-0">
           <button
             onClick={o}
-            className={`w-5 h-5 mt-0.5 rounded-sm border-2 flex items-center justify-center transition-colors ${u ? "bg-green-600 border-green-600" : d ? "bg-red-600 border-red-600" : "border-gray-600 hover:border-gray-500"}`}
+            className={`w-5 h-5 mt-0.5 rounded-sm border-2 flex items-center justify-center transition-colors ${u ? "bg-green-600 border-green-600" : v ? "bg-orange-500 border-orange-500" : d ? "bg-red-600 border-red-600" : "border-gray-600 hover:border-gray-500"}`}
           >
-            {u && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+            {(u || v) && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
             {d && <X className="w-3 h-3 text-white" strokeWidth={3} />}
           </button>
           <span className="hidden group-hover:block absolute z-50 right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-950 border border-gray-700 rounded-sm text-[11px] text-gray-100 whitespace-nowrap shadow-lg pointer-events-none">
@@ -9081,16 +9089,17 @@ function DevTestDetail({
                     let w = (c.step_notes || {})[m];
                     let T = f === "done";
                     let A = f === "blocked";
+                    let R = f === "review";
                     return (
                       <div
-                        className={`p-2.5 border rounded-sm ${T ? "bg-green-900/15 border-green-800" : A ? "bg-red-900/15 border-red-800" : "bg-gray-900 border-gray-800"}`}
+                        className={`p-2.5 border rounded-sm ${T ? "bg-green-900/15 border-green-800" : R ? "bg-orange-900/15 border-orange-800" : A ? "bg-red-900/15 border-red-800" : "bg-gray-900 border-gray-800"}`}
                         key={m}
                       >
                         <div className="flex items-start gap-2.5">
                           <div
-                            className={`w-5 h-5 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 ${T ? "bg-green-600" : A ? "bg-red-600" : "border-2 border-gray-700"}`}
+                            className={`w-5 h-5 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 ${T ? "bg-green-600" : R ? "bg-orange-500" : A ? "bg-red-600" : "border-2 border-gray-700"}`}
                           >
-                            {T && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                            {(T || R) && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                             {A && <X className="w-3 h-3 text-white" strokeWidth={3} />}
                           </div>
                           <div className="text-[11px] font-bold text-emerald-400 mt-1 font-mono w-5 text-right flex-shrink-0">
@@ -9102,6 +9111,11 @@ function DevTestDetail({
                               {A && (
                                 <span className="ml-2 text-[10px] uppercase tracking-wider text-red-400 font-bold">
                                   Unable to proceed
+                                </span>
+                              )}
+                              {R && (
+                                <span className="ml-2 text-[10px] uppercase tracking-wider text-orange-400 font-bold">
+                                  Works but needs review
                                 </span>
                               )}
                             </div>
