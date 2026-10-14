@@ -10,6 +10,7 @@ import React, {
   useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -22,6 +23,8 @@ import {
   CircleCheck,
   CircleX,
   CircleAlert,
+  AlertTriangle,
+  RefreshCw,
   CircleHelp,
   ExternalLink,
   Check,
@@ -628,6 +631,296 @@ var combineImportSources = (e) => {
     duplicateIds: Object.keys(l).filter((i) => l[i] > 1),
   };
 };
+// ---------------------------------------------------------------------------
+// Re-upload an updated sheet into an existing session ("resync").
+// Tests are matched by module (tab) + test ID; results always stay attached.
+// ---------------------------------------------------------------------------
+var RESYNC_FIELDS = [
+  "module",
+  "feature",
+  "title",
+  "pre_conditions",
+  "test_data",
+  "steps",
+  "expected_result",
+  "downstream_check",
+  "edge_case",
+  "dev_branch_name",
+  "focus",
+  "priority",
+];
+var RESYNC_FIELD_LABELS = {
+  module: "tab",
+  feature: "feature",
+  title: "title",
+  pre_conditions: "preconditions",
+  test_data: "test data",
+  steps: "steps",
+  expected_result: "expected result",
+  downstream_check: "downstream check",
+  edge_case: "edge case",
+  dev_branch_name: "branch",
+  focus: "focus area",
+  priority: "priority",
+};
+var importedTestToRow = (e) => ({
+  test_id: e.testId,
+  module: e.module,
+  feature: e.feature,
+  title: e.title,
+  pre_conditions: e.preConditions,
+  test_data: e.testData,
+  steps: e.steps,
+  expected_result: e.expectedResult,
+  downstream_check: e.downstreamCheck,
+  edge_case: e.edgeCase,
+  dev_branch_name: e.devBranchName,
+  focus: e.focus || null,
+  priority: e.priority || null,
+  row_num: e.rowNum,
+  initial_tester: e.initialTester,
+});
+var resyncNorm = (e) =>
+  String(e ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+var resyncFieldValue = (e) => {
+  if (e == null) return "";
+  if (Array.isArray(e)) return JSON.stringify(e.map((t) => String(t ?? "").replace(/\s+/g, " ").trim()));
+  if (typeof e === "object") return JSON.stringify(e);
+  return String(e).replace(/\r\n/g, "\n").trim();
+};
+// Moves step ticks/notes to wherever the same wording now sits; drops them where the wording changed.
+var remapChecksByText = (e, t, a, r, o) => {
+  let l = (u) => resyncNorm(u);
+  let i = {};
+  let d = new Set();
+  e.forEach((u, c) => {
+    let p = -1;
+    if (c < t.length && l(t[c]) === l(u) && !d.has(c)) {
+      p = c;
+    } else {
+      p = t.findIndex((h, b) => !d.has(b) && l(h) === l(u));
+    }
+    if (p >= 0) {
+      d.add(p);
+      i[c] = p;
+    }
+  });
+  let s = (u) => {
+    let c = {};
+    let p = 0;
+    for (let [h, b] of Object.entries(u || {})) {
+      let _ = o(h);
+      if (_ === null) {
+        c[h] = b;
+        continue;
+      }
+      if (i[_] !== undefined) {
+        c[r(i[_])] = b;
+      } else {
+        p++;
+      }
+    }
+    return [c, p];
+  };
+  let [n, m] = s(a.checks);
+  let [f, g] = s(a.notes);
+  return { checks: n, notes: f, dropped: m + g };
+};
+var stepKeyIndex = (e) => (/^\d+$/.test(e) ? parseInt(e, 10) : null);
+var expKeyIndex = (e) => {
+  let t = /^exp-(\d+)$/.exec(e);
+  return t ? parseInt(t[1], 10) : null;
+};
+var expectedItemsOf = (e) => parseExpectedChecklist(e)?.items || [];
+// existing: all test_cases rows in the session (including removed). sources: from parseImportFiles.
+var computeResyncPlan = (e, t) => {
+  let a = t.filter((v) => v.include && v.testCases);
+  let r = a.flatMap((v) => v.testCases.map((k) => ({ ...k, source: v.name })));
+  let o = new Set(r.map((v) => resyncNorm(v.module)));
+  let s = (v, k) => {
+    let C = {};
+    v.forEach((m) => {
+      let f = resyncNorm(k(m));
+      if (f) C[f] = (C[f] || 0) + 1;
+    });
+    return C;
+  };
+  let l = s(e, (v) => v.test_id);
+  let i = s(r, (v) => v.testId);
+  let u = new Set();
+  let d = r.map((v) => {
+    let k = resyncNorm(v.testId);
+    let C = resyncNorm(v.module);
+    let m = e.find(
+      (w) =>
+        !u.has(w.id) &&
+        resyncNorm(w.module) === C &&
+        (k ? resyncNorm(w.test_id) === k : !resyncNorm(w.test_id) && resyncNorm(w.title) === resyncNorm(v.title)),
+    );
+    let f = false;
+    if (!m && k && i[k] === 1 && l[k] === 1) {
+      m = e.find((w) => !u.has(w.id) && resyncNorm(w.test_id) === k);
+      f = !!m;
+    }
+    if (m) u.add(m.id);
+    let g = importedTestToRow(v);
+    if (!m) return { incoming: v, row: g, kind: "new" };
+    let w = RESYNC_FIELDS.filter((T) => resyncFieldValue(m[T]) !== resyncFieldValue(g[T]));
+    return {
+      incoming: v,
+      row: g,
+      existing: m,
+      kind: "match",
+      moved: f || resyncNorm(m.module) !== C,
+      restored: !!m.removed_at,
+      changedFields: w,
+      contentChanged: w.includes("steps") || w.includes("expected_result"),
+    };
+  });
+  let c = e.filter((v) => !u.has(v.id) && !v.removed_at && o.has(resyncNorm(v.module)));
+  let p = e.filter((v) => !u.has(v.id) && !v.removed_at && !o.has(resyncNorm(v.module)));
+  // Final order: keep the session's tab order; ticked tabs follow the sheet's order inside them.
+  let h = [...e].filter((v) => !v.removed_at).sort((v, k) => (v.position ?? 0) - (k.position ?? 0));
+  let b = [];
+  let _ = new Set();
+  h.forEach((v) => {
+    let k = resyncNorm(v.module);
+    if (!_.has(k)) {
+      _.add(k);
+      b.push({ key: k, label: v.module });
+    }
+  });
+  let S = [];
+  r.forEach((v) => {
+    let k = resyncNorm(v.module);
+    if (!S.some((C) => C.key === k)) S.push({ key: k, label: v.module });
+  });
+  S.forEach((v) => {
+    if (_.has(v.key)) return;
+    let k = d.find((m) => resyncNorm(m.incoming.module) === v.key && m.existing && !m.existing.removed_at);
+    let C = k ? b.findIndex((m) => m.key === resyncNorm(k.existing.module)) : -1;
+    if (C >= 0) b.splice(C + 1, 0, v);
+    else b.push(v);
+    _.add(v.key);
+  });
+  let I = [];
+  b.forEach((v) => {
+    if (o.has(v.key)) {
+      d.filter((k) => resyncNorm(k.incoming.module) === v.key).forEach((k) => I.push(k));
+    } else {
+      p.filter((k) => resyncNorm(k.module) === v.key).forEach((k) => I.push({ kind: "keep", existing: k }));
+    }
+  });
+  let x = new Map();
+  I.forEach((v, k) => {
+    if (v.existing) x.set(v.existing.id, k);
+    v.position = k;
+  });
+  let perSource = a.map((v) => {
+    let k = d.filter((m) => m.incoming.source === v.name);
+    let C = (m) => k.filter(m).length;
+    let m = e.some((f) => !f.removed_at && k.some((g) => resyncNorm(g.incoming.module) === resyncNorm(f.module)));
+    return {
+      name: v.name,
+      isNewTab: !m && !k.some((f) => f.kind === "match"),
+      total: k.length,
+      added: C((f) => f.kind === "new"),
+      updated: C((f) => f.kind === "match" && f.changedFields.length > 0 && !f.moved && !f.restored),
+      moved: C((f) => f.kind === "match" && f.moved),
+      restored: C((f) => f.kind === "match" && f.restored),
+      removed: c.filter((f) => k.some((g) => resyncNorm(g.incoming.module) === resyncNorm(f.module))).length,
+    };
+  });
+  let leftAlone = [];
+  p.forEach((v) => {
+    if (!leftAlone.includes(v.module)) leftAlone.push(v.module);
+  });
+  return {
+    entries: d,
+    ordered: I,
+    added: d.filter((v) => v.kind === "new"),
+    updated: d.filter((v) => v.kind === "match" && v.changedFields.length > 0 && !v.moved && !v.restored),
+    moved: d.filter((v) => v.kind === "match" && v.moved),
+    restored: d.filter((v) => v.kind === "match" && v.restored),
+    unchanged: d.filter((v) => v.kind === "match" && v.changedFields.length === 0 && !v.restored),
+    removed: c,
+    leftAlone,
+    leftAloneCount: p.length,
+    perSource,
+    hasChanges:
+      d.some((v) => v.kind === "new" || v.restored || v.changedFields.length > 0) ||
+      c.length > 0 ||
+      I.some((v) => v.existing && v.existing.position !== v.position),
+  };
+};
+// Writes the plan: inserts new tests, updates changed ones, hides removed ones, and keeps
+// every finding attached (step/expected ticks follow their wording).
+var applyResyncPlan = async (e, t, a) => {
+  let r = new Date().toISOString();
+  let o = {};
+  (a || []).forEach((m) => {
+    o[m.test_case_id] = m;
+  });
+  let l = [];
+  let i = [];
+  let u = [];
+  let d = 0;
+  let c = 0;
+  t.ordered.forEach((m) => {
+    if (m.kind === "new") {
+      l.push({ session_id: e.id, position: m.position, ...m.row });
+      return;
+    }
+    let f = m.existing;
+    let g = { ...f, position: m.position };
+    if (m.kind === "match") {
+      let { initial_tester: w, ...T } = m.row;
+      Object.assign(g, T, { removed_at: null });
+      let A = o[f.id];
+      if (m.contentChanged && A) {
+        let j = { checks: A.step_checks || {}, notes: A.step_notes || {} };
+        let M = remapChecksByText(f.steps || [], m.row.steps || [], j, (V) => String(V), stepKeyIndex);
+        let W = remapChecksByText(
+          expectedItemsOf(f.expected_result),
+          expectedItemsOf(m.row.expected_result),
+          M,
+          (V) => `exp-${V}`,
+          expKeyIndex,
+        );
+        let F = M.dropped + W.dropped;
+        if (JSON.stringify(W.checks) !== JSON.stringify(A.step_checks || {}) || JSON.stringify(W.notes) !== JSON.stringify(A.step_notes || {})) {
+          u.push({ ...A, step_checks: W.checks, step_notes: W.notes });
+        }
+        d += F;
+        let se = (A.status && A.status !== "Not Tested") || Object.keys(A.step_checks || {}).length > 0 || Object.keys(A.step_notes || {}).length > 0;
+        if (se) {
+          g.content_updated_at = r;
+          c++;
+        }
+      }
+    }
+    if (JSON.stringify(g) !== JSON.stringify(f)) i.push(g);
+  });
+  t.removed.forEach((m) => {
+    i.push({ ...m, removed_at: r, position: t.ordered.length + (m.position ?? 0) });
+  });
+  let p = async (m, f, g) => {
+    for (let w = 0; w < f.length; w += 200) {
+      let { error: T } = await g(supabase.from(m), f.slice(w, w + 200));
+      if (T) throw T;
+    }
+  };
+  await p("test_cases", i, (m, f) => m.upsert(f));
+  await p("test_cases", l, (m, f) => m.insert(f));
+  await p("findings", u, (m, f) => m.upsert(f));
+  return { inserted: l.length, updated: i.length, droppedTicks: d, flagged: c };
+};
+// True when the sheet changed this test's steps/expected result after the tester last touched it.
+var sheetUpdateUnseen = (e, t) =>
+  !!e?.content_updated_at && (!t?.updated_at || new Date(t.updated_at) < new Date(e.content_updated_at));
 function LightApp() {
   let [e, t] = useState([]);
   let [a, r] = useState({});
@@ -3765,19 +4058,31 @@ function AdminPortal() {
     (async () => {
       let x = a.map((w) => w.id);
       let [g, v] = await Promise.all([
-        supabase.from("test_cases").select("session_id").in("session_id", x),
-        supabase.from("findings").select("session_id, status").in("session_id", x),
+        supabase.from("test_cases").select("id, session_id, removed_at").in("session_id", x),
+        supabase.from("findings").select("session_id, status, test_case_id").in("session_id", x),
       ]);
+      if (g.error) {
+        // Database without the removed_at column yet.
+        g = await supabase.from("test_cases").select("id, session_id").in("session_id", x);
+      }
       if (I) {
         return;
       }
       let k = {};
+      let rm = new Set();
       (g.data || []).forEach((w) => {
+        if (w.removed_at) {
+          rm.add(w.id);
+          return;
+        }
         k[w.session_id] = (k[w.session_id] || 0) + 1;
       });
       let C = {};
       let m = {};
       (v.data || []).forEach((w) => {
+        if (rm.has(w.test_case_id)) {
+          return;
+        }
         let T = w.status || "Not Tested";
         if (T !== "Not Tested") {
           C[w.session_id] = (C[w.session_id] || 0) + 1;
@@ -3948,7 +4253,438 @@ function SessionCard({ session: e, progress: t, onShowUrls: a, onEdit: r }) {
     </div>
   );
 }
+// Import from a Google Sheets link. Only works for sheets shared as "Anyone with the link can view".
+// The download goes through the "fetch-sheet" Supabase Edge Function (Google blocks direct browser downloads).
+var looksLikeSheetLink = (e) => /docs\.google\.com\/spreadsheets\/(?:u\/\d+\/)?d\/[a-zA-Z0-9_-]{20,}/.test(String(e || ""));
+var fetchSheetFromLink = async (e) => {
+  let t;
+  try {
+    t = await fetch(`${SUPABASE_URL}/functions/v1/fetch-sheet`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+      },
+      body: JSON.stringify({
+        url: e,
+      }),
+    });
+  } catch (r) {
+    throw new Error("Couldn't reach the sheet importer. Check your connection, or that the fetch-sheet function is set up in Supabase.");
+  }
+  if (!t.ok) {
+    let r = await t.json().catch(() => ({}));
+    let o = r.error || r.message || r.msg || "";
+    if (/function was not found|not_found/i.test(`${r.code || ""} ${o}`) && !r.error) {
+      throw new Error("Link import isn't set up yet: the fetch-sheet function hasn't been added in Supabase.");
+    }
+    if (t.status === 401 && !r.error) {
+      throw new Error("Link import is blocked by a setting: turn off \"Verify JWT\" on the fetch-sheet function in Supabase.");
+    }
+    throw new Error(o || `Import failed (${t.status}).`);
+  }
+  let a = await t.arrayBuffer();
+  let r = "Google Sheet.xlsx";
+  try {
+    r = decodeURIComponent(t.headers.get("X-File-Name") || r);
+  } catch (o) {}
+  if (!/\.xlsx$/i.test(r)) r += ".xlsx";
+  return {
+    name: r,
+    arrayBuffer: async () => a,
+  };
+};
+function SheetLinkImport({ onFile: e, disabled: t }) {
+  let [a, r] = useState("");
+  let [o, s] = useState(false);
+  let [l, i] = useState("");
+  let u = async () => {
+    let d = a.trim();
+    if (!d || o) return;
+    if (!looksLikeSheetLink(d)) {
+      i("Paste a link that starts with https://docs.google.com/spreadsheets/…");
+      return;
+    }
+    s(true);
+    i("");
+    try {
+      let c = await fetchSheetFromLink(d);
+      await e(c);
+      r("");
+    } catch (c) {
+      i(c.message || "Import failed");
+    }
+    s(false);
+  };
+  return (
+    <div className="mt-2">
+      <div className="flex items-center gap-2 text-[11px] text-gray-500 mb-1.5">
+        <span className="h-px flex-1 bg-gray-800" />
+        or import from a Google Sheets link
+        <span className="h-px flex-1 bg-gray-800" />
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="url"
+          value={a}
+          onChange={(d) => {
+            r(d.target.value);
+            i("");
+          }}
+          onKeyDown={(d) => {
+            if (d.key === "Enter") {
+              d.preventDefault();
+              u();
+            }
+          }}
+          disabled={t || o}
+          placeholder="https://docs.google.com/spreadsheets/d/…"
+          autoCapitalize="off"
+          autoComplete="off"
+          spellCheck="false"
+          className="flex-1 min-w-0 px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+        />
+        <button
+          onClick={u}
+          disabled={t || o || !a.trim()}
+          className="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
+        >
+          {o ? "Fetching…" : "Import"}
+        </button>
+      </div>
+      {l ? (
+        <div className="text-[11px] text-red-300 mt-1.5">{l}</div>
+      ) : (
+        <div className="text-[11px] text-gray-500 mt-1.5">
+          Only for sheets shared as "Anyone with the link can view". Private sheets: download as .xlsx and drop it
+          above.
+        </div>
+      )}
+    </div>
+  );
+}
+// "Upload updated sheet" flow, opened from Edit session.
+function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
+  let [r, o] = useState(true);
+  let [s, l] = useState([]);
+  let [i, u] = useState({});
+  let [d, c] = useState("");
+  let [p, h] = useState(false);
+  let [b, _] = useState([]);
+  let [S, I] = useState(false);
+  let [x, g] = useState(false);
+  let [v, k] = useState(null);
+  let [C, m] = useState(false);
+  let f = useRef(null);
+  useEffect(() => {
+    let y = false;
+    (async () => {
+      let [E, D] = await Promise.all([
+        supabase.from("test_cases").select("*").eq("session_id", e.id).order("position"),
+        supabase.from("findings").select("*").eq("session_id", e.id),
+      ]);
+      if (y) return;
+      if (E.error || D.error) {
+        c((E.error || D.error).message);
+      } else {
+        l(E.data || []);
+        let O = {};
+        (D.data || []).forEach((B) => {
+          O[B.test_case_id] = B;
+        });
+        u(O);
+        if ((E.data || []).length > 0 && !("removed_at" in E.data[0])) h(true);
+      }
+      o(false);
+    })();
+    return () => {
+      y = true;
+    };
+  }, [e.id]);
+  useEffect(() => {
+    let y = (E) => {
+      if (E.key === "Escape" && !x) t();
+    };
+    window.addEventListener("keydown", y);
+    return () => window.removeEventListener("keydown", y);
+  }, [t, x]);
+  let w = async (y) => {
+    let E = Array.from(y || []);
+    if (E.length === 0) return;
+    I(true);
+    c("");
+    let D = await parseImportFiles(E);
+    _(D);
+    I(false);
+    if (D.every((O) => O.skipped)) {
+      c("None of the tabs or files contained a test table.");
+    }
+  };
+  let T = (y) => _(b.map((E) => (E.key === y ? { ...E, include: !E.include } : E)));
+  let A = useMemo(() => (b.some((y) => y.include && y.testCases) ? computeResyncPlan(s, b) : null), [s, b]);
+  let j = (y) => {
+    let E = i[y.id];
+    return (
+      !!E &&
+      ((E.status && E.status !== "Not Tested") ||
+        Object.keys(E.step_checks || {}).length > 0 ||
+        Object.keys(E.step_notes || {}).length > 0)
+    );
+  };
+  let M = A
+    ? A.entries.filter((y) => y.kind === "match" && y.contentChanged && j(y.existing)).length
+    : 0;
+  let W = A ? A.removed.filter((y) => j(y)).length : 0;
+  let V = async () => {
+    if (!A || !A.hasChanges) return;
+    g(true);
+    c("");
+    try {
+      let y = await applyResyncPlan(e, A, Object.values(i));
+      k(y);
+    } catch (y) {
+      c(
+        /removed_at|content_updated_at/i.test(y.message || "")
+          ? "The database needs a quick update first (see the yellow box above)."
+          : y.message || "Update failed",
+      );
+      if (/removed_at|content_updated_at/i.test(y.message || "")) h(true);
+    }
+    g(false);
+  };
+  let F = (y) => y.row?.test_id || y.existing?.test_id || y.test_id || "—";
+  let se = (y, E, D, O) =>
+    E.length > 0 && (
+      <details className="group border border-gray-800 rounded-sm">
+        <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none text-sm text-gray-200 hover:bg-gray-800/40">
+          <ChevronRight className="w-3.5 h-3.5 text-gray-500 transition-transform group-open:rotate-90" />
+          <span className={`font-semibold ${D}`}>{E.length}</span> {y}
+        </summary>
+        <div className="px-3 pb-2.5 pt-1 space-y-1 max-h-48 overflow-y-auto">
+          {E.map((B, Y) => (
+            <div className="flex items-baseline gap-2 text-xs" key={Y}>
+              <span className="font-mono text-emerald-400 flex-shrink-0">{F(B)}</span>
+              <span className="text-gray-400 truncate">{O(B)}</span>
+            </div>
+          ))}
+        </div>
+      </details>
+    );
+  let K = (y) => {
+    if (y.skipped) return <span className="text-gray-500">{y.skipped}</span>;
+    if (!y.include) return <span className="text-gray-500">Not included · left as is</span>;
+    let E = A?.perSource.find((O) => O.name === y.name);
+    if (!E) return null;
+    if (E.isNewTab) return <span className="text-sky-300">New tab · {E.total} tests</span>;
+    let D = [
+      E.updated && `${E.updated} updated`,
+      E.added && `${E.added} new`,
+      E.moved && `${E.moved} moved`,
+      E.restored && `${E.restored} restored`,
+      E.removed && `${E.removed} removed`,
+    ].filter(Boolean);
+    return <span className={D.length ? "text-amber-300" : "text-gray-500"}>{D.length ? D.join(" · ") : "No changes"}</span>;
+  };
+  let G = A ? A.added.length + A.updated.length + A.moved.length + A.restored.length + A.removed.length : 0;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => !x && t()}>
+      <div
+        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
+        onClick={(y) => y.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 flex-shrink-0">
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-gray-100">Upload updated sheet</h2>
+            <div className="text-xs text-gray-500 truncate">{e.name}</div>
+          </div>
+          <button onClick={t} disabled={x} className="text-gray-400 hover:text-gray-100 p-1" title="Close">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        {v ? (
+          <div className="flex-1 overflow-y-auto px-5 py-6 text-center">
+            <CircleCheck className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+            <div className="text-lg font-semibold text-gray-100 mb-1">Session updated</div>
+            <div className="text-sm text-gray-400">
+              {A.updated.length} updated · {A.added.length} new · {A.moved.length} moved
+              {A.restored.length ? ` · ${A.restored.length} restored` : ""} · {A.removed.length} removed from sheet
+            </div>
+            <div className="text-xs text-gray-500 mt-2">
+              All existing results were kept.
+              {v.flagged > 0 ? ` ${v.flagged} test${v.flagged === 1 ? " is" : "s are"} flagged "Updated" for testers to re-check.` : ""}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            {p && (
+              <div className="p-3 bg-amber-950/40 border border-amber-700 rounded-sm text-xs text-amber-100 space-y-2">
+                <div className="font-semibold">One-time database update needed</div>
+                <div>
+                  In Supabase, open the SQL Editor, paste these two lines and click Run. Then close and reopen this
+                  window.
+                </div>
+                <pre className="bg-gray-950 border border-gray-800 rounded-sm p-2 font-mono text-[11px] text-gray-200 overflow-x-auto">
+                  {`alter table test_cases add column if not exists removed_at timestamptz;
+alter table test_cases add column if not exists content_updated_at timestamptz;`}
+                </pre>
+              </div>
+            )}
+            {r ? (
+              <div className="text-sm text-gray-400">Loading the current tests…</div>
+            ) : (
+              <>
+                <div className="text-xs text-gray-400 leading-relaxed">
+                  Tests are matched by tab and test ID. Changed wording is updated, new tests are added, and tests
+                  that disappeared from a tab are hidden, never deleted. Status, severity, notes, screenshots and dev
+                  notes stay attached. Nothing is saved until you confirm.
+                </div>
+                <div
+                  onClick={() => f.current?.click()}
+                  onDragOver={(y) => {
+                    y.preventDefault();
+                    m(true);
+                  }}
+                  onDragLeave={() => m(false)}
+                  onDrop={(y) => {
+                    y.preventDefault();
+                    m(false);
+                    w(y.dataTransfer.files);
+                  }}
+                  className={`border-2 border-dashed rounded-sm p-5 text-center cursor-pointer transition-colors ${C ? "border-emerald-500 bg-emerald-950/20" : "border-gray-700 hover:border-gray-600"}`}
+                >
+                  <Upload className="w-5 h-5 text-gray-500 mx-auto mb-1.5" />
+                  <div className="text-sm text-gray-300">
+                    {S ? "Reading…" : b.length ? "Drop a different file to replace it" : "Drop the updated sheet here or click to choose"}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">.xlsx (all tabs) or one or more CSVs</div>
+                  <input
+                    ref={f}
+                    type="file"
+                    multiple
+                    accept=".csv,.xlsx,.xlsm,.xls,.ods"
+                    onChange={(y) => {
+                      w(y.target.files);
+                      y.target.value = "";
+                    }}
+                    className="hidden"
+                  />
+                </div>
+                <SheetLinkImport disabled={S || x} onFile={(y) => w([y])} />
+                {b.length > 0 && (
+                  <div className="border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
+                    {b.map((y) => (
+                      <label
+                        key={y.key}
+                        className={`flex items-center gap-3 px-3 py-2 text-sm ${y.skipped ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/50"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!y.include}
+                          disabled={!!y.skipped}
+                          onChange={() => T(y.key)}
+                          className="accent-emerald-500 w-4 h-4 flex-shrink-0"
+                        />
+                        <span className={`flex-1 truncate ${y.include ? "text-gray-100" : "text-gray-400"}`}>{y.name}</span>
+                        <span className="text-xs flex-shrink-0 text-right">{K(y)}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {A && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                      What will change
+                    </div>
+                    {G === 0 && !A.hasChanges && (
+                      <div className="text-sm text-gray-400">Everything already matches the sheet. Nothing to update.</div>
+                    )}
+                    {G === 0 && A.hasChanges && (
+                      <div className="text-sm text-gray-400">Only the order of tests changes.</div>
+                    )}
+                    {se("updated", A.updated, "text-amber-300", (y) =>
+                      `${y.changedFields.map((E) => RESYNC_FIELD_LABELS[E] || E).join(", ")} changed`,
+                    )}
+                    {se("new", A.added, "text-sky-300", (y) => `${y.row.title || ""} · ${y.row.module}`)}
+                    {se("moved to another tab", A.moved, "text-violet-300", (y) => `${y.existing.module} → ${y.row.module}`)}
+                    {se("restored (back in the sheet)", A.restored, "text-emerald-300", (y) => y.row.title || "")}
+                    {se("removed from the sheet (hidden, results kept)", A.removed, "text-red-300", (y) => `${y.title || ""} · ${y.module}`)}
+                    {A.leftAlone.length > 0 && (
+                      <div className="text-xs text-gray-500">
+                        Not in this upload, left as is: {A.leftAlone.join(", ")} ({A.leftAloneCount} test
+                        {A.leftAloneCount === 1 ? "" : "s"})
+                      </div>
+                    )}
+                    {M > 0 && (
+                      <div className="px-3 py-2 bg-orange-950/30 border border-orange-800/70 rounded-sm text-xs text-orange-200">
+                        {M} tested test{M === 1 ? " has" : "s have"} reworded steps or expected results. Ticks on
+                        unchanged lines are kept; ticks on reworded lines are cleared, and the test is flagged
+                        "Updated" for the tester.
+                      </div>
+                    )}
+                    {W > 0 && (
+                      <div className="text-xs text-gray-500">
+                        {W} of the removed tests already have results. They're kept and come back if the test returns
+                        to the sheet.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+            {d && (
+              <div className="px-3 py-2 bg-red-950/40 border border-red-800 rounded-sm text-xs text-red-200">{d}</div>
+            )}
+          </div>
+        )}
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-800 flex-shrink-0">
+          {v ? (
+            <button
+              onClick={a}
+              className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500"
+            >
+              Done
+            </button>
+          ) : (
+            <>
+              <button onClick={t} disabled={x} className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-200">
+                Cancel
+              </button>
+              <button
+                onClick={V}
+                disabled={!A || !A.hasChanges || x || p}
+                className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
+              >
+                {x ? "Updating…" : "Update session"}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
+  let [resyncOpen, setResyncOpen] = useState(false);
+  let [removedTests, setRemovedTests] = useState([]);
+  let [restoringId, setRestoringId] = useState(null);
+  let loadRemovedTests = async () => {
+    let { data: E, error: D } = await supabase
+      .from("test_cases")
+      .select("id, test_id, title, module, removed_at")
+      .eq("session_id", e.id)
+      .not("removed_at", "is", null)
+      .order("position");
+    if (!D) setRemovedTests(E || []);
+  };
+  useEffect(() => {
+    loadRemovedTests();
+  }, [e.id]);
+  let restoreTest = async (E) => {
+    setRestoringId(E);
+    let { error: D } = await supabase.from("test_cases").update({ removed_at: null }).eq("id", E);
+    setRestoringId(null);
+    if (!D) setRemovedTests((O) => O.filter((B) => B.id !== E));
+  };
   let [r, o] = useState(e.name || "");
   let [s, l] = useState(e.base_url || "");
   let [i, u] = useState([]);
@@ -3960,6 +4696,9 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   let v = e.testers || [];
   let k = e.developers || [];
   useEffect(() => {
+    if (resyncOpen) {
+      return;
+    }
     let E = (D) => {
       if (D.key === "Escape") {
         t();
@@ -3967,7 +4706,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
     };
     window.addEventListener("keydown", E);
     return () => window.removeEventListener("keydown", E);
-  }, [t]);
+  }, [t, resyncOpen]);
   let C = () => {
     let E = p.trim();
     if (!E) {
@@ -4181,6 +4920,44 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               </button>
             </div>
           </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Test cases</div>
+            <button
+              onClick={() => setResyncOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-sm transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Upload updated sheet
+            </button>
+            <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+              Updates wording, adds new tests and tabs, and hides tests removed from the sheet. Existing results are
+              kept. You'll see a summary before anything changes.
+            </div>
+            {removedTests.length > 0 && (
+              <details className="group mt-2 border border-gray-800 rounded-sm">
+                <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none text-xs text-gray-300 hover:bg-gray-800/40">
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-500 transition-transform group-open:rotate-90" />
+                  Removed from sheet ({removedTests.length}) · hidden from testers, results kept
+                </summary>
+                <div className="px-3 pb-2 pt-1 space-y-1 max-h-48 overflow-y-auto">
+                  {removedTests.map((E) => (
+                    <div className="flex items-center gap-2 text-xs" key={E.id}>
+                      <span className="font-mono text-emerald-400 flex-shrink-0">{E.test_id || "—"}</span>
+                      <span className="text-gray-400 truncate flex-1">
+                        {E.title} · {E.module}
+                      </span>
+                      <button
+                        onClick={() => restoreTest(E.id)}
+                        disabled={restoringId === E.id}
+                        className="flex-shrink-0 px-2 py-0.5 text-[11px] text-gray-300 border border-gray-700 rounded-sm hover:bg-gray-800 disabled:text-gray-600"
+                      >
+                        {restoringId === E.id ? "Restoring…" : "Restore"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
           <div className="text-[10px] text-gray-500 pt-2 border-t border-gray-800">
             Existing testers and developers can't be removed here — only added. Their findings stay
             regardless.
@@ -4204,6 +4981,18 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
           </button>
         </div>
       </div>
+      {resyncOpen && (
+        <div onClick={(E) => E.stopPropagation()}>
+          <ResyncTestsModal
+            session={e}
+            onClose={() => setResyncOpen(false)}
+            onDone={() => {
+              setResyncOpen(false);
+              a();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -4541,6 +5330,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
               className="hidden"
             />
           </div>
+          <SheetLinkImport onFile={(P) => xe([P])} />
           {(Q.length > 1 || Q.some((P) => P.skipped)) && (
             <div className="mt-2 border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2 bg-gray-900/60 text-[11px] text-gray-400">
@@ -5666,7 +6456,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
         c(false);
         return;
       }
-      o(G.data || []);
+      o((G.data || []).filter((Le) => !Le.removed_at));
       let re = {};
       (Q.data || []).forEach((Le) => {
         re[Le.test_case_id] = Le;
@@ -6432,6 +7222,14 @@ function TesterSidebar({
                     <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-0.5">
                       <span className="font-mono text-emerald-400">{O.test_id || "—"}</span>
                       {O.priority && <PriorityBadge value={O.priority} size="xs" />}
+                      {sheetUpdateUnseen(O, B) && (
+                        <span
+                          className="text-[9px] px-1 border rounded-sm font-bold tracking-wider bg-orange-950/50 text-orange-300 border-orange-800 flex-shrink-0"
+                          title="Steps or expected results changed in the sheet since you last worked on this test"
+                        >
+                          UPDATED
+                        </span>
+                      )}
                       {O.module && <span className="truncate">· {O.module}</span>}
                       {O.focus && <span className="truncate text-gray-600">· {O.focus}</span>}
                     </div>
@@ -6620,6 +7418,15 @@ function TesterTestDetail({
           <div className="flex-1 min-w-0">
             <Breadcrumb tc={c} />
             <h1 className="text-xl font-bold text-gray-100">{c.title || "Untitled"}</h1>
+            {sheetUpdateUnseen(c, p) && (
+              <div className="mt-2 inline-flex items-start gap-2 px-2.5 py-1.5 bg-orange-950/40 border border-orange-800 rounded-sm text-xs text-orange-200">
+                <AlertTriangle className="w-3.5 h-3.5 mt-px flex-shrink-0 text-orange-400" />
+                <span>
+                  Steps updated from the sheet on {new Date(c.content_updated_at).toLocaleDateString()}. Ticks on
+                  reworded lines were cleared, so please re-check them. This note goes away once you make a change.
+                </span>
+              </div>
+            )}
           </div>
           <div className="pt-1 flex-shrink-0">
             <SaveIndicator saving={!!r} />
@@ -7286,7 +8093,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
         c(false);
         return;
       }
-      o(H.data || []);
+      o((H.data || []).filter((de) => !de.removed_at));
       let P = {};
       (K.data || []).forEach((de) => {
         P[de.test_case_id] = de;
