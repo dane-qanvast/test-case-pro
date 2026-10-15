@@ -17,6 +17,7 @@ import React, {
 import * as ReactDOM from "react-dom/client";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
+import JSZip from "jszip";
 import { createClient } from "@supabase/supabase-js";
 import {
   Clock,
@@ -25,6 +26,9 @@ import {
   CircleAlert,
   AlertTriangle,
   Paperclip,
+  Image as ImageIcon,
+  Circle as CircleIcon,
+  Type,
   RefreshCw,
   CircleHelp,
   ExternalLink,
@@ -48,7 +52,6 @@ import {
   GripVertical,
   Pencil,
   Trash2,
-  Image as ImageIcon,
   Upload,
   ArrowLeft,
   Monitor,
@@ -307,7 +310,207 @@ function PathChipText({ text: e }) {
     );
   }
 }
+// "[Fig. N]" in notes links to the Nth screenshot of the test (see FigureContext / MentionTextarea).
+var FIG_TOKEN_RE = /\[Fig\. (\d+)\]/g;
+var FigureContext = createContext(null);
+function FigChip({ n: e }) {
+  let t = useContext(FigureContext);
+  let a = t?.shots?.[e - 1];
+  if (!a || !t.open) {
+    return `[Fig. ${e}]`;
+  }
+  return (
+    <button
+      type="button"
+      onClick={(r) => {
+        r.preventDefault();
+        r.stopPropagation();
+        t.open(e - 1);
+      }}
+      className="inline-flex items-center gap-1 align-baseline mx-0.5 px-1.5 py-px text-[11px] font-mono font-semibold bg-sky-950/60 text-sky-300 border border-sky-800 rounded-sm transition-colors hover:bg-sky-900/60 hover:text-sky-100"
+      title={`Open ${a.name || `Fig. ${e}`}`}
+    >
+      <ImageIcon className="w-3 h-3" />
+      Fig. {e}
+    </button>
+  );
+}
+// Renumbers "[Fig. N]" references after screenshot number `e` (1-based) is removed.
+var renumberFigRefs = (e, t) =>
+  typeof e != "string"
+    ? e
+    : e.replace(FIG_TOKEN_RE, (a, r) => {
+        let o = parseInt(r, 10);
+        if (o === t) return "[image removed]";
+        return o > t ? `[Fig. ${o - 1}]` : a;
+      });
 var normalizePath = (e) => {
+  if (e == null) {
+    return e;
+  }
+  let t = String(e);
+  if (!t.includes("[Fig. ")) {
+    return normalizePathOnly(t);
+  }
+  let a = [];
+  let r = 0;
+  let o;
+  for (FIG_TOKEN_RE.lastIndex = 0; (o = FIG_TOKEN_RE.exec(t)) !== null;) {
+    if (o.index > r) {
+      a.push(<Fragment key={`t${r}`}>{normalizePathOnly(t.substring(r, o.index))}</Fragment>);
+    }
+    a.push(<FigChip n={parseInt(o[1], 10)} key={`f${o.index}`} />);
+    r = o.index + o[0].length;
+  }
+  if (r < t.length) {
+    a.push(<Fragment key={`t${r}`}>{normalizePathOnly(t.substring(r))}</Fragment>);
+  }
+  return a;
+};
+// Textarea that offers the test's screenshots when you type "@" (e.g. "@F" → Fig. 1), inserting "[Fig. N]".
+function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showRefs: o = true, ...s }) {
+  let l = useContext(FigureContext);
+  let i = useRef(null);
+  let [u, d] = useState(null);
+  let [c, p] = useState(0);
+  let h = l?.shots || [];
+  let b = (x) => {
+    let g = x.selectionStart ?? x.value.length;
+    let v = x.value.slice(0, g);
+    let k = /(^|\s)@([^\s@]{0,20})$/.exec(v);
+    if (k) {
+      d({ start: g - k[2].length - 1, end: g, query: k[2] });
+    } else {
+      d(null);
+    }
+    p(0);
+  };
+  let _ = u
+    ? h
+        .map((x, g) => ({ idx: g, name: x.name || "" }))
+        .filter((x) => {
+          let g = u.query.toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (!g) return true;
+          let v = `fig${x.idx + 1}`;
+          return v.startsWith(g) || String(x.idx + 1).startsWith(g) || x.name.toLowerCase().replace(/[^a-z0-9]/g, "").includes(g);
+        })
+    : [];
+  let S = (x) => {
+    if (!u) return;
+    let g = `[Fig. ${x + 1}] `;
+    let v = (e || "").slice(0, u.start) + g + (e || "").slice(u.end);
+    let k = u.start + g.length;
+    d(null);
+    t({ target: { value: v } });
+    requestAnimationFrame(() => {
+      let C = i.current;
+      if (C) {
+        C.focus();
+        C.setSelectionRange(k, k);
+      }
+    });
+  };
+  let I = [];
+  if (o && e && e.includes("[Fig. ")) {
+    let x;
+    for (FIG_TOKEN_RE.lastIndex = 0; (x = FIG_TOKEN_RE.exec(e)) !== null;) {
+      let g = parseInt(x[1], 10);
+      if (!I.includes(g)) I.push(g);
+    }
+  }
+  return (
+    <div className="relative">
+      <textarea
+        ref={i}
+        value={e}
+        onChange={(x) => {
+          t(x);
+          b(x.target);
+        }}
+        onKeyDown={(x) => {
+          if (u) {
+            if (x.key === "Escape") {
+              x.preventDefault();
+              x.stopPropagation();
+              d(null);
+              return;
+            }
+            if (_.length > 0) {
+              if (x.key === "ArrowDown") {
+                x.preventDefault();
+                p((g) => (g + 1) % _.length);
+                return;
+              }
+              if (x.key === "ArrowUp") {
+                x.preventDefault();
+                p((g) => (g - 1 + _.length) % _.length);
+                return;
+              }
+              if (x.key === "Enter" || x.key === "Tab") {
+                x.preventDefault();
+                S(_[Math.min(c, _.length - 1)].idx);
+                return;
+              }
+            }
+          }
+          a?.(x);
+        }}
+        onClick={(x) => b(x.target)}
+        onBlur={(x) => {
+          setTimeout(() => d(null), 120);
+          r?.(x);
+        }}
+        {...s}
+      />
+      {u && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl overflow-hidden">
+          {h.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-gray-400">
+              No screenshots on this test yet. Upload one under Screenshots, then type @ to link it.
+            </div>
+          ) : _.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-gray-400">No screenshot matches "{u.query}".</div>
+          ) : (
+            <div className="max-h-56 overflow-y-auto py-1">
+              {_.map((x, g) => (
+                <button
+                  type="button"
+                  key={x.idx}
+                  onMouseDown={(v) => {
+                    v.preventDefault();
+                    S(x.idx);
+                  }}
+                  onMouseEnter={() => p(g)}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 text-left text-xs ${g === c ? "bg-gray-800 text-gray-100" : "text-gray-300"}`}
+                >
+                  <img
+                    src={h[x.idx].url}
+                    alt=""
+                    className="w-10 h-7 object-cover rounded-sm border border-gray-700 flex-shrink-0 bg-gray-950"
+                  />
+                  <span className="font-mono font-semibold text-sky-300 flex-shrink-0">Fig. {x.idx + 1}</span>
+                  <span className="truncate text-gray-500">{x.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="px-2.5 py-1 border-t border-gray-800 text-[10px] text-gray-500">
+            ↑↓ to choose · Enter to insert · Esc to close
+          </div>
+        </div>
+      )}
+      {I.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1 mt-1">
+          <span className="text-[10px] text-gray-500">Linked:</span>
+          {I.map((x) => (
+            <FigChip n={x} key={x} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+var normalizePathOnly = (e) => {
   if (e == null) {
     return e;
   }
@@ -4622,10 +4825,21 @@ function SampleFilesManager({ session: e }) {
     </div>
   );
 }
-// Tester portal: floating prompt to download the session's sample files.
-function TesterSampleFilesBar({ sessionId: e, myName: t }) {
+// Tester portal: full-height side panel prompting testers to download the session's sample files.
+var ALREADY_COMPRESSED = /\.(zip|png|jpe?g|gif|webp|pdf|xlsx|xls|docx|pptx|mp4|mov|gz|7z|rar)$/i;
+var downloadBlob = (e, t) => {
+  let a = URL.createObjectURL(e);
+  let r = document.createElement("a");
+  r.href = a;
+  r.download = t;
+  document.body.appendChild(r);
+  r.click();
+  r.remove();
+  setTimeout(() => URL.revokeObjectURL(a), 4000);
+};
+function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
   let [a, r] = useState([]);
-  let o = `uat-pro-samples-ack-${e}-${t}`;
+  let o = `uat-pro-samples-ack-${e}-${n}`;
   let [s, l] = useState(() => {
     try {
       return localStorage.getItem(o) === "1";
@@ -4635,6 +4849,8 @@ function TesterSampleFilesBar({ sessionId: e, myName: t }) {
   });
   let [i, u] = useState(false);
   let [d, c] = useState(false);
+  let [z, setZip] = useState(null);
+  let [zErr, setZErr] = useState("");
   useEffect(() => {
     let h = false;
     (async () => {
@@ -4650,6 +4866,14 @@ function TesterSampleFilesBar({ sessionId: e, myName: t }) {
       h = true;
     };
   }, [e]);
+  useEffect(() => {
+    if (!i) return;
+    let h = (b) => {
+      if (b.key === "Escape") u(false);
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [i]);
   if (!d || a.length === 0) return null;
   let p = () => {
     l(true);
@@ -4657,69 +4881,109 @@ function TesterSampleFilesBar({ sessionId: e, myName: t }) {
       localStorage.setItem(o, "1");
     } catch {}
   };
+  let total = a.reduce((h, b) => h + (b.size || 0), 0);
+  let zipAll = async () => {
+    if (z !== null) return;
+    setZErr("");
+    setZip(0);
+    try {
+      let h = new JSZip();
+      let b = new Set();
+      for (let _ = 0; _ < a.length; _++) {
+        let S = a[_];
+        let I = await fetch(S.url);
+        if (!I.ok) throw new Error(`Couldn't download ${S.name}`);
+        let x = await I.blob();
+        let g = S.name;
+        for (let v = 2; b.has(g); v++) g = S.name.replace(/(\.[^.]*)?$/, ` (${v})$1`);
+        b.add(g);
+        h.file(g, x, { compression: ALREADY_COMPRESSED.test(g) ? "STORE" : "DEFLATE" });
+        setZip(Math.round(((_ + 1) / a.length) * 80));
+      }
+      let _ = await h.generateAsync({ type: "blob" }, (S) => setZip(80 + Math.round(S.percent * 0.2)));
+      downloadBlob(_, `${(t || "Sample files").replace(/[\\/:*?"<>|]+/g, "-").trim()} - sample files.zip`);
+      p();
+    } catch (h) {
+      setZErr(h.message || "Couldn't build the zip. Download the files one by one instead.");
+    }
+    setZip(null);
+  };
+  let close = () => {
+    u(false);
+    p();
+  };
   return (
     <>
       <div
-        className={`fixed z-40 bottom-4 right-4 left-4 sm:left-auto sm:w-96 transition-all duration-300 ease-out ${i ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-30 bg-black/40 sm:hidden transition-opacity duration-300 ${i ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={close}
+        aria-hidden="true"
+      />
+      <aside
+        className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-96 flex flex-col bg-gray-900 border-l border-amber-700/60 shadow-2xl transition-transform duration-300 ease-out ${i ? "translate-x-0" : "translate-x-full pointer-events-none"}`}
         role="dialog"
         aria-label="Sample files"
         aria-hidden={!i}
       >
-        <div className="bg-gray-900 border border-amber-700/70 rounded-sm shadow-2xl">
-          <div className="flex items-start gap-2.5 px-4 pt-3 pb-2">
-            <Paperclip className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-gray-100">
-                {s ? "Sample files" : "Download the sample files first"}
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">
-                {s
-                  ? "Files you'll need for these tests."
-                  : `Some tests need ${a.length === 1 ? "this file" : "these files"}. Download ${a.length === 1 ? "it" : "them"} before you start${a.some((h) => /\.zip$/i.test(h.name)) ? ", then unzip" : ""}.`}
-              </div>
+        <div className="flex items-start gap-2.5 px-5 pt-5 pb-4 border-b border-gray-800">
+          <Paperclip className="w-4 h-4 text-amber-400 mt-1 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-base font-semibold text-gray-100">
+              {s ? "Sample files" : "Download the sample files first"}
             </div>
-            <button
-              onClick={() => {
-                u(false);
-                p();
-              }}
-              className="text-gray-500 hover:text-gray-200 p-0.5 flex-shrink-0"
-              title="Hide"
+            <div className="text-xs text-gray-400 mt-1 leading-relaxed">
+              {s
+                ? "Files you'll need for these tests."
+                : `Some tests need ${a.length === 1 ? "this file" : "these files"}. Download ${a.length === 1 ? "it" : "them"} before you start${a.some((h) => /\.zip$/i.test(h.name)) ? ", then unzip" : ""}.`}
+            </div>
+          </div>
+          <button onClick={close} className="text-gray-500 hover:text-gray-200 p-0.5 flex-shrink-0" title="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1.5">
+          <div className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">
+            {a.length} file{a.length === 1 ? "" : "s"} · {formatBytes(total)}
+          </div>
+          {a.map((h) => (
+            <a
+              href={h.url}
+              onClick={p}
+              key={h.path}
+              className="flex items-center gap-2.5 px-3 py-2.5 bg-gray-800/70 border border-gray-700 rounded-sm text-sm text-gray-200 transition-colors hover:border-amber-600 hover:bg-gray-800"
             >
-              <X className="w-4 h-4" />
+              <Download className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <span className="flex-1 min-w-0 truncate" title={h.name}>
+                {h.name}
+              </span>
+              <span className="text-xs text-gray-500 flex-shrink-0">{formatBytes(h.size)}</span>
+            </a>
+          ))}
+        </div>
+        <div className="px-5 pt-3 pb-5 border-t border-gray-800 space-y-2.5">
+          {a.length > 1 && (
+            <button
+              onClick={zipAll}
+              disabled={z !== null}
+              className="relative w-full overflow-hidden flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-amber-600 text-gray-950 rounded-sm transition-colors hover:bg-amber-500 disabled:cursor-wait"
+            >
+              {z !== null && (
+                <span className="absolute inset-y-0 left-0 bg-amber-400/60 transition-all" style={{ width: `${z}%` }} />
+              )}
+              <span className="relative flex items-center gap-2">
+                <FileDown className="w-4 h-4" />
+                {z !== null ? `Zipping… ${z}%` : `Download all as .zip (${formatBytes(total)})`}
+              </span>
             </button>
-          </div>
-          <div className="px-4 pb-3 space-y-1 max-h-56 overflow-y-auto">
-            {a.map((h) => (
-              <a
-                href={h.url}
-                onClick={p}
-                key={h.path}
-                className="flex items-center gap-2 px-2.5 py-2 bg-gray-800/70 border border-gray-700 rounded-sm text-xs text-gray-200 transition-colors hover:border-amber-600 hover:bg-gray-800"
-              >
-                <Download className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="flex-1 min-w-0 truncate" title={h.name}>
-                  {h.name}
-                </span>
-                <span className="text-gray-500 flex-shrink-0">{formatBytes(h.size)}</span>
-              </a>
-            ))}
-          </div>
+          )}
+          {zErr && <div className="text-xs text-red-300">{zErr}</div>}
           {!s && (
-            <div className="px-4 pb-3 flex justify-end">
-              <button
-                onClick={() => {
-                  u(false);
-                  p();
-                }}
-                className="text-xs text-gray-400 hover:text-gray-200"
-              >
-                I already have them
-              </button>
-            </div>
+            <button onClick={close} className="w-full text-center text-xs text-gray-400 hover:text-gray-200 py-1">
+              I already have them
+            </button>
           )}
         </div>
-      </div>
+      </aside>
       <button
         onClick={() => u(true)}
         className={`fixed z-30 bottom-4 right-4 inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border border-gray-700 text-gray-300 rounded-sm shadow-lg transition-all duration-300 ease-out hover:text-gray-100 hover:border-gray-600 ${i ? "translate-y-6 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`}
@@ -7138,10 +7402,18 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   let be = async (N, G) => {
     let Q = B.current[N]?.screenshots || [];
     let z = Q[G];
+    let fnd = B.current[N] || {};
+    let sn = {};
+    Object.entries(fnd.step_notes || {}).forEach(([re, ce]) => {
+      sn[re] = renumberFigRefs(ce, G + 1);
+    });
     if (
       z &&
       (fe(N, {
         screenshots: Q.filter((re, ce) => ce !== G),
+        notes: renumberFigRefs(fnd.notes, G + 1),
+        other_observations: renumberFigRefs(fnd.other_observations, G + 1),
+        step_notes: sn,
       }),
       z.path)
     ) {
@@ -7366,7 +7638,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           currentFocusedIds={W}
           onApply={(N) => V(N)}
         />
-        <TesterSampleFilesBar sessionId={e.id} myName={t} />
+        <TesterSampleFilesBar sessionId={e.id} sessionName={e.name} myName={t} />
       </div>
     </BaseUrlContext.Provider>
   );
@@ -7798,6 +8070,7 @@ function TesterTestDetail({
     }
   };
   return (
+    <FigureContext.Provider value={{ shots: p.screenshots || [], open: (f) => x(f) }}>
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-6xl mx-auto px-6 py-6">
         <div className="mb-3 pb-4 border-b border-gray-800 flex items-start gap-4">
@@ -7938,9 +8211,10 @@ function TesterTestDetail({
             </div>
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Tester Notes
+                Tester Notes{" "}
+                <span className="normal-case tracking-normal font-normal text-gray-500">· type @ to link a screenshot</span>
               </div>
-              <textarea
+              <MentionTextarea
                 value={p.notes || ""}
                 onChange={(f) =>
                   l({
@@ -7956,7 +8230,7 @@ function TesterTestDetail({
               <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
                 Other Observations
               </div>
-              <textarea
+              <MentionTextarea
                 value={p.other_observations || ""}
                 onChange={(f) =>
                   l({
@@ -8127,6 +8401,7 @@ function TesterTestDetail({
         />
       )}
     </div>
+    </FigureContext.Provider>
   );
 }
 // Expected results written as "✓ ..." lines become a checklist. Each item's tick is saved in
@@ -8161,13 +8436,13 @@ function ExpectedItemNote({ note: e, onNote: t }) {
   }
   return a || e ? (
     <div className="ml-[26px] mt-1 mb-0.5">
-      <textarea
+      <MentionTextarea
         autoFocus={a}
         value={e || ""}
         onChange={(o) => t(prettyArrows(o.target.value))}
         onBlur={() => r(false)}
         rows={2}
-        placeholder="Note for this item…"
+        placeholder="Note for this item… (type @ to link a screenshot)"
         className="w-full px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-sm text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
       />
     </div>
@@ -8293,13 +8568,13 @@ function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s })
             )}
           </div>
           {l || r ? (
-            <textarea
+            <MentionTextarea
               autoFocus={l}
               value={r || ""}
               onChange={(p) => s(prettyArrows(p.target.value))}
               onBlur={() => i(false)}
               rows={2}
-              placeholder="Note for this step…"
+              placeholder="Note for this step… (type @ to link a screenshot)"
               className="mt-2 w-full px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
             />
           ) : (
@@ -9645,10 +9920,12 @@ function ScreenshotLightbox({
   let [h, b] = useState("select");
   let [_, S] = useState(null);
   let [I, x] = useState(null);
+  let [editingText, setEditingText] = useState(null);
   useEffect(() => {
     b("select");
     S(null);
     x(null);
+    setEditingText(null);
   }, [l]);
   let g = useRef(null);
   let v = useRef(null);
@@ -9745,14 +10022,33 @@ function ScreenshotLightbox({
       return;
     }
     let { x: W, y: V } = w(M.clientX, M.clientY);
-    if (h === "arrow") {
+    if (h === "text") {
+      M.preventDefault();
+      let F = "t_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      m([
+        ...d,
+        {
+          id: F,
+          type: "text",
+          x1: W,
+          y1: V,
+          x2: W,
+          y2: V,
+          text: "",
+        },
+      ]);
+      S(F);
+      setEditingText(F);
+      return;
+    }
+    if (h === "arrow" || h === "circle") {
       M.preventDefault();
       let F = "a_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       m([
         ...d,
         {
           id: F,
-          type: "arrow",
+          type: h,
           x1: W,
           y1: V,
           x2: W,
@@ -9825,11 +10121,16 @@ function ScreenshotLightbox({
       } catch {}
       if (I.mode === "create") {
         let W = d.find((V) => V.id === I.id);
-        if (W && Math.hypot(W.x2 - W.x1, W.y2 - W.y1) < 0.02) {
+        let tooSmall =
+          W &&
+          (W.type === "circle"
+            ? Math.abs(W.x2 - W.x1) < 0.015 && Math.abs(W.y2 - W.y1) < 0.015
+            : Math.hypot(W.x2 - W.x1, W.y2 - W.y1) < 0.02);
+        if (tooSmall) {
           m(d.filter((F) => F.id !== I.id));
           S(null);
         }
-        b("select");
+        // Stay in the drawing tool so several marks can be added in a row.
       }
       x(null);
     }
@@ -9852,21 +10153,28 @@ function ScreenshotLightbox({
             )}
             {r && (
               <Fragment>
-                <button
-                  onClick={() => {
-                    b(h === "arrow" ? "select" : "arrow");
-                    S(null);
-                  }}
-                  className={`px-2 py-1 text-[11px] rounded-sm border inline-flex items-center gap-1 flex-shrink-0 ${h === "arrow" ? "bg-red-900/50 border-red-700 text-red-100" : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"}`}
-                  title={
-                    h === "arrow"
-                      ? "Click an empty area or press Esc to stop"
-                      : "Click + drag on the image to draw an arrow"
-                  }
-                >
-                  <Pencil className="w-3 h-3" />
-                  {h === "arrow" ? "Drawing…" : "Add arrow"}
-                </button>
+                {[
+                  { key: "arrow", label: "Add arrow", Icon: Pencil, hint: "Click + drag on the image to draw arrows" },
+                  { key: "circle", label: "Add circle", Icon: CircleIcon, hint: "Click + drag on the image to circle an area" },
+                  { key: "text", label: "Add text", Icon: Type, hint: "Click on the image to add a text label" },
+                ].map((M) => {
+                  let W = h === M.key;
+                  return (
+                    <button
+                      key={M.key}
+                      onClick={() => {
+                        b(W ? "select" : M.key);
+                        S(null);
+                      }}
+                      aria-pressed={W}
+                      className={`px-2 py-1 text-[11px] rounded-sm border inline-flex items-center gap-1 flex-shrink-0 ${W ? "bg-red-900/50 border-red-700 text-red-100" : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"}`}
+                      title={W ? "Click to finish (or press Esc)" : M.hint}
+                    >
+                      {W ? <Check className="w-3 h-3" /> : <M.Icon className="w-3 h-3" />}
+                      {W ? `Done ${M.key === "arrow" ? "arrows" : M.key === "circle" ? "circles" : "text"}` : M.label}
+                    </button>
+                  );
+                })}
                 {d.length > 0 && (
                   <button
                     onClick={() => {
@@ -9874,7 +10182,7 @@ function ScreenshotLightbox({
                       S(null);
                     }}
                     className="px-2 py-1 text-[11px] rounded-sm bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-red-300 inline-flex items-center gap-1 flex-shrink-0"
-                    title="Remove all arrows on this screenshot"
+                    title="Remove all arrows, circles and text on this screenshot"
                   >
                     <Trash2 className="w-3 h-3" /> Clear
                   </button>
@@ -9920,7 +10228,7 @@ function ScreenshotLightbox({
                   viewBox={`0 0 ${k.w} ${k.h}`}
                   className="absolute inset-0"
                   style={{
-                    cursor: h === "arrow" ? "crosshair" : "default",
+                    cursor: h === "arrow" || h === "circle" ? "crosshair" : h === "text" ? "text" : "default",
                     pointerEvents: r || d.length > 0 ? "auto" : "none",
                     touchAction: "none",
                   }}
@@ -9930,9 +10238,10 @@ function ScreenshotLightbox({
                   onPointerCancel={j}
                 >
                   {d.map((M) => {
-                    if (M.type !== "arrow") {
+                    if (M.type !== "arrow" && M.type !== "circle") {
                       return null;
                     }
+                    let isCircle = M.type === "circle";
                     let W = M.x1 * k.w;
                     let V = M.y1 * k.h;
                     let F = M.x2 * k.w;
@@ -9941,17 +10250,46 @@ function ScreenshotLightbox({
                     let D = E ? "#fb7185" : "#ef4444";
                     return (
                       <g key={M.id}>
-                        <path
-                          d={arrowGeometry(W, V, F, se)}
-                          stroke={D}
-                          strokeWidth={E ? 4 : 3}
-                          fill="none"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          pointerEvents="none"
-                        />
+                        {isCircle ? (
+                          <Fragment>
+                            {E && r && (
+                              <rect
+                                x={Math.min(W, F)}
+                                y={Math.min(V, se)}
+                                width={Math.abs(F - W)}
+                                height={Math.abs(se - V)}
+                                fill="none"
+                                stroke="#fb7185"
+                                strokeWidth={1}
+                                strokeDasharray="4 4"
+                                pointerEvents="none"
+                              />
+                            )}
+                            <ellipse
+                              cx={(W + F) / 2}
+                              cy={(V + se) / 2}
+                              rx={Math.abs(F - W) / 2}
+                              ry={Math.abs(se - V) / 2}
+                              stroke={D}
+                              strokeWidth={E ? 4 : 3}
+                              fill="none"
+                              pointerEvents="none"
+                            />
+                          </Fragment>
+                        ) : (
+                          <path
+                            d={arrowGeometry(W, V, F, se)}
+                            stroke={D}
+                            strokeWidth={E ? 4 : 3}
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            pointerEvents="none"
+                          />
+                        )}
                         {r && (
-                          <line
+                          <HitShape
+                            circle={isCircle}
                             x1={W}
                             y1={V}
                             x2={F}
@@ -10042,6 +10380,80 @@ function ScreenshotLightbox({
                   })}
                 </svg>
               )}
+              {k.w > 0 &&
+                d
+                  .filter((M) => M.type === "text")
+                  .map((M) => {
+                    let W = _ === M.id;
+                    let V = editingText === M.id && r;
+                    let F = {
+                      position: "absolute",
+                      left: `${M.x1 * k.w}px`,
+                      top: `${M.y1 * k.h}px`,
+                      maxWidth: `${Math.max(140, k.w - M.x1 * k.w)}px`,
+                      fontSize: "18px",
+                      lineHeight: 1.3,
+                      fontWeight: 600,
+                      color: "#fff",
+                      background: "#dc2626",
+                      padding: "4px 8px",
+                      borderRadius: "3px",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                      boxShadow: W && r ? "0 0 0 2px #0b0f17, 0 0 0 4px #fb7185" : "0 1px 3px rgba(0,0,0,0.4)",
+                      pointerEvents: !r || h === "arrow" || h === "circle" ? "none" : "auto",
+                      touchAction: "none",
+                      cursor: h === "select" ? "move" : "text",
+                    };
+                    let se = (E) => {
+                      let D = E.trim();
+                      setEditingText(null);
+                      m(D ? d.map((O) => (O.id === M.id ? { ...O, text: E } : O)) : d.filter((O) => O.id !== M.id));
+                      if (!D) S(null);
+                    };
+                    if (V) {
+                      return (
+                        <AnnotationTextInput
+                          key={M.id}
+                          initial={M.text || ""}
+                          style={{ ...F, cursor: "text", minWidth: "140px", border: "none", outline: "none", resize: "none" }}
+                          onCommit={se}
+                        />
+                      );
+                    }
+                    return (
+                      <div
+                        key={M.id}
+                        style={F}
+                        title={r && h === "select" ? "Drag to move · double-click to edit · Delete to remove" : undefined}
+                        onPointerDown={(E) => {
+                          if (!r) return;
+                          E.stopPropagation();
+                          E.preventDefault();
+                          S(M.id);
+                          if (h === "text") {
+                            setEditingText(M.id);
+                            return;
+                          }
+                          let { x: D, y: O } = w(E.clientX, E.clientY);
+                          x({ mode: "move", id: M.id, origAnn: { ...M }, origX: D, origY: O });
+                          try {
+                            E.currentTarget.setPointerCapture(E.pointerId);
+                          } catch {}
+                        }}
+                        onPointerMove={A}
+                        onPointerUp={j}
+                        onPointerCancel={j}
+                        onDoubleClick={(E) => {
+                          if (!r) return;
+                          E.stopPropagation();
+                          setEditingText(M.id);
+                        }}
+                      >
+                        {M.text}
+                      </div>
+                    );
+                  })}
             </div>
           </div>
           {(e.length > 1 || r) && (
@@ -10061,12 +10473,16 @@ function ScreenshotLightbox({
               {r && (
                 <span className="text-[10px] text-gray-500 truncate">
                   {h === "arrow"
-                    ? "Click + drag on the image to draw an arrow."
-                    : _
-                      ? "Drag endpoints to reshape, drag line to move, Delete to remove."
-                      : d.length > 0
-                        ? "Click an arrow to select. Press Esc to close."
-                        : 'Press "Add arrow" then click + drag on the image.'}
+                    ? "Drag on the image to draw arrows. Add as many as you like, then click Done or press Esc."
+                    : h === "circle"
+                      ? "Drag across an area to circle it. Add as many as you like, then click Done or press Esc."
+                      : h === "text"
+                        ? "Click where the label should go and type. Enter to finish, Shift+Enter for a new line."
+                      : _
+                        ? "Drag the handles to reshape, drag the outline to move, Delete to remove."
+                        : d.length > 0
+                          ? "Click a mark to select it. Double-click text to edit. Press Esc to close."
+                          : 'Pick "Add arrow", "Add circle" or "Add text", then use it on the image.'}
                 </span>
               )}
               {e.length > 1 ? (
@@ -10089,6 +10505,67 @@ function ScreenshotLightbox({
   } else {
     return null;
   }
+}
+// Inline editor for a text label on a screenshot. Enter (or clicking away) saves; Shift+Enter adds a line.
+function AnnotationTextInput({ initial: e, style: t, onCommit: a }) {
+  let [r, o] = useState(e);
+  let s = useRef(null);
+  let l = useRef(false);
+  let i = (u) => {
+    if (l.current) return;
+    l.current = true;
+    a(u);
+  };
+  useLayoutEffect(() => {
+    let u = s.current;
+    if (!u) return;
+    u.style.height = "auto";
+    u.style.height = `${u.scrollHeight}px`;
+  }, [r]);
+  useEffect(() => {
+    let u = s.current;
+    if (u) {
+      u.focus();
+      u.setSelectionRange(u.value.length, u.value.length);
+    }
+  }, []);
+  return (
+    <textarea
+      ref={s}
+      rows={1}
+      value={r}
+      placeholder="Type…"
+      onChange={(u) => o(u.target.value)}
+      onPointerDown={(u) => u.stopPropagation()}
+      onKeyDown={(u) => {
+        u.stopPropagation();
+        if ((u.key === "Enter" && !u.shiftKey) || u.key === "Escape") {
+          u.preventDefault();
+          i(r);
+        }
+      }}
+      onBlur={() => i(r)}
+      className="placeholder-red-200"
+      style={{ ...t, display: "block", overflow: "hidden", fontFamily: "inherit" }}
+    />
+  );
+}
+// Invisible, wide outline used to grab an arrow (line) or circle (ellipse) in the lightbox.
+function HitShape({ circle: e, x1: t, y1: a, x2: r, y2: o, ...s }) {
+  if (e) {
+    return (
+      <ellipse
+        cx={(t + r) / 2}
+        cy={(a + o) / 2}
+        rx={Math.abs(r - t) / 2}
+        ry={Math.abs(o - a) / 2}
+        fill="none"
+        pointerEvents="stroke"
+        {...s}
+      />
+    );
+  }
+  return <line x1={t} y1={a} x2={r} y2={o} {...s} />;
 }
 function arrowGeometry(e, t, a, r) {
   let o = a - e;
@@ -10288,6 +10765,7 @@ function DevTestDetail({
   }, [d.id]);
   let k = a.filter((C) => C.developer_name !== r).sort((C, m) => new Date(C.done_at) - new Date(m.done_at));
   return (
+    <FigureContext.Provider value={{ shots: c.screenshots || [], open: (f) => v(f) }}>
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-6xl mx-auto px-6 py-6">
         <div className="mb-6 pb-4 border-b border-gray-800 flex items-start gap-4 flex-wrap">
@@ -10398,17 +10876,7 @@ function DevTestDetail({
                   <div className="text-sm text-gray-200">{c.tested_by}</div>
                 </div>
               )}
-              <div className="mb-3">
-                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Severity</div>
-                {getSeverity(c.bug_severity) ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <SeverityBadge value={c.bug_severity} />
-                    <span className="text-xs text-gray-400">{getSeverity(c.bug_severity).description}</span>
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-600 italic">Not set</div>
-                )}
-              </div>
+
               <div className="mb-3">
                 <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Notes</div>
                 <div className="text-sm text-gray-200 whitespace-pre-wrap bg-gray-950 border border-gray-800 px-3 py-2 rounded-sm">
@@ -10506,7 +10974,6 @@ function DevTestDetail({
                     u(m);
                   }}
                   rows={3}
-                  placeholder="e.g. Fixed in commit abc123 — please re-test the email flow. Not a bug, by design — here's why…"
                   className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-600 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
                 />
               </div>
@@ -10531,6 +10998,7 @@ function DevTestDetail({
         <ScreenshotLightbox screenshots={c.screenshots || []} startIdx={g} onClose={() => v(null)} />
       )}
     </div>
+    </FigureContext.Provider>
   );
 }
 var root = ReactDOM.createRoot(document.getElementById("root"));
