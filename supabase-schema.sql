@@ -201,3 +201,42 @@ begin
     using (bucket_id = 'session-files');
   end if;
 end $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Admin code (idempotent). A 4-digit code that unlocks the admin page.
+-- The code is NOT readable through the app's key (row level security, no
+-- policies); the app can only ask check_admin_code() whether a code is right.
+-- To change it: Supabase > Table Editor > app_settings > edit the admin_code row.
+-- Replace 1234 below with your own code before running (it's only used the first time).
+-- ─────────────────────────────────────────────────────────────────────────────
+create table if not exists app_settings (
+  key text primary key,
+  value text not null
+);
+alter table app_settings enable row level security;
+
+insert into app_settings (key, value)
+values ('admin_code', '1234')
+on conflict (key) do nothing;
+
+create or replace function check_admin_code(code text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  ok boolean;
+begin
+  select exists (
+    select 1 from app_settings where key = 'admin_code' and value = code
+  ) into ok;
+  if not ok then
+    perform pg_sleep(1); -- slows down guessing
+  end if;
+  return ok;
+end;
+$$;
+
+revoke all on function check_admin_code(text) from public;
+grant execute on function check_admin_code(text) to anon, authenticated;

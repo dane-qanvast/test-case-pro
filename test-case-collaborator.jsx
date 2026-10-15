@@ -29,6 +29,7 @@ import {
   Image as ImageIcon,
   Circle as CircleIcon,
   Type,
+  Lock,
   RefreshCw,
   CircleHelp,
   ExternalLink,
@@ -4048,7 +4049,11 @@ function App() {
   } else if (e.role === "picker") {
     a = <PortalPicker sessionId={e.sessionId} />;
   } else {
-    a = <AdminPortal />;
+    a = (
+      <AdminGate>
+        <AdminPortal />
+      </AdminGate>
+    );
   }
   return (
     <Fragment>
@@ -4218,6 +4223,156 @@ var sessionUrl = (e) => `${window.location.origin + window.location.pathname}?se
 var navigateTo = (e) => {
   window.location.assign(e);
 };
+// ---------------------------------------------------------------------------
+// Admin lock: a 4-digit code stored in Supabase (table app_settings, key "admin_code").
+// The code can't be read through the app; it's only checked by the check_admin_code()
+// database function. Change it in Supabase > Table Editor > app_settings.
+// ---------------------------------------------------------------------------
+var ADMIN_CODE_KEY = "uat-pro-admin-code";
+var AdminLockContext = createContext(null);
+var checkAdminCode = async (e) => {
+  let { data: t, error: a } = await supabase.rpc("check_admin_code", { code: e });
+  if (a) {
+    let r = new Error(a.message || "Check failed");
+    r.setup = /check_admin_code|PGRST202|does not exist|schema cache/i.test(`${a.code || ""} ${a.message || ""}`);
+    throw r;
+  }
+  return t === true;
+};
+function AdminGate({ children: e }) {
+  let [t, a] = useState("checking");
+  let [r, o] = useState("");
+  let [s, l] = useState("");
+  let [i, u] = useState(false);
+  let d = useRef(null);
+  let c = () => {
+    try {
+      localStorage.removeItem(ADMIN_CODE_KEY);
+    } catch {}
+    o("");
+    l("");
+    a("locked");
+  };
+  useEffect(() => {
+    let h = false;
+    (async () => {
+      let b = null;
+      try {
+        b = localStorage.getItem(ADMIN_CODE_KEY);
+      } catch {}
+      if (!b) {
+        a("locked");
+        return;
+      }
+      try {
+        let _ = await checkAdminCode(b);
+        if (!h) a(_ ? "open" : "locked");
+        if (!_) c();
+      } catch (_) {
+        if (!h) a(_.setup ? "setup" : "locked");
+      }
+    })();
+    return () => {
+      h = true;
+    };
+  }, []);
+  useEffect(() => {
+    if (t === "locked") setTimeout(() => d.current?.focus(), 50);
+  }, [t]);
+  let p = async (h) => {
+    if (i || h.length !== 4) return;
+    u(true);
+    l("");
+    try {
+      if (await checkAdminCode(h)) {
+        try {
+          localStorage.setItem(ADMIN_CODE_KEY, h);
+        } catch {}
+        a("open");
+      } else {
+        l("That code isn't right.");
+        o("");
+        setTimeout(() => d.current?.focus(), 30);
+      }
+    } catch (b) {
+      if (b.setup) a("setup");
+      else l(b.message || "Couldn't check the code. Try again.");
+    }
+    u(false);
+  };
+  if (t === "open") {
+    return <AdminLockContext.Provider value={{ lock: c }}>{e}</AdminLockContext.Provider>;
+  }
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-indigo-950 flex items-center justify-center p-6">
+      <div className="w-full max-w-xs text-center">
+        <div className="w-11 h-11 bg-emerald-600 rounded-sm flex items-center justify-center mx-auto mb-4">
+          <FileText className="w-6 h-6 text-white" />
+        </div>
+        <div className="font-bold text-gray-100 text-lg">Test Case Collaborator</div>
+        <div className="text-xs text-gray-500 mb-6">Admin</div>
+        {t === "checking" ? (
+          <div className="text-sm text-gray-400">Checking…</div>
+        ) : t === "setup" ? (
+          <div className="text-left p-3 bg-amber-950/40 border border-amber-700 rounded-sm text-xs text-amber-100 leading-relaxed">
+            The admin code isn't set up in Supabase yet. Run the admin-code SQL from supabase-schema.sql in the
+            Supabase SQL Editor, then reload this page.
+          </div>
+        ) : (
+          <form
+            onSubmit={(h) => {
+              h.preventDefault();
+              p(r);
+            }}
+          >
+            <label htmlFor="admin-code" className="block text-sm text-gray-300 mb-3">
+              Enter the 4-digit admin code
+            </label>
+            <input
+              id="admin-code"
+              ref={d}
+              value={r}
+              onChange={(h) => {
+                let b = h.target.value.replace(/\D/g, "").slice(0, 4);
+                o(b);
+                l("");
+                if (b.length === 4) p(b);
+              }}
+              inputMode="numeric"
+              autoComplete="off"
+              pattern="[0-9]*"
+              maxLength={4}
+              disabled={i}
+              aria-invalid={!!s}
+              className={`w-40 mx-auto block text-center font-mono text-2xl tracking-[0.6em] pl-[0.6em] py-2.5 bg-gray-900 border text-gray-100 rounded-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 ${s ? "border-red-600" : "border-gray-700"}`}
+              placeholder="••••"
+            />
+            <div className="h-5 mt-2 text-xs">
+              {i ? (
+                <span className="text-gray-400">Checking…</span>
+              ) : s ? (
+                <span className="text-red-300">{s}</span>
+              ) : null}
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+function AdminLockButton() {
+  let e = useContext(AdminLockContext);
+  if (!e) return null;
+  return (
+    <button
+      onClick={e.lock}
+      className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-400 border border-gray-700 rounded-sm hover:text-gray-100 hover:bg-gray-800"
+      title="Lock the admin page on this device"
+    >
+      <Lock className="w-4 h-4" /> Lock
+    </button>
+  );
+}
 function AdminPortal() {
   let [e, t] = useState("list");
   let [a, r] = useState([]);
@@ -4336,12 +4491,15 @@ function AdminPortal() {
                 <div className="text-[11px] text-gray-500 leading-tight">Admin</div>
               </div>
             </div>
-            <button
-              onClick={() => t("create")}
-              className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white text-sm font-medium rounded-sm hover:bg-emerald-500"
-            >
-              <Plus className="w-4 h-4" /> New session
-            </button>
+            <div className="flex items-center gap-2">
+              <AdminLockButton />
+              <button
+                onClick={() => t("create")}
+                className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white text-sm font-medium rounded-sm hover:bg-emerald-500"
+              >
+                <Plus className="w-4 h-4" /> New session
+              </button>
+            </div>
           </div>
         </header>
         <main className="flex-1 max-w-5xl w-full mx-auto px-8 py-10">
