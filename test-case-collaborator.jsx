@@ -9771,6 +9771,8 @@ function DevSidebar({
     let O = sevOf(D);
     sevCounts[O] = (sevCounts[O] || 0) + 1;
   });
+  let failedOnly = l.filter((D) => isFailureStatus(i[D.id]?.status)).length;
+  let reviewOnly = l.filter((D) => String(i[D.id]?.status || "").toLowerCase() === "needs review").length;
   let resCounts = {};
   l.forEach((D) => {
     let O = i[D.id]?.status || "Not Tested";
@@ -9810,7 +9812,13 @@ function DevSidebar({
             <span>
               {c} / {l.length} fixed by you
             </span>
-            {p > 0 && <span className="text-red-400">{p} failed</span>}
+            {(failedOnly > 0 || reviewOnly > 0) && (
+              <span>
+                {failedOnly > 0 && <span className="text-red-400">{failedOnly} failed</span>}
+                {failedOnly > 0 && reviewOnly > 0 && <span className="text-gray-600"> · </span>}
+                {reviewOnly > 0 && <span className="text-amber-400">{reviewOnly} needs review</span>}
+              </span>
+            )}
           </div>
           <div className="w-full bg-gray-800 rounded-full h-1 mb-3 overflow-hidden">
             <div
