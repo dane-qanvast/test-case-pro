@@ -5686,36 +5686,35 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
                 <SheetLinkImport disabled={S || x} onFile={(y) => w([y])} />
                 {b.length > 0 && (
                   <div className="border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
-                    {b.map((y) => (
-                      <label
-                        key={y.key}
-                        className={`flex items-center gap-3 px-3 py-2 text-sm ${y.skipped ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/50"}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!y.include}
-                          disabled={!!y.skipped}
-                          onChange={() => T(y.key)}
-                          className="accent-emerald-500 w-4 h-4 flex-shrink-0"
-                        />
-                        <span className={`flex-1 truncate ${y.include ? "text-gray-100" : "text-gray-400"}`}>{y.name}</span>
-                        <span className="text-xs flex-shrink-0 text-right">{K(y)}</span>
-                      </label>
-                    ))}
+                    {b.map((y) => {
+                      let E = !!y.readmeText && y === b.find((O) => O.readmeText);
+                      let D = E ? resyncReadme : !!y.include;
+                      return (
+                        <label
+                          key={y.key}
+                          className={`flex items-center gap-3 px-3 py-2 text-sm ${y.skipped && !E ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/50"}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={D}
+                            disabled={!!y.skipped && !E}
+                            onChange={() => (E ? setResyncReadme(!resyncReadme) : T(y.key))}
+                            className="accent-emerald-500 w-4 h-4 flex-shrink-0"
+                          />
+                          <span className={`flex-1 truncate ${D ? "text-gray-100" : "text-gray-400"}`}>{y.name}</span>
+                          <span className="text-xs flex-shrink-0 text-right">
+                            {E ? (
+                              <span className={D ? "text-sky-300" : "text-gray-500"}>
+                                {D ? "Update testers' Read me" : "Read me · left as is"}
+                              </span>
+                            ) : (
+                              K(y)
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
-                )}
-                {b.find((y) => y.readmeText) && (
-                  <label className="flex items-start gap-2.5 px-3 py-2 border border-gray-800 rounded-sm text-sm cursor-pointer hover:bg-gray-800/40">
-                    <input
-                      type="checkbox"
-                      checked={resyncReadme}
-                      onChange={() => setResyncReadme(!resyncReadme)}
-                      className="accent-emerald-500 w-4 h-4 mt-0.5 flex-shrink-0"
-                    />
-                    <span className="text-gray-100">
-                      Also update the testers' Read me from "{b.find((y) => y.readmeText).name}"
-                    </span>
-                  </label>
                 )}
                 {A && (
                   <div className="space-y-2">
@@ -6483,24 +6482,6 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
             />
           </div>
           <SheetLinkImport onFile={(P) => xe([P])} />
-          {Q.find((P) => P.readmeText) && (
-            <label className="mt-2 flex items-start gap-2.5 px-3 py-2 border border-gray-800 rounded-sm text-sm cursor-pointer hover:bg-gray-800/40">
-              <input
-                type="checkbox"
-                checked={useReadme}
-                onChange={() => setUseReadme(!useReadme)}
-                className="accent-emerald-500 w-4 h-4 mt-0.5 flex-shrink-0"
-              />
-              <span>
-                <span className="text-gray-100">
-                  Use "{Q.find((P) => P.readmeText).name}" as the testers' Read me
-                </span>
-                <span className="block text-[11px] text-gray-500">
-                  Shown behind a Read me button on the tester page. You can edit it later in Edit session.
-                </span>
-              </span>
-            </label>
-          )}
           {(Q.length > 1 || Q.some((P) => P.skipped)) && (
             <div className="mt-2 border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2 bg-gray-900/60 text-[11px] text-gray-400">
@@ -6510,26 +6491,36 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
                 </span>
                 <span className="text-gray-500">Tab name is used as the Module when there's no Module column</span>
               </div>
-              {Q.map((P) => (
-                <label
-                  key={P.key}
-                  className={`flex items-center gap-3 px-3 py-2 text-sm ${P.skipped ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/50"}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!P.include}
-                    disabled={!!P.skipped}
-                    onChange={() => toggleImportSource(P.key)}
-                    className="accent-emerald-500 w-4 h-4 flex-shrink-0"
-                  />
-                  <span className={`flex-1 truncate ${P.include ? "text-gray-100" : "text-gray-400"}`}>{P.name}</span>
-                  <span className="text-xs text-gray-500 flex-shrink-0 text-right">
-                    {P.skipped
-                      ? P.skipped
-                      : `${P.testCases.length} test${P.testCases.length === 1 ? "" : "s"}${P.hidden ? " · hidden tab" : ""}`}
-                  </span>
-                </label>
-              ))}
+              {Q.map((P) => {
+                let X = !!P.readmeText && P === Q.find((N) => N.readmeText);
+                let ve = X ? useReadme : !!P.include;
+                return (
+                  <label
+                    key={P.key}
+                    className={`flex items-center gap-3 px-3 py-2 text-sm ${P.skipped && !X ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/50"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={ve}
+                      disabled={!!P.skipped && !X}
+                      onChange={() => (X ? setUseReadme(!useReadme) : toggleImportSource(P.key))}
+                      className="accent-emerald-500 w-4 h-4 flex-shrink-0"
+                    />
+                    <span className={`flex-1 truncate ${ve ? "text-gray-100" : "text-gray-400"}`}>{P.name}</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0 text-right">
+                      {X ? (
+                        <span className={ve ? "text-sky-300" : "text-gray-500"}>
+                          {ve ? "Read me for testers" : "Read me · not used"}
+                        </span>
+                      ) : P.skipped ? (
+                        P.skipped
+                      ) : (
+                        `${P.testCases.length} test${P.testCases.length === 1 ? "" : "s"}${P.hidden ? " · hidden tab" : ""}`
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
           )}
           {l?.duplicateIds?.length > 0 && (
