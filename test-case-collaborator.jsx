@@ -143,6 +143,8 @@ var isFailureStatus = (e) => {
   let t = String(e).trim().toLowerCase();
   return t === "fail" || t === "blocked" || t === "fail/blocked" || t === "fail/ blocked";
 };
+// Anything a developer may need to look at: failed, blocked, or "works but needs review".
+var isIssueStatus = (e) => isFailureStatus(e) || String(e || "").trim().toLowerCase() === "needs review";
 var stepsToText = (e) =>
   (e || []).map((t, a) => `${a + 1}. ${t}`).join(`
 `);
@@ -379,7 +381,7 @@ function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showR
   let b = (x) => {
     let g = x.selectionStart ?? x.value.length;
     let v = x.value.slice(0, g);
-    let k = /(^|\s)@([^\s@]{0,20})$/.exec(v);
+    let k = /(^|\s)@(fig\.?\s?\d{0,3}|[^\s@]{0,20})$/i.exec(v);
     if (k) {
       d({ start: g - k[2].length - 1, end: g, query: k[2] });
     } else {
@@ -9549,6 +9551,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   };
   let he = ($) => severityRank($);
   let [devSeverity, setDevSeverity] = useState("All");
+  let [devResult, setDevResult] = useState("All");
   let [devPriority, setDevPriority] = useState("All");
   let ie = (() => {
     let $ = r.filter((H) => {
@@ -9558,7 +9561,8 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
       let te = s[H.id]?.status || "Not Tested";
       let ve = (i[H.id] || []).find((N) => N.developer_name === t)?.status || null;
       if (
-        (f === "failed" && !isFailureStatus(te)) ||
+        (f === "failed" && !isIssueStatus(te)) ||
+        (devResult !== "All" && te !== devResult) ||
         (f === "mywip" && ve !== "in_progress") ||
         (f === "myfixed" && ve !== "fixed")
       ) {
@@ -9605,7 +9609,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let Ce = r.filter(($) =>
     (i[$.id] || []).some((H) => H.developer_name === t && H.status === "fixed"),
   ).length;
-  let be = r.filter(($) => isFailureStatus(s[$.id]?.status)).length;
+  let be = r.filter(($) => isIssueStatus(s[$.id]?.status)).length;
   useSidebarArrowNav(ie, x, g);
   if (d) {
     return <Notice>Loading session…</Notice>;
@@ -9665,6 +9669,8 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           setFilter={w}
           severityFilter={devSeverity}
           setSeverityFilter={setDevSeverity}
+          resultFilter={devResult}
+          setResultFilter={setDevResult}
           priorityFilter={devPriority}
           setPriorityFilter={setDevPriority}
           focusedIds={j}
@@ -9744,6 +9750,8 @@ function DevSidebar({
   setFilter: k,
   severityFilter: sevF = "All",
   setSeverityFilter: setSevF = () => {},
+  resultFilter: resF = "All",
+  setResultFilter: setResF = () => {},
   priorityFilter: priF = "All",
   setPriorityFilter: setPriF = () => {},
   focusedIds: C,
@@ -9763,11 +9771,16 @@ function DevSidebar({
     let O = sevOf(D);
     sevCounts[O] = (sevCounts[O] || 0) + 1;
   });
+  let resCounts = {};
+  l.forEach((D) => {
+    let O = i[D.id]?.status || "Not Tested";
+    resCounts[O] = (resCounts[O] || 0) + 1;
+  });
   let priOptions = sortPriorities(Array.from(new Set(l.map((D) => D.priority).filter(Boolean))));
   let priHasNone = priOptions.length > 0 && l.some((D) => !D.priority);
   let devTabs = [
     { key: "all", label: "All", count: l.length },
-    { key: "failed", label: "Failed", count: p, alert: p > 0 },
+    { key: "failed", label: "Issues", count: p, alert: p > 0, hint: "Failed, blocked or needs review" },
     { key: "mywip", label: "Fixing", count: d, hint: "Tests you've marked In Progress" },
     { key: "myfixed", label: "Fixed", count: c, hint: "Tests you've marked Fixed" },
   ];
@@ -9842,6 +9855,17 @@ function DevSidebar({
               >
                 <Filter className="w-3.5 h-3.5" />
               </button>
+              <FilterSelect value={resF} onChange={setResF} active={resF !== "All"}>
+                <option value="All">Tester result</option>
+                {TESTER_STATUSES.map((D) => (
+                  <option value={D.value} key={D.value}>
+                    {D.label} ({resCounts[D.value] || 0})
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
+          )}
+          <div className="flex gap-1.5 mt-1.5">
               <FilterSelect value={sevF} onChange={setSevF} active={sevF !== "All"}>
                 <option value="All">Severity</option>
                 {SEVERITIES.map((D) => (
@@ -9862,8 +9886,7 @@ function DevSidebar({
                   {priHasNone && <option value="">No priority</option>}
                 </FilterSelect>
               )}
-            </div>
-          )}
+          </div>
           {C && (
             <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 bg-emerald-950/40 border border-emerald-800/50 rounded-sm text-xs">
               <Filter className="w-3 h-3 text-emerald-400 flex-shrink-0" />
@@ -9892,6 +9915,10 @@ function DevSidebar({
                 v !== "all" && {
                   label: "Show all tests",
                   onClick: () => k("all"),
+                },
+                resF !== "All" && {
+                  label: "Clear tester result filter",
+                  onClick: () => setResF("All"),
                 },
                 sevF !== "All" && {
                   label: "Clear severity filter",
