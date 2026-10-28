@@ -254,7 +254,7 @@ var CSV_GENERATION_PROMPT =
 // Matches app paths like /quotes/<id>/preview or /tools/x?leadId=<lead id>.
 // Placeholders in angle brackets may contain spaces (e.g. <lead id>) and stay inside the chip.
 var PATH_TOKEN_RE =
-  /(?<![a-zA-Z0-9_])\/[a-zA-Z][a-zA-Z0-9_-]*(?:\/(?:[a-zA-Z0-9_.-]|<[a-zA-Z0-9_][a-zA-Z0-9_ .-]{0,38}>)+)*\/?(?:\?(?:[a-zA-Z0-9_=&.%\-]|<[a-zA-Z0-9_][a-zA-Z0-9_ .-]{0,38}>)+)?/g;
+  /(?<![a-zA-Z0-9_\/:.])\/[a-zA-Z][a-zA-Z0-9_-]*(?:\/(?:[a-zA-Z0-9_.-]|<[a-zA-Z0-9_][a-zA-Z0-9_ .-]{0,38}>)+)*\/?(?:\?(?:[a-zA-Z0-9_=&.%\-]|<[a-zA-Z0-9_][a-zA-Z0-9_ .-]{0,38}>)+)?/g;
 var BaseUrlContext = createContext("");
 function PathChipText({ text: e }) {
   let t = useContext(BaseUrlContext);
@@ -512,10 +512,48 @@ function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showR
     </div>
   );
 }
+// Full web addresses (https://…) are shown as one plain link, never split into path chips.
+var FULL_URL_RE = /\bhttps?:\/\/[^\s<>"'`]+/g;
 var normalizePathOnly = (e) => {
   if (e == null) {
     return e;
   }
+  let t = String(e);
+  if (!t.includes("/")) {
+    return t;
+  }
+  if (/https?:\/\//i.test(t)) {
+    let a = [];
+    let r = 0;
+    let o;
+    for (FULL_URL_RE.lastIndex = 0; (o = FULL_URL_RE.exec(t)) !== null;) {
+      let l = o[0].replace(/[.,;:!?)\]]+$/, "");
+      if (o.index > r) {
+        a.push(<Fragment key={`s${r}`}>{normalizePathOnlyPlain(t.substring(r, o.index))}</Fragment>);
+      }
+      a.push(
+        <a
+          key={`u${o.index}`}
+          href={l}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(i) => i.stopPropagation()}
+          className="text-sky-300 underline decoration-sky-700 underline-offset-2 break-all hover:text-sky-200"
+        >
+          {l}
+        </a>,
+      );
+      r = o.index + l.length;
+      FULL_URL_RE.lastIndex = r;
+    }
+    if (r < t.length) {
+      a.push(<Fragment key={`s${r}`}>{normalizePathOnlyPlain(t.substring(r))}</Fragment>);
+    }
+    return a;
+  }
+  return normalizePathOnlyPlain(t);
+};
+var normalizePathOnlyPlain = (e) => {
   let t = String(e);
   if (!t.includes("/")) {
     return t;
