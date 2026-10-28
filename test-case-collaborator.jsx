@@ -9871,9 +9871,6 @@ function DevSidebar({
                   </option>
                 ))}
               </FilterSelect>
-            </div>
-          )}
-          <div className="flex gap-1.5 mt-1.5">
               <FilterSelect value={sevF} onChange={setSevF} active={sevF !== "All"}>
                 <option value="All">Severity</option>
                 {SEVERITIES.map((D) => (
@@ -9883,6 +9880,10 @@ function DevSidebar({
                 ))}
                 <option value="">Not set ({sevCounts[""] || 0})</option>
               </FilterSelect>
+            </div>
+          )}
+          {priOptions.length > 0 && (
+          <div className="flex gap-1.5 mt-1.5">
               {priOptions.length > 0 && (
                 <FilterSelect value={priF} onChange={setPriF} active={priF !== "All"}>
                   <option value="All">Priority</option>
@@ -9895,6 +9896,7 @@ function DevSidebar({
                 </FilterSelect>
               )}
           </div>
+          )}
           {C && (
             <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 bg-emerald-950/40 border border-emerald-800/50 rounded-sm text-xs">
               <Filter className="w-3 h-3 text-emerald-400 flex-shrink-0" />
