@@ -578,19 +578,22 @@ ${i}`;
 // ---------------------------------------------------------------------------
 var normalizeHeader = (e) => String(e ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 var HEADER_ALIASES = {
-  testId: ["id", "testid", "testcaseid", "tcid", "caseid", "testno", "no"],
+  testId: ["id", "testid", "testcaseid", "tcid", "caseid", "testno", "no", "step", "stepno", "stepid"],
   module: ["module", "epic"],
-  feature: ["feature", "featurearea", "subfeature", "area"],
-  title: ["title", "test", "testcase", "testtitle", "testcasetitle", "testname", "scenario", "testscenario"],
+  feature: ["feature", "featurearea", "subfeature", "area", "scene"],
+  title: ["title", "test", "testcase", "testtitle", "testcasetitle", "testname", "scenario", "testscenario", "trythis"],
   preConditions: ["preconditions", "precondition", "prerequisites", "prerequisite", "setup"],
   testData: ["testdata", "data"],
-  steps: ["steps", "teststeps", "stepstoreproduce", "procedure"],
-  expectedResult: ["expectedresult", "expectedresults", "expected", "expectedoutcome"],
+  steps: ["steps", "teststeps", "stepstoreproduce", "procedure", "how", "howto", "instructions"],
+  expectedResult: ["expectedresult", "expectedresults", "expected", "expectedoutcome", "youshouldsee", "shouldsee"],
   downstreamCheck: ["downstreamcheck", "downstreamchecks", "downstream"],
   edgeCase: ["edgecase", "edgecases"],
   devBranchName: ["devbranchname", "devbranch", "branch", "branchname"],
   focus: ["focus", "focusarea", "testfocus", "category", "testtype"],
   priority: ["priority", "prio", "testpriority"],
+  // Folded into other fields: "Log in as" → Pre-conditions, "Files to use" → Test Data.
+  loginAs: ["loginas", "youare", "persona", "loginuser"],
+  filesToUse: ["filestouse", "files", "samplefiles", "filesneeded"],
 };
 var resolveColumns = (e) => {
   let t = e.map((r) => String(r ?? "").trim());
@@ -637,8 +640,12 @@ var rowsToTestCases = (e, t, a) => {
       module: i(d, "module") || a.fallbackModule || "",
       feature: i(d, "feature"),
       title: i(d, "title"),
-      preConditions: i(d, "preConditions"),
-      testData: i(d, "testData"),
+      preConditions: [i(d, "loginAs") && `Log in as: ${i(d, "loginAs")}`, i(d, "preConditions")]
+        .filter(Boolean)
+        .join("\n"),
+      testData: [i(d, "testData"), i(d, "filesToUse") && `Files: ${i(d, "filesToUse").replace(/\s*\n\s*/g, ", ")}`]
+        .filter(Boolean)
+        .join("\n"),
       steps: parseSteps(i(d, "steps")),
       expectedResult: i(d, "expectedResult"),
       downstreamCheck: i(d, "downstreamCheck"),
