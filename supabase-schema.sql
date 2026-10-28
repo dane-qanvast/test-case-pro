@@ -240,3 +240,9 @@ $$;
 
 revoke all on function check_admin_code(text) from public;
 grant execute on function check_admin_code(text) to anon, authenticated;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Read me for testers (idempotent): instructions shown behind a "Read me" button,
+-- usually imported from the sheet's "Start here" tab.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table sessions add column if not exists readme text;

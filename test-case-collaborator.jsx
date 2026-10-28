@@ -30,6 +30,7 @@ import {
   Circle as CircleIcon,
   Type,
   Lock,
+  BookOpen,
   RefreshCw,
   CircleHelp,
   ExternalLink,
@@ -717,6 +718,38 @@ var parseCsvFile = (e) =>
         }),
     });
   });
+// "Read me": instructions shown to testers in a side panel. Stored as light markup in sessions.readme:
+//   "# Heading" lines, "Term :: description" lines, plain paragraphs, blank lines between groups.
+var README_TAB_NAMES = /(start\s*here|read\s*me|instruction|guide|how\s*to)/i;
+var sheetRowsToReadme = (e) => {
+  let t = [];
+  let a = true;
+  e.forEach((r) => {
+    let o = (r || []).map((l) => String(l ?? "").replace(/\s+$/g, "").trim()).filter(Boolean);
+    if (o.length === 0) {
+      if (t.length && t[t.length - 1] !== "") t.push("");
+      return;
+    }
+    if (o.length === 1) {
+      let l = o[0].replace(/\n+/g, " ");
+      if (a) {
+        t.push(`# ${l}`);
+      } else if (l.length <= 40 && !/[.!?:,…]$/.test(l)) {
+        if (t.length && t[t.length - 1] !== "") t.push("");
+        t.push(`## ${l}`);
+      } else {
+        t.push(l);
+      }
+    } else {
+      t.push(`${o[0].replace(/\n+/g, " ")} :: ${o.slice(1).join(" · ").replace(/\n+/g, " ")}`);
+    }
+    a = false;
+  });
+  while (t.length && t[t.length - 1] === "") t.pop();
+  return t.join("\n");
+};
+var README_SETUP_SQL = "alter table sessions add column if not exists readme text;";
+var isReadmeSetupError = (e) => /readme/i.test(String(e?.message || e || ""));
 // Tabs whose names look like instructions, overviews, issue logs or question lists start unticked
 // (the admin can still tick them).
 var NON_TEST_TAB_NAMES =
@@ -762,6 +795,7 @@ var parseWorkbookFile = async (e) => {
       return {
         name: r,
         skipped: "No test table found",
+        readmeText: README_TAB_NAMES.test(r.trim()) ? sheetRowsToReadme(u) : undefined,
       };
     }
     let c = u[d].map((h) => String(h ?? "").trim());
@@ -4990,6 +5024,75 @@ function SampleFilesManager({ session: e }) {
     </div>
   );
 }
+var linkifyText = (e) =>
+  String(e)
+    .split(/(https?:\/\/[^\s<>"')]+)/g)
+    .map((t, a) =>
+      a % 2 === 1 ? (
+        <a
+          key={a}
+          href={t}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sky-300 underline decoration-sky-700 underline-offset-2 break-all hover:text-sky-200"
+        >
+          {t}
+        </a>
+      ) : (
+        <Fragment key={a}>{t}</Fragment>
+      ),
+    );
+function ReadmeContent({ text: e }) {
+  let t = String(e || "").split("\n");
+  let a = [];
+  let r = [];
+  let o = () => {
+    if (r.length) {
+      a.push(
+        <dl className="divide-y divide-gray-800 border border-gray-800 rounded-sm" key={`dl${a.length}`}>
+          {r.map((s, l) => (
+            <div className="px-3 py-2" key={l}>
+              <dt className="text-xs font-semibold text-gray-100">{linkifyText(s[0])}</dt>
+              <dd className="text-xs text-gray-400 mt-0.5 leading-relaxed">{linkifyText(s[1])}</dd>
+            </div>
+          ))}
+        </dl>,
+      );
+      r = [];
+    }
+  };
+  t.forEach((s, l) => {
+    let i = s.trim();
+    let u = i.indexOf(" :: ");
+    if (u > 0) {
+      r.push([i.slice(0, u), i.slice(u + 4)]);
+      return;
+    }
+    o();
+    if (!i) return;
+    if (i.startsWith("## ")) {
+      a.push(
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-300 pt-3" key={l}>
+          {i.slice(3)}
+        </h3>,
+      );
+    } else if (i.startsWith("# ")) {
+      a.push(
+        <h2 className="text-base font-bold text-gray-100" key={l}>
+          {i.slice(2)}
+        </h2>,
+      );
+    } else {
+      a.push(
+        <p className="text-sm text-gray-300 leading-relaxed" key={l}>
+          {linkifyText(i)}
+        </p>,
+      );
+    }
+  });
+  o();
+  return <div className="space-y-2.5">{a}</div>;
+}
 // Tester portal: full-height side panel prompting testers to download the session's sample files.
 var ALREADY_COMPRESSED = /\.(zip|png|jpe?g|gif|webp|pdf|xlsx|xls|docx|pptx|mp4|mov|gz|7z|rar)$/i;
 var downloadBlob = (e, t) => {
@@ -5016,6 +5119,26 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
   let [d, c] = useState(false);
   let [z, setZip] = useState(null);
   let [zErr, setZErr] = useState("");
+  let [readme, setReadme] = useState("");
+  let [readmeOpen, setReadmeOpen] = useState(false);
+  useEffect(() => {
+    let h = false;
+    (async () => {
+      let { data: b, error: _ } = await supabase.from("sessions").select("readme").eq("id", e).single();
+      if (!h && !_ && b?.readme && b.readme.trim()) setReadme(b.readme);
+    })();
+    return () => {
+      h = true;
+    };
+  }, [e]);
+  useEffect(() => {
+    if (!readmeOpen) return;
+    let h = (b) => {
+      if (b.key === "Escape") setReadmeOpen(false);
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [readmeOpen]);
   useEffect(() => {
     let h = false;
     (async () => {
@@ -5039,7 +5162,8 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [i]);
-  if (!d || a.length === 0) return null;
+  let hasFiles = d && a.length > 0;
+  if (!hasFiles && !readme) return null;
   let p = () => {
     l(true);
     try {
@@ -5079,6 +5203,38 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
   };
   return (
     <>
+      {readme && (
+        <Fragment>
+          <div
+            className={`fixed inset-0 z-30 bg-black/40 sm:hidden transition-opacity duration-300 ${readmeOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            onClick={() => setReadmeOpen(false)}
+            aria-hidden="true"
+          />
+          <aside
+            className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${readmeOpen ? "translate-x-0" : "translate-x-full pointer-events-none"}`}
+            role="dialog"
+            aria-label="Read me"
+            aria-hidden={!readmeOpen}
+          >
+            <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-800">
+              <BookOpen className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="flex-1 text-base font-semibold text-gray-100">Read me</div>
+              <button
+                onClick={() => setReadmeOpen(false)}
+                className="text-gray-500 hover:text-gray-200 p-0.5"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <ReadmeContent text={readme} />
+            </div>
+          </aside>
+        </Fragment>
+      )}
+      {hasFiles && (
+      <Fragment>
       <div
         className={`fixed inset-0 z-30 bg-black/40 sm:hidden transition-opacity duration-300 ${i ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={close}
@@ -5149,14 +5305,160 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
           )}
         </div>
       </aside>
-      <button
-        onClick={() => u(true)}
-        className={`fixed z-30 bottom-4 right-4 inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border border-gray-700 text-gray-300 rounded-sm shadow-lg transition-all duration-300 ease-out hover:text-gray-100 hover:border-gray-600 ${i ? "translate-y-6 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`}
-        title="Sample files for these tests"
+      </Fragment>
+      )}
+      <div
+        className={`fixed z-30 bottom-4 right-4 flex items-center gap-2 transition-all duration-300 ease-out ${i || readmeOpen ? "translate-y-6 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`}
       >
-        <Paperclip className="w-3.5 h-3.5" /> Sample files ({a.length})
-      </button>
+        {readme && (
+          <button
+            onClick={() => {
+              u(false);
+              setReadmeOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border border-gray-700 text-gray-300 rounded-sm shadow-lg transition-colors hover:text-gray-100 hover:border-gray-600"
+            title="Instructions for this test round"
+          >
+            <BookOpen className="w-3.5 h-3.5" /> Read me
+          </button>
+        )}
+        {hasFiles && (
+          <button
+            onClick={() => {
+              setReadmeOpen(false);
+              u(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border border-gray-700 text-gray-300 rounded-sm shadow-lg transition-colors hover:text-gray-100 hover:border-gray-600"
+            title="Sample files for these tests"
+          >
+            <Paperclip className="w-3.5 h-3.5" /> Sample files ({a.length})
+          </button>
+        )}
+      </div>
     </>
+  );
+}
+// Edit session: the tester "Read me" text.
+function ReadmeEditor({ session: e }) {
+  let [t, a] = useState(null);
+  let [r, o] = useState("");
+  let [s, l] = useState("");
+  let [i, u] = useState(false);
+  let [d, c] = useState(false);
+  let [p, h] = useState(false);
+  let b = useRef(null);
+  useEffect(() => {
+    let S = false;
+    (async () => {
+      let { data: I, error: x } = await supabase.from("sessions").select("readme").eq("id", e.id).single();
+      if (S) return;
+      if (x) {
+        if (isReadmeSetupError(x)) c(true);
+        a("");
+        o("");
+      } else {
+        a(I?.readme || "");
+        o(I?.readme || "");
+      }
+    })();
+    return () => {
+      S = true;
+    };
+  }, [e.id]);
+  let _ = async () => {
+    u(true);
+    l("");
+    let { error: S } = await supabase
+      .from("sessions")
+      .update({ readme: r.trim() ? r : null })
+      .eq("id", e.id);
+    u(false);
+    if (S) {
+      if (isReadmeSetupError(S)) c(true);
+      l(S.message || "Couldn't save");
+    } else {
+      a(r);
+      l("Saved");
+      setTimeout(() => l((I) => (I === "Saved" ? "" : I)), 2000);
+    }
+  };
+  let S = async (I) => {
+    let x = Array.from(I || []);
+    if (!x.length) return;
+    l("");
+    let g = await parseImportFiles(x);
+    let v = g.find((k) => k.readmeText);
+    if (v) {
+      o(v.readmeText);
+      l(`Loaded from "${v.name}". Check it, then Save.`);
+    } else {
+      l('No "Start here" / "Read me" style tab found in that file.');
+    }
+  };
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">Read me for testers</div>
+        <div className="flex items-center gap-3 text-[11px]">
+          <button type="button" onClick={() => b.current?.click()} className="text-gray-400 hover:text-gray-100">
+            Load from sheet…
+          </button>
+          <button type="button" onClick={() => h(!p)} className="text-gray-400 hover:text-gray-100">
+            {p ? "Edit" : "Preview"}
+          </button>
+        </div>
+        <input
+          ref={b}
+          type="file"
+          accept=".xlsx,.xlsm,.xls,.ods"
+          onChange={(I) => {
+            S(I.target.files);
+            I.target.value = "";
+          }}
+          className="hidden"
+        />
+      </div>
+      {d && (
+        <div className="mb-2 p-3 bg-amber-950/40 border border-amber-700 rounded-sm text-xs text-amber-100 space-y-2">
+          <div className="font-semibold">One-time Supabase setup needed</div>
+          <div>In Supabase, open the SQL Editor, paste this line and click Run. Then reopen this window.</div>
+          <pre className="bg-gray-950 border border-gray-800 rounded-sm p-2 font-mono text-[11px] text-gray-200 overflow-x-auto">
+            {README_SETUP_SQL}
+          </pre>
+        </div>
+      )}
+      {t === null ? (
+        <div className="text-xs text-gray-500">Loading…</div>
+      ) : p ? (
+        <div className="max-h-72 overflow-y-auto p-3 bg-gray-950 border border-gray-800 rounded-sm">
+          {r.trim() ? <ReadmeContent text={r} /> : <div className="text-xs text-gray-600 italic">Nothing yet.</div>}
+        </div>
+      ) : (
+        <textarea
+          value={r}
+          onChange={(I) => o(I.target.value)}
+          rows={8}
+          placeholder={"# Title\n## Section\nA paragraph of instructions.\nTerm :: what it means"}
+          className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-600 rounded-sm text-base sm:text-xs font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
+        />
+      )}
+      <div className="flex items-center justify-between gap-3 mt-1.5">
+        <div className="text-[11px] text-gray-500">
+          Shown to testers behind a "Read me" button. "# " title, "## " section, "Term :: description".
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {s && <span className={`text-[11px] ${s === "Saved" ? "text-emerald-400" : "text-gray-400"}`}>{s}</span>}
+          <button
+            type="button"
+            onClick={_}
+            disabled={i || t === null || r === t}
+            className="px-2.5 py-1 text-[11px] font-medium bg-gray-800 border border-gray-700 text-gray-200 rounded-sm hover:bg-gray-700 disabled:opacity-40"
+          >
+            {i ? "Saving…" : "Save read me"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 // "Upload updated sheet" flow, opened from Edit session.
@@ -5171,6 +5473,7 @@ function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
   let [x, g] = useState(false);
   let [v, k] = useState(null);
   let [C, m] = useState(false);
+  let [resyncReadme, setResyncReadme] = useState(true);
   let f = useRef(null);
   useEffect(() => {
     let y = false;
@@ -5232,11 +5535,24 @@ function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
     : 0;
   let W = A ? A.removed.filter((y) => j(y)).length : 0;
   let V = async () => {
-    if (!A || !A.hasChanges) return;
+    let rsOn = resyncReadme && b.some((E) => E.readmeText);
+    if (!rsOn && (!A || !A.hasChanges)) return;
     g(true);
     c("");
     try {
-      let y = await applyResyncPlan(e, A, Object.values(i));
+      let y = A && A.hasChanges ? await applyResyncPlan(e, A, Object.values(i)) : { flagged: 0 };
+      let rs = b.find((E) => E.readmeText);
+      if (rs && resyncReadme) {
+        let { error: E } = await supabase.from("sessions").update({ readme: rs.readmeText }).eq("id", e.id);
+        if (E) {
+          throw new Error(
+            isReadmeSetupError(E)
+              ? `Tests updated, but the Read me needs a one-time setup. In the Supabase SQL Editor run: ${README_SETUP_SQL}`
+              : E.message,
+          );
+        }
+        y.readmeUpdated = true;
+      }
       k(y);
     } catch (y) {
       c(
@@ -5302,8 +5618,10 @@ function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
             <CircleCheck className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
             <div className="text-lg font-semibold text-gray-100 mb-1">Session updated</div>
             <div className="text-sm text-gray-400">
-              {A.updated.length} updated · {A.added.length} new · {A.moved.length} moved
-              {A.restored.length ? ` · ${A.restored.length} restored` : ""} · {A.removed.length} removed from sheet
+              {!A ? "Read me updated." : null}
+              {A && <>{A.updated.length} updated · {A.added.length} new · {A.moved.length} moved
+              {A.restored.length ? ` · ${A.restored.length} restored` : ""} · {A.removed.length} removed from sheet</>}
+              {A && v.readmeUpdated ? " · Read me updated" : ""}
             </div>
             <div className="text-xs text-gray-500 mt-2">
               All existing results were kept.
@@ -5386,6 +5704,19 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
                     ))}
                   </div>
                 )}
+                {b.find((y) => y.readmeText) && (
+                  <label className="flex items-start gap-2.5 px-3 py-2 border border-gray-800 rounded-sm text-sm cursor-pointer hover:bg-gray-800/40">
+                    <input
+                      type="checkbox"
+                      checked={resyncReadme}
+                      onChange={() => setResyncReadme(!resyncReadme)}
+                      className="accent-emerald-500 w-4 h-4 mt-0.5 flex-shrink-0"
+                    />
+                    <span className="text-gray-100">
+                      Also update the testers' Read me from "{b.find((y) => y.readmeText).name}"
+                    </span>
+                  </label>
+                )}
                 {A && (
                   <div className="space-y-2">
                     <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -5447,7 +5778,7 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
               </button>
               <button
                 onClick={V}
-                disabled={!A || !A.hasChanges || x || p}
+                disabled={(!(A && A.hasChanges) && !(resyncReadme && b.some((y) => y.readmeText))) || x || p}
                 className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
               >
                 {x ? "Updating…" : "Update session"}
@@ -5716,6 +6047,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               </button>
             </div>
           </div>
+          <ReadmeEditor session={e} />
           <SampleFilesManager session={e} />
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Test cases</div>
@@ -5810,6 +6142,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
   let [M, W] = useState(false);
   let [Q, setImportSources] = useState([]);
   let [sampleFiles, setSampleFiles] = useState([]);
+  let [useReadme, setUseReadme] = useState(true);
   let V = useRef(null);
   let F = async () => {
     let P = false;
@@ -6001,9 +6334,15 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
           tester_col_header: l.testerColHeader || "Tester",
           base_url: m.trim() || null,
           ...(uploadedSamples.length ? { sample_files: uploadedSamples } : {}),
+          ...(useReadme && Q.find((N) => N.readmeText) ? { readme: Q.find((N) => N.readmeText).readmeText } : {}),
         })
         .select()
         .single();
+      if (X && isReadmeSetupError(X)) {
+        throw new Error(
+          `The Read me needs a one-time Supabase setup. In the SQL Editor run: ${README_SETUP_SQL}  (or untick "Use as Read me" and create the session without it).`,
+        );
+      }
       if (X) {
         if (uploadedSamples.length) {
           await supabase.storage.from(SAMPLE_BUCKET).remove(uploadedSamples.map((N) => N.path));
@@ -6144,6 +6483,24 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
             />
           </div>
           <SheetLinkImport onFile={(P) => xe([P])} />
+          {Q.find((P) => P.readmeText) && (
+            <label className="mt-2 flex items-start gap-2.5 px-3 py-2 border border-gray-800 rounded-sm text-sm cursor-pointer hover:bg-gray-800/40">
+              <input
+                type="checkbox"
+                checked={useReadme}
+                onChange={() => setUseReadme(!useReadme)}
+                className="accent-emerald-500 w-4 h-4 mt-0.5 flex-shrink-0"
+              />
+              <span>
+                <span className="text-gray-100">
+                  Use "{Q.find((P) => P.readmeText).name}" as the testers' Read me
+                </span>
+                <span className="block text-[11px] text-gray-500">
+                  Shown behind a Read me button on the tester page. You can edit it later in Edit session.
+                </span>
+              </span>
+            </label>
+          )}
           {(Q.length > 1 || Q.some((P) => P.skipped)) && (
             <div className="mt-2 border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2 bg-gray-900/60 text-[11px] text-gray-400">
