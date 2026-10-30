@@ -18,6 +18,7 @@ import * as ReactDOM from "react-dom/client";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import JSZip from "jszip";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, ExternalHyperlink, BorderStyle } from "docx";
 import { createClient } from "@supabase/supabase-js";
 import {
   Clock,
@@ -31,6 +32,7 @@ import {
   Type,
   Lock,
   BookOpen,
+  Play,
   RefreshCw,
   CircleHelp,
   ExternalLink,
@@ -9726,6 +9728,490 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
     </BaseUrlContext.Provider>
   );
 }
+// ---------------------------------------------------------------------------
+// Developer export: tests marked Fail / Blocked / Needs Review, as a PDF (via the
+// browser's "Save as PDF") or a .docx that opens in Word and Google Docs.
+// Screenshots are exported with their arrows, circles and text labels drawn in.
+// ---------------------------------------------------------------------------
+var EXPORT_ISSUE_STATUSES = [
+  { value: "Fail", color: "#dc2626" },
+  { value: "Blocked", color: "#dc2626" },
+  { value: "Needs Review", color: "#d97706" },
+];
+var STEP_MARK = {
+  done: { sym: "✓", label: "Done", color: "#16a34a" },
+  review: { sym: "✓", label: "Works but needs review", color: "#ea580c" },
+  blocked: { sym: "✗", label: "Unable to proceed", color: "#dc2626" },
+  unsure: { sym: "?", label: "Unsure", color: "#ea580c" },
+};
+var EXP_MARK = {
+  done: { sym: "✓", label: "Met", color: "#16a34a" },
+  blocked: { sym: "✗", label: "Not as expected", color: "#dc2626" },
+  unsure: { sym: "?", label: "Unsure", color: "#ea580c" },
+};
+var exportEsc = (e) =>
+  String(e ?? "").replace(/[&<>"']/g, (t) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[t]);
+var exportFileBase = (e) => `${String(e || "UAT").replace(/[\\/:*?"<>|]+/g, "-").trim()} - issues ${new Date().toISOString().slice(0, 10)}`;
+// Draws a screenshot plus its annotations onto a canvas. Falls back to the plain URL if the image can't be read.
+var renderAnnotatedShot = async (e) => {
+  try {
+    let t = await fetch(e.url);
+    if (!t.ok) throw new Error("fetch");
+    let a = await createImageBitmap(await t.blob());
+    let r = Math.min(1, 1600 / a.width);
+    let o = Math.round(a.width * r);
+    let s = Math.round(a.height * r);
+    let l = document.createElement("canvas");
+    l.width = o;
+    l.height = s;
+    let i = l.getContext("2d");
+    i.fillStyle = "#fff";
+    i.fillRect(0, 0, o, s);
+    i.drawImage(a, 0, 0, o, s);
+    let u = Math.max(1, o / 900);
+    i.strokeStyle = "#ef4444";
+    i.lineWidth = 3 * u;
+    i.lineCap = "round";
+    i.lineJoin = "round";
+    (e.annotations || []).forEach((d) => {
+      let c = d.x1 * o;
+      let p = d.y1 * s;
+      let h = d.x2 * o;
+      let b = d.y2 * s;
+      if (d.type === "arrow") {
+        let _ = h - c;
+        let S = b - p;
+        let I = Math.hypot(_, S);
+        if (I < 1) return;
+        let x = Math.min(22 * u, Math.max(8 * u, I * 0.28));
+        let g = Math.atan2(S, _);
+        let v = Math.PI / 7;
+        i.beginPath();
+        i.moveTo(c, p);
+        i.lineTo(h, b);
+        i.moveTo(h - x * Math.cos(g - v), b - x * Math.sin(g - v));
+        i.lineTo(h, b);
+        i.lineTo(h - x * Math.cos(g + v), b - x * Math.sin(g + v));
+        i.stroke();
+      } else if (d.type === "circle") {
+        i.beginPath();
+        i.ellipse((c + h) / 2, (p + b) / 2, Math.max(1, Math.abs(h - c) / 2), Math.max(1, Math.abs(b - p) / 2), 0, 0, Math.PI * 2);
+        i.stroke();
+      } else if (d.type === "text" && d.text) {
+        let _ = 18 * u;
+        let S = 4 * u;
+        let I = 8 * u;
+        i.font = `600 ${_}px -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`;
+        let x = Math.max(140 * u, o - c) - I * 2;
+        let g = [];
+        String(d.text)
+          .split("\n")
+          .forEach((C) => {
+            let m = "";
+            C.split(/(\s+)/).forEach((f) => {
+              let w = m + f;
+              if (i.measureText(w).width > x && m.trim()) {
+                g.push(m.trimEnd());
+                m = f.trimStart();
+              } else {
+                m = w;
+              }
+            });
+            g.push(m);
+          });
+        let v = _ * 1.3;
+        let k = Math.min(x, Math.max(...g.map((C) => i.measureText(C).width)));
+        i.fillStyle = "#dc2626";
+        i.fillRect(c, p, k + I * 2, g.length * v + S * 2);
+        i.fillStyle = "#fff";
+        i.textBaseline = "top";
+        g.forEach((C, m) => i.fillText(C, c + I, p + S + m * v + (v - _) / 2));
+      }
+    });
+    let d = await new Promise((c) => l.toBlob(c, "image/jpeg", 0.88));
+    return {
+      dataUrl: l.toDataURL("image/jpeg", 0.88),
+      bytes: new Uint8Array(await d.arrayBuffer()),
+      width: o,
+      height: s,
+    };
+  } catch {
+    return { dataUrl: e.url, bytes: null, width: 0, height: 0 };
+  }
+};
+// Collects everything needed for the report, in session order.
+var collectIssueReport = (e, t, a) =>
+  e
+    .filter((r) => a.includes(t[r.id]?.status))
+    .map((r) => {
+      let o = t[r.id] || {};
+      let s = o.step_checks || {};
+      let l = o.step_notes || {};
+      let i = parseExpectedChecklist(r.expected_result);
+      return {
+        tc: r,
+        f: o,
+        steps: (r.steps || []).map((u, d) => ({ text: u, mark: s[d], note: l[d] })),
+        expectedIntro: i ? i.intro : null,
+        expectedItems: i
+          ? i.items.map((u, d) => ({ text: u, mark: s[`exp-${d}`], note: l[`exp-${d}`] }))
+          : null,
+      };
+    });
+var buildIssuesHtml = (e, t, a) => {
+  let r = (c) => exportEsc(c).replace(/\n/g, "<br>");
+  let o = (c) => {
+    let p = getTesterStatus(c);
+    return `<span class="pill" style="border-color:${(EXPORT_ISSUE_STATUSES.find((h) => h.value === c) || {}).color || "#999"};color:${(EXPORT_ISSUE_STATUSES.find((h) => h.value === c) || {}).color || "#555"}">${exportEsc(p.label)}</span>`;
+  };
+  let s = (c, p) =>
+    c
+      ? `<span class="mark" style="background:${p[c]?.color || "#999"}">${p[c]?.sym || ""}</span>`
+      : `<span class="mark empty"></span>`;
+  let l = (c, p) =>
+    `<li>${s(c.mark, p)}<div><div>${r(c.text)}${c.mark && p[c.mark] && c.mark !== "done" ? ` <span class="tag" style="color:${p[c.mark].color}">${exportEsc(p[c.mark].label)}</span>` : ""}</div>${c.note ? `<div class="note">${r(c.note)}</div>` : ""}</div></li>`;
+  let i = e
+    .map((c, p) => {
+      let { tc: h, f: b } = c;
+      let _ = getSeverity(b.bug_severity);
+      let S = [h.module, h.feature].filter(Boolean).map(exportEsc).join(" › ");
+      let I = (b.screenshots || [])
+        .map(
+          (g, v) =>
+            `<figure><img src="${exportEsc(a[`${h.id}:${v}`]?.dataUrl || g.url)}" alt=""><figcaption><b>Fig. ${v + 1}</b> · ${exportEsc(g.name || "")}</figcaption></figure>`,
+        )
+        .join("");
+      let x = (b.recordings || [])
+        .map((g) => `<li><a href="${exportEsc(g.url)}">${exportEsc(g.url)}</a></li>`)
+        .join("");
+      return `<section class="test${p === 0 ? "" : " pb"}">
+<div class="crumb">${exportEsc(h.test_id || "")}${S ? ` · ${S}` : ""}</div>
+<h2>${exportEsc(h.title || "Untitled")}</h2>
+<div class="meta">${o(b.status)}${_ ? `<span class="pill" style="border-color:#b45309;color:#b45309">${exportEsc(_.value)}</span>` : ""}${h.priority ? `<span class="pill">${exportEsc(h.priority)}</span>` : ""}${h.focus ? `<span class="pill">${exportEsc(h.focus)}</span>` : ""}<span class="who">${exportEsc(b.tested_by || "")}${b.updated_at ? ` · ${exportEsc(new Date(b.updated_at).toLocaleString())}` : ""}</span></div>
+${h.pre_conditions ? `<h3>Pre-conditions</h3><p>${r(h.pre_conditions)}</p>` : ""}
+${c.steps.length ? `<h3>Steps</h3><ol class="checks">${c.steps.map((g) => l(g, STEP_MARK)).join("")}</ol>` : ""}
+${h.expected_result ? `<h3>Expected result</h3>${c.expectedItems ? `${c.expectedIntro ? `<p>${r(c.expectedIntro)}</p>` : ""}<ul class="checks">${c.expectedItems.map((g) => l(g, EXP_MARK)).join("")}</ul>` : `<p class="exp">${r(h.expected_result)}</p>`}` : ""}
+${b.notes ? `<h3>Tester notes</h3><p class="box">${r(b.notes)}</p>` : ""}
+${b.other_observations ? `<h3>Other observations</h3><p class="box">${r(b.other_observations)}</p>` : ""}
+${x ? `<h3>Recordings</h3><ul class="links">${x}</ul>` : ""}
+${I ? `<h3>Screenshots</h3>${I}` : ""}
+</section>`;
+    })
+    .join("\n");
+  let u = EXPORT_ISSUE_STATUSES.map((c) => ({ ...c, n: e.filter((p) => p.f.status === c.value).length })).filter((c) => c.n);
+  let d = e
+    .map(
+      (c) =>
+        `<tr><td class="mono">${exportEsc(c.tc.test_id || "")}</td><td>${exportEsc(c.tc.title || "")}</td><td>${o(c.f.status)}</td><td>${exportEsc(getSeverity(c.f.bug_severity)?.value || "")}</td></tr>`,
+    )
+    .join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${exportEsc(exportFileBase(t))}</title>
+<style>
+@page{size:A4;margin:16mm 14mm}
+*{box-sizing:border-box}
+body{font:12px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#111;margin:0;padding:24px;max-width:820px;margin:0 auto}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:2px 0 6px}h3{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#666;margin:14px 0 4px}
+p{margin:0 0 4px}.sub{color:#666;margin-bottom:14px}
+.crumb{font:11px ui-monospace,Menlo,monospace;color:#047857}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
+.pill{border:1px solid #bbb;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.who{color:#666;font-size:11px;margin-left:4px}
+table{width:100%;border-collapse:collapse;margin:8px 0 4px}td,th{border-bottom:1px solid #e5e5e5;padding:5px 6px;text-align:left;vertical-align:top}th{font-size:10px;text-transform:uppercase;color:#666}
+.mono{font-family:ui-monospace,Menlo,monospace;color:#047857;white-space:nowrap}
+.checks{list-style:none;padding:0;margin:0}.checks li{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f0f0f0;break-inside:avoid}
+.mark{flex:0 0 16px;height:16px;border-radius:3px;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:1px}
+.mark.empty{border:1.5px solid #ccc}
+.tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.note{margin-top:3px;padding:4px 8px;background:#fff7ed;border-left:3px solid #f59e0b;border-radius:2px}
+.exp{padding:6px 10px;background:#fffbeb;border-left:3px solid #f59e0b}
+.box{padding:6px 10px;background:#f7f7f7;border-radius:3px}
+.links{padding-left:16px;margin:0}.links a{color:#0369a1;word-break:break-all}
+figure{margin:8px 0 12px;break-inside:avoid}figure img{max-width:100%;max-height:230mm;border:1px solid #ddd;display:block}figcaption{font-size:10px;color:#555;margin-top:3px}
+.pb{break-before:page}
+@media print{body{padding:0}}
+</style></head><body>
+<h1>${exportEsc(t || "UAT")} · issues</h1>
+<div class="sub">Exported ${exportEsc(new Date().toLocaleString())} · ${e.length} test${e.length === 1 ? "" : "s"}${u.length ? ` · ${u.map((c) => `${c.n} ${exportEsc(getTesterStatus(c.value).label.toLowerCase())}`).join(" · ")}` : ""}</div>
+<table><thead><tr><th>ID</th><th>Test</th><th>Result</th><th>Severity</th></tr></thead><tbody>${d}</tbody></table>
+${i}
+</body></html>`;
+};
+var buildIssuesDocx = async (e, t, a) => {
+  let r = (c, p = {}) =>
+    String(c ?? "")
+      .split("\n")
+      .map((h, b) => new TextRun({ text: h, break: b > 0 ? 1 : 0, ...p }));
+  let o = (c) => new Paragraph({ spacing: { before: 220, after: 60 }, children: [new TextRun({ text: c.toUpperCase(), bold: true, size: 16, color: "666666" })] });
+  let s = (c, p) => {
+    let h = c.mark ? p[c.mark] : null;
+    let b = [
+      new Paragraph({
+        spacing: { after: 40 },
+        children: [
+          new TextRun({ text: h ? `${h.sym}  ` : "☐  ", bold: true, color: h ? h.color.slice(1) : "999999" }),
+          ...r(c.text),
+          ...(h && c.mark !== "done" ? [new TextRun({ text: `  ${h.label.toUpperCase()}`, bold: true, size: 16, color: h.color.slice(1) })] : []),
+        ],
+      }),
+    ];
+    if (c.note) {
+      b.push(
+        new Paragraph({
+          indent: { left: 360 },
+          spacing: { after: 60 },
+          shading: { fill: "FFF7ED" },
+          border: { left: { style: BorderStyle.SINGLE, size: 12, color: "F59E0B", space: 6 } },
+          children: r(c.note, { size: 20 }),
+        }),
+      );
+    }
+    return b;
+  };
+  let l = [];
+  l.push(new Paragraph({ heading: HeadingLevel.TITLE, children: [new TextRun({ text: `${t || "UAT"} · issues` })] }));
+  l.push(
+    new Paragraph({
+      spacing: { after: 200 },
+      children: [new TextRun({ text: `Exported ${new Date().toLocaleString()} · ${e.length} test${e.length === 1 ? "" : "s"}`, color: "666666" })],
+    }),
+  );
+  e.forEach((c) =>
+    l.push(
+      new Paragraph({
+        spacing: { after: 40 },
+        children: [
+          new TextRun({ text: `${c.tc.test_id || ""}  `, bold: true, color: "047857" }),
+          new TextRun({ text: c.tc.title || "" }),
+          new TextRun({ text: `  ·  ${getTesterStatus(c.f.status).label}${getSeverity(c.f.bug_severity) ? ` · ${getSeverity(c.f.bug_severity).value}` : ""}`, color: "666666" }),
+        ],
+      }),
+    ),
+  );
+  e.forEach((c) => {
+    let { tc: p, f: h } = c;
+    let b = getSeverity(h.bug_severity);
+    l.push(
+      new Paragraph({
+        pageBreakBefore: true,
+        children: [new TextRun({ text: [p.test_id, p.module, p.feature].filter(Boolean).join(" › "), color: "047857", size: 18 })],
+      }),
+    );
+    l.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: p.title || "Untitled" })] }));
+    l.push(
+      new Paragraph({
+        spacing: { after: 80 },
+        children: [
+          new TextRun({ text: getTesterStatus(h.status).label.toUpperCase(), bold: true, color: ((EXPORT_ISSUE_STATUSES.find((_) => _.value === h.status) || {}).color || "#555555").slice(1) }),
+          ...(b ? [new TextRun({ text: `   ${b.value.toUpperCase()}`, bold: true, color: "B45309" })] : []),
+          ...(p.priority ? [new TextRun({ text: `   ${p.priority}`, bold: true })] : []),
+          ...(p.focus ? [new TextRun({ text: `   ${p.focus}`, color: "666666" })] : []),
+          new TextRun({ text: `   ${h.tested_by || ""}${h.updated_at ? ` · ${new Date(h.updated_at).toLocaleString()}` : ""}`, color: "666666", size: 18 }),
+        ],
+      }),
+    );
+    if (p.pre_conditions) {
+      l.push(o("Pre-conditions"));
+      l.push(new Paragraph({ children: r(p.pre_conditions) }));
+    }
+    if (c.steps.length) {
+      l.push(o("Steps"));
+      c.steps.forEach((_, S) => l.push(...s({ ..._, text: `${S + 1}. ${_.text}` }, STEP_MARK)));
+    }
+    if (p.expected_result) {
+      l.push(o("Expected result"));
+      if (c.expectedItems) {
+        if (c.expectedIntro) l.push(new Paragraph({ children: r(c.expectedIntro) }));
+        c.expectedItems.forEach((_) => l.push(...s(_, EXP_MARK)));
+      } else {
+        l.push(new Paragraph({ shading: { fill: "FFFBEB" }, children: r(p.expected_result) }));
+      }
+    }
+    if (h.notes) {
+      l.push(o("Tester notes"));
+      l.push(new Paragraph({ shading: { fill: "F5F5F5" }, children: r(h.notes) }));
+    }
+    if (h.other_observations) {
+      l.push(o("Other observations"));
+      l.push(new Paragraph({ shading: { fill: "F5F5F5" }, children: r(h.other_observations) }));
+    }
+    if ((h.recordings || []).length) {
+      l.push(o("Recordings"));
+      h.recordings.forEach((_) =>
+        l.push(
+          new Paragraph({
+            children: [new ExternalHyperlink({ link: _.url, children: [new TextRun({ text: _.url, style: "Hyperlink" })] })],
+          }),
+        ),
+      );
+    }
+    if ((h.screenshots || []).length) {
+      l.push(o("Screenshots"));
+      h.screenshots.forEach((_, S) => {
+        let I = a[`${p.id}:${S}`];
+        if (I && I.bytes) {
+          let x = Math.min(600, I.width);
+          let g = Math.round((I.height * x) / I.width);
+          if (g > 820) {
+            x = Math.round((x * 820) / g);
+            g = 820;
+          }
+          l.push(new Paragraph({ children: [new ImageRun({ type: "jpg", data: I.bytes, transformation: { width: x, height: g } })] }));
+        } else {
+          l.push(
+            new Paragraph({
+              children: [new ExternalHyperlink({ link: _.url, children: [new TextRun({ text: `(image) ${_.url}`, style: "Hyperlink" })] })],
+            }),
+          );
+        }
+        l.push(
+          new Paragraph({
+            spacing: { after: 160 },
+            children: [new TextRun({ text: `Fig. ${S + 1}`, bold: true, size: 18 }), new TextRun({ text: `  ${_.name || ""}`, size: 18, color: "666666" })],
+          }),
+        );
+      });
+    }
+  });
+  let i = new Document({
+    styles: { default: { document: { run: { font: "Arial", size: 21 } } } },
+    sections: [{ properties: { page: { margin: { top: 900, bottom: 900, left: 1000, right: 1000 } } }, children: l }],
+  });
+  return Packer.toBlob(i);
+};
+function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleCases: r, onClose: o }) {
+  let [s, l] = useState(["Fail", "Blocked", "Needs Review"]);
+  let [i, u] = useState(false);
+  let [d, c] = useState("pdf");
+  let [p, h] = useState(null);
+  let [b, _] = useState("");
+  useEffect(() => {
+    let C = (m) => {
+      if (m.key === "Escape" && !p) o();
+    };
+    window.addEventListener("keydown", C);
+    return () => window.removeEventListener("keydown", C);
+  }, [o, p]);
+  let S = i ? r : t;
+  let I = (C) => S.filter((m) => a[m.id]?.status === C).length;
+  let x = collectIssueReport(S, a, s);
+  let g = x.reduce((C, m) => C + (m.f.screenshots || []).length, 0);
+  let v = async () => {
+    if (!x.length || p) return;
+    _("");
+    let C = d === "pdf" ? window.open("", "_blank") : null;
+    if (C) {
+      C.document.write('<p style="font:14px sans-serif;padding:24px;color:#555">Preparing the export…</p>');
+    }
+    try {
+      let m = {};
+      let f = 0;
+      h(`Preparing screenshots 0/${g}`);
+      for (let T of x) {
+        for (let [A, j] of (T.f.screenshots || []).entries()) {
+          m[`${T.tc.id}:${A}`] = await renderAnnotatedShot(j);
+          f++;
+          h(`Preparing screenshots ${f}/${g}`);
+        }
+      }
+      if (d === "pdf") {
+        h("Opening print view…");
+        let T = buildIssuesHtml(x, e, m);
+        if (C) {
+          C.document.open();
+          C.document.write(T);
+          C.document.close();
+          setTimeout(() => {
+            try {
+              C.focus();
+              C.print();
+            } catch {}
+          }, 600);
+        } else {
+          downloadBlob(new Blob([T], { type: "text/html;charset=utf-8" }), `${exportFileBase(e)}.html`);
+          _("Pop-ups are blocked, so the report downloaded as an .html file. Open it and print to PDF.");
+        }
+      } else {
+        h("Building the document…");
+        let T = await buildIssuesDocx(x, e, m);
+        downloadBlob(T, `${exportFileBase(e)}.docx`);
+      }
+      h(null);
+      if (d !== "pdf" || C) o();
+    } catch (m) {
+      if (C) C.close();
+      h(null);
+      _(m.message || "Export failed");
+    }
+  };
+  let k = (C) => l(s.includes(C) ? s.filter((m) => m !== C) : [...s, C]);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !p && o()}>
+      <div className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-md shadow-2xl" onClick={(C) => C.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800">
+          <h2 className="text-base font-bold text-gray-100">Export issues</h2>
+          <button onClick={o} disabled={!!p} className="text-gray-400 hover:text-gray-100 p-1" title="Close">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Include</div>
+            <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
+              {EXPORT_ISSUE_STATUSES.map((C) => (
+                <label key={C.value} className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-800/50">
+                  <input type="checkbox" checked={s.includes(C.value)} onChange={() => k(C.value)} className="accent-emerald-500 w-4 h-4" />
+                  <span className="flex-1 text-gray-100">{getTesterStatus(C.value).label}</span>
+                  <span className="text-xs text-gray-500">{I(C.value)}</span>
+                </label>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 mt-2 text-xs text-gray-400 cursor-pointer">
+              <input type="checkbox" checked={i} onChange={() => u(!i)} className="accent-emerald-500 w-3.5 h-3.5" />
+              Only tests in the current sidebar list (uses your filters and search)
+            </label>
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Format</div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: "pdf", title: "PDF", sub: "Opens the print view, then choose Save as PDF" },
+                { key: "docx", title: "Google Docs / Word", sub: "Downloads a .docx. In Drive: Open with › Google Docs" },
+              ].map((C) => (
+                <button
+                  key={C.key}
+                  type="button"
+                  onClick={() => c(C.key)}
+                  aria-pressed={d === C.key}
+                  className={`text-left p-3 border rounded-sm transition-colors ${d === C.key ? "border-emerald-600 bg-emerald-950/30" : "border-gray-800 hover:border-gray-700"}`}
+                >
+                  <div className="text-sm font-semibold text-gray-100">{C.title}</div>
+                  <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">{C.sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="text-xs text-gray-400">
+            {x.length} test{x.length === 1 ? "" : "s"} · {g} screenshot{g === 1 ? "" : "s"} (arrows, circles and labels included) · recordings as links
+          </div>
+          {b && <div className="text-xs text-amber-300">{b}</div>}
+        </div>
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-800">
+          {p && <span className="mr-auto text-xs text-gray-400">{p}</span>}
+          <button onClick={o} disabled={!!p} className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-200">
+            Cancel
+          </button>
+          <button
+            onClick={v}
+            disabled={!x.length || !!p}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500"
+          >
+            <FileDown className="w-4 h-4" /> {p ? "Exporting…" : "Export"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 function DevSidebar({
   open: e,
   onClose: t,
@@ -9771,6 +10257,7 @@ function DevSidebar({
     let O = sevOf(D);
     sevCounts[O] = (sevCounts[O] || 0) + 1;
   });
+  let [exportOpen, setExportOpen] = useState(false);
   let failedOnly = l.filter((D) => isFailureStatus(i[D.id]?.status)).length;
   let reviewOnly = l.filter((D) => String(i[D.id]?.status || "").toLowerCase() === "needs review").length;
   let resCounts = {};
@@ -9797,13 +10284,22 @@ function DevSidebar({
               </button>
               <h2 className="font-bold text-gray-100 truncate">{a}</h2>
             </div>
-            <button
-              onClick={() => E(true)}
-              className="p-1 hover:bg-gray-800 rounded-sm flex-shrink-0"
-              title="Settings"
-            >
-              <Settings2 className="w-4 h-4 text-gray-400" />
-            </button>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button
+                onClick={() => setExportOpen(true)}
+                className="p-1 hover:bg-gray-800 rounded-sm"
+                title="Export failed, blocked and needs-review tests"
+              >
+                <FileDown className="w-4 h-4 text-gray-400" />
+              </button>
+              <button
+                onClick={() => E(true)}
+                className="p-1 hover:bg-gray-800 rounded-sm"
+                title="Settings"
+              >
+                <Settings2 className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
           </div>
           <div className="text-xs text-gray-400 mb-2">
             Signed in as <span className="text-gray-100 font-medium">{r}</span> <span className="text-gray-500">(Developer)</span>
@@ -10010,6 +10506,15 @@ function DevSidebar({
             })
           )}
         </div>
+        {exportOpen && (
+          <ExportIssuesModal
+            sessionName={a}
+            testCases={l}
+            findings={i}
+            visibleCases={h}
+            onClose={() => setExportOpen(false)}
+          />
+        )}
         {se && (
           <SettingsModal
             baseUrl={w}
@@ -11483,6 +11988,7 @@ function DevTestDetail({
               )}
               {(c.recordings || []).length > 0 && (
                 <div className="mb-3">
+                  <style>{`@keyframes recPulse{0%,100%{background-color:#047857;box-shadow:0 0 0 0 rgba(16,185,129,0)}50%{background-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.25)}}.rec-pulse{animation:recPulse 1.6s ease-in-out infinite}@media (prefers-reduced-motion: reduce){.rec-pulse{animation:none;background-color:#059669}}`}</style>
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
                     Recordings ({(c.recordings || []).length})
                   </div>
@@ -11494,9 +12000,19 @@ function DevTestDetail({
                           className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-950 border border-gray-800 rounded-sm hover:border-emerald-700 hover:bg-gray-900 group"
                           key={m}
                         >
-                          <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-gray-900 text-emerald-300 border border-gray-700 rounded-sm flex-shrink-0">
+                          <button
+                            onClick={() =>
+                              x({
+                                recordings: c.recordings,
+                                startIdx: m,
+                              })
+                            }
+                            className="rec-pulse inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-1 text-white border border-emerald-500 rounded-sm flex-shrink-0 hover:brightness-110"
+                            title="Play the recording"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
                             {w}
-                          </span>
+                          </button>
                           <button
                             onClick={() =>
                               x({
