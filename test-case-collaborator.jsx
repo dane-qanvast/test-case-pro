@@ -10325,12 +10325,7 @@ function DevSidebar({
             />
           </div>
           {resultShortcuts.length > 0 && (
-            <div
-              className="grid gap-1.5 mb-3"
-              style={{
-                gridTemplateColumns: resultShortcuts.map((D) => `minmax(0, ${D.label.length + 6}fr)`).join(" "),
-              }}
-            >
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-xs">
               {resultShortcuts.map((D) => {
                 let O = resF === D.value;
                 return (
@@ -10345,14 +10340,12 @@ function DevSidebar({
                       if (v === "mywip" || v === "myfixed") k("all");
                     }}
                     aria-pressed={O}
-                    title={O ? "Click again to show all results" : `Show only ${D.value === "Needs Review" ? "needs-review" : D.label.toLowerCase()} tests`}
-                    className={`min-w-0 flex flex-col items-start px-2 py-1 border rounded-sm text-left transition-colors ${O ? D.active : "bg-gray-800/60 border-gray-700 hover:bg-gray-800 hover:border-gray-600"}`}
+                    title={O ? "Click again to show all results" : `Show only ${D.label.toLowerCase()} tests`}
+                    className={`inline-flex items-center gap-1 ${D.text} underline-offset-2 transition-colors ${O ? "font-semibold underline decoration-2" : "hover:underline"}`}
                   >
-                    <span className={`text-sm font-bold leading-tight ${O ? "" : D.text}`}>{D.count}</span>
-                    <span className={`flex items-center gap-1 w-full text-[10px] uppercase tracking-wide leading-tight ${O ? "" : "text-gray-400"}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${D.dot}`} />
-                      <span className="truncate">{D.label}</span>
-                    </span>
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${D.dot}`} />
+                    {D.count} {D.label.toLowerCase()}
+                    {O && <X className="w-3 h-3" />}
                   </button>
                 );
               })}
