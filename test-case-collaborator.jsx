@@ -8242,7 +8242,7 @@ function TesterSidebar({
   let hasNoFocus = focusOptions.length > 0 && l.some((O) => !O.focus);
   if (e) {
     return (
-      <aside className="w-80 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
+      <aside className="w-[360px] flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-800">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 min-w-0">
@@ -10258,6 +10258,13 @@ function DevSidebar({
     sevCounts[O] = (sevCounts[O] || 0) + 1;
   });
   let [exportOpen, setExportOpen] = useState(false);
+  let resultShortcuts = [
+    { value: "Fail", label: "Failed", text: "text-red-400", dot: "bg-red-500", active: "bg-red-900/50 border-red-600 text-red-100" },
+    { value: "Blocked", label: "Blocked", text: "text-red-300", dot: "bg-red-400", active: "bg-red-900/50 border-red-600 text-red-100" },
+    { value: "Needs Review", label: "Needs review", text: "text-amber-400", dot: "bg-amber-500", active: "bg-amber-900/40 border-amber-600 text-amber-100" },
+  ]
+    .map((D) => ({ ...D, count: l.filter((O) => i[O.id]?.status === D.value).length }))
+    .filter((D) => D.count > 0);
   let failedOnly = l.filter((D) => isFailureStatus(i[D.id]?.status)).length;
   let reviewOnly = l.filter((D) => String(i[D.id]?.status || "").toLowerCase() === "needs review").length;
   let resCounts = {};
@@ -10275,7 +10282,7 @@ function DevSidebar({
   ];
   if (e) {
     return (
-      <aside className="w-80 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
+      <aside className="w-[360px] flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-800">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 min-w-0">
@@ -10308,15 +10315,8 @@ function DevSidebar({
             <span>
               {c} / {l.length} fixed by you
             </span>
-            {(failedOnly > 0 || reviewOnly > 0) && (
-              <span>
-                {failedOnly > 0 && <span className="text-red-400">{failedOnly} failed</span>}
-                {failedOnly > 0 && reviewOnly > 0 && <span className="text-gray-600"> · </span>}
-                {reviewOnly > 0 && <span className="text-amber-400">{reviewOnly} needs review</span>}
-              </span>
-            )}
           </div>
-          <div className="w-full bg-gray-800 rounded-full h-1 mb-3 overflow-hidden">
+          <div className={`w-full bg-gray-800 rounded-full h-1 overflow-hidden ${resultShortcuts.length ? "mb-2" : "mb-3"}`}>
             <div
               className="bg-emerald-500 h-1 rounded-full transition-all"
               style={{
@@ -10324,6 +10324,40 @@ function DevSidebar({
               }}
             />
           </div>
+          {resultShortcuts.length > 0 && (
+            <div
+              className="grid gap-1.5 mb-3"
+              style={{
+                gridTemplateColumns: resultShortcuts.map((D) => `minmax(0, ${D.label.length + 6}fr)`).join(" "),
+              }}
+            >
+              {resultShortcuts.map((D) => {
+                let O = resF === D.value;
+                return (
+                  <button
+                    key={D.value}
+                    onClick={() => {
+                      if (O) {
+                        setResF("All");
+                        return;
+                      }
+                      setResF(D.value);
+                      if (v === "mywip" || v === "myfixed") k("all");
+                    }}
+                    aria-pressed={O}
+                    title={O ? "Click again to show all results" : `Show only ${D.value === "Needs Review" ? "needs-review" : D.label.toLowerCase()} tests`}
+                    className={`min-w-0 flex flex-col items-start px-2 py-1 border rounded-sm text-left transition-colors ${O ? D.active : "bg-gray-800/60 border-gray-700 hover:bg-gray-800 hover:border-gray-600"}`}
+                  >
+                    <span className={`text-sm font-bold leading-tight ${O ? "" : D.text}`}>{D.count}</span>
+                    <span className={`flex items-center gap-1 w-full text-[10px] uppercase tracking-wide leading-tight ${O ? "" : "text-gray-400"}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${D.dot}`} />
+                      <span className="truncate">{D.label}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="grid grid-cols-4 border border-gray-700 rounded-sm overflow-hidden mb-2">
             {devTabs.map((D, O) => {
               let B = v === D.key;
