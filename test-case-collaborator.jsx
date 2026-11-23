@@ -8618,7 +8618,7 @@ function TesterSidebar({
                       </div>
                     )}
                   </div>
-                  {B?.tested_by && B.tested_by !== "" && (
+                  {B?.tested_by && B.tested_by !== "" && (B.status || "Not Tested") !== "Not Tested" && (
                     <span
                       className="text-[10px] text-gray-500 mt-1 flex-shrink-0"
                       title={`Last edited by ${B.tested_by}`}
@@ -8785,7 +8785,7 @@ function TesterTestDetail({
             <SaveIndicator saving={!!r} />
           </div>
         </div>
-        {p.updated_by && p.updated_at && (
+        {p.updated_by && p.updated_at && (p.status || "Not Tested") !== "Not Tested" && (
           <div
             className="mb-5 text-[11px] text-gray-500 flex items-center gap-1.5"
             title={new Date(p.updated_at).toLocaleString()}
@@ -9744,13 +9744,15 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let pe = ue ? s[ue.id] : null;
   let me = ue ? i[ue.id] || [] : [];
   let Y = me.find(($) => $.developer_name === t)?.status || null;
-  let fe = r.filter(($) =>
+  // Tab counts follow the Focus filter when one is active.
+  let inFocus = j ? r.filter(($) => j.has($.id)) : r;
+  let fe = inFocus.filter(($) =>
     (i[$.id] || []).some((H) => H.developer_name === t && H.status === "in_progress"),
   ).length;
-  let Ce = r.filter(($) =>
+  let Ce = inFocus.filter(($) =>
     (i[$.id] || []).some((H) => H.developer_name === t && H.status === "fixed"),
   ).length;
-  let be = r.filter(($) => isIssueStatus(s[$.id]?.status)).length;
+  let be = inFocus.filter(($) => isIssueStatus(s[$.id]?.status)).length;
   useSidebarArrowNav(ie, x, g);
   if (d) {
     return <Notice>Loading session…</Notice>;
@@ -10411,8 +10413,10 @@ function DevSidebar({
   let [V, F] = useState(false);
   let [se, E] = useState(false);
   let sevOf = (D) => getSeverity(i[D.id]?.bug_severity)?.value || "";
+  // Counts (shortcuts, tabs, filter menus) follow the Focus filter when one is active.
+  let lc = C ? l.filter((D) => C.has(D.id)) : l;
   let sevCounts = {};
-  l.forEach((D) => {
+  lc.forEach((D) => {
     let O = sevOf(D);
     sevCounts[O] = (sevCounts[O] || 0) + 1;
   });
@@ -10422,19 +10426,19 @@ function DevSidebar({
     { value: "Blocked", label: "Blocked", text: "text-red-300", dot: "bg-red-400", active: "bg-red-900/50 border-red-600 text-red-100" },
     { value: "Needs Review", label: "Needs review", text: "text-amber-400", dot: "bg-amber-500", active: "bg-amber-900/40 border-amber-600 text-amber-100" },
   ]
-    .map((D) => ({ ...D, count: l.filter((O) => i[O.id]?.status === D.value).length }))
+    .map((D) => ({ ...D, count: lc.filter((O) => i[O.id]?.status === D.value).length }))
     .filter((D) => D.count > 0);
-  let failedOnly = l.filter((D) => isFailureStatus(i[D.id]?.status)).length;
-  let reviewOnly = l.filter((D) => String(i[D.id]?.status || "").toLowerCase() === "needs review").length;
+  let failedOnly = lc.filter((D) => isFailureStatus(i[D.id]?.status)).length;
+  let reviewOnly = lc.filter((D) => String(i[D.id]?.status || "").toLowerCase() === "needs review").length;
   let resCounts = {};
-  l.forEach((D) => {
+  lc.forEach((D) => {
     let O = i[D.id]?.status || "Not Tested";
     resCounts[O] = (resCounts[O] || 0) + 1;
   });
   let priOptions = sortPriorities(Array.from(new Set(l.map((D) => D.priority).filter(Boolean))));
   let priHasNone = priOptions.length > 0 && l.some((D) => !D.priority);
   let devTabs = [
-    { key: "all", label: "All", count: l.length },
+    { key: "all", label: "All", count: lc.length },
     { key: "failed", label: "Issues", count: p, alert: p > 0, hint: "Failed, blocked or needs review" },
     { key: "mywip", label: "Fixing", count: d, hint: "Tests you've marked In Progress" },
     { key: "myfixed", label: "Fixed", count: c, hint: "Tests you've marked Fixed" },
@@ -12151,7 +12155,8 @@ function DevTestDetail({
               <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-3">
                 Tester findings
               </div>
-              {c.tested_by && (
+              {/* Hide the tester's name once the result is set back to "Not run". */}
+              {c.tested_by && (c.status || "Not Tested") !== "Not Tested" && (
                 <div className="mb-3">
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Tester</div>
                   <div className="text-sm text-gray-200">{c.tested_by}</div>
@@ -12240,7 +12245,7 @@ function DevTestDetail({
                   </div>
                 </div>
               )}
-              {c.updated_by && c.updated_at && (
+              {c.updated_by && c.updated_at && (c.status || "Not Tested") !== "Not Tested" && (
                 <div className="text-[10px] text-gray-500 pt-2 mt-2 border-t border-gray-800">
                   Last tester edit: {c.updated_by} · {new Date(c.updated_at).toLocaleString()}
                 </div>
