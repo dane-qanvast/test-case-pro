@@ -10099,9 +10099,11 @@ var buildIssuesDocx = async (e, t, a) => {
   });
   return Packer.toBlob(i);
 };
-function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleCases: r, onClose: o }) {
+function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleCases: r, doneMarks: marks = {}, myName: me = "", onClose: o }) {
   let [s, l] = useState(["Fail", "Blocked", "Needs Review"]);
-  let [i, u] = useState(false);
+  // Which tests to export: the current sidebar list (default), this developer's own Fixing/Fixed tests, or the whole session.
+  let myMarked = t.filter((C) => (marks[C.id] || []).some((m) => m.developer_name === me && (m.status === "in_progress" || m.status === "fixed")));
+  let [i, u] = useState("list");
   let [d, c] = useState("pdf");
   let [p, h] = useState(null);
   let [b, _] = useState("");
@@ -10112,7 +10114,7 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
     window.addEventListener("keydown", C);
     return () => window.removeEventListener("keydown", C);
   }, [o, p]);
-  let S = i ? r : t;
+  let S = i === "mine" ? myMarked : i === "list" ? r : t;
   let I = (C) => S.filter((m) => a[m.id]?.status === C).length;
   let x = collectIssueReport(S, a, s);
   let g = x.reduce((C, m) => C + (m.f.screenshots || []).length, 0);
@@ -10176,6 +10178,28 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
         </div>
         <div className="px-5 py-4 space-y-4">
           <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">From</div>
+            <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
+              {[
+                { key: "list", title: "Current sidebar list", sub: "Uses your tab, filters and search", count: r.length },
+                { key: "mine", title: "My Fixing and Fixed tests", sub: "Tests you've marked In Progress or Fixed", count: myMarked.length },
+                { key: "all", title: "All tests in this session", sub: "Everyone's, whoever is fixing them", count: t.length },
+              ].map((C) => (
+                <label key={C.key} className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-800/50">
+                  <input type="radio" name="export-scope" checked={i === C.key} onChange={() => u(C.key)} className="accent-emerald-500 w-4 h-4" />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-gray-100">{C.title}</span>
+                    <span className="block text-[11px] text-gray-500 leading-snug">{C.sub}</span>
+                  </span>
+                  <span className="text-xs text-gray-500">{C.count}</span>
+                </label>
+              ))}
+            </div>
+            {i === "mine" && myMarked.length === 0 && (
+              <div className="text-xs text-gray-500 mt-1.5">You haven't marked any tests as Fixing or Fixed yet.</div>
+            )}
+          </div>
+          <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Include</div>
             <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
               {EXPORT_ISSUE_STATUSES.map((C) => (
@@ -10186,10 +10210,6 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
                 </label>
               ))}
             </div>
-            <label className="flex items-center gap-2 mt-2 text-xs text-gray-400 cursor-pointer">
-              <input type="checkbox" checked={i} onChange={() => u(!i)} className="accent-emerald-500 w-3.5 h-3.5" />
-              Only tests in the current sidebar list (uses your filters and search)
-            </label>
           </div>
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Format</div>
@@ -10560,6 +10580,8 @@ function DevSidebar({
             testCases={l}
             findings={i}
             visibleCases={h}
+            doneMarks={u}
+            myName={r}
             onClose={() => setExportOpen(false)}
           />
         )}
