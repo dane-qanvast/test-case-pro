@@ -792,6 +792,12 @@ var sheetRowsToReadme = (e) => {
 };
 var README_SETUP_SQL = "alter table sessions add column if not exists readme text;";
 var isReadmeSetupError = (e) => /readme/i.test(String(e?.message || e || ""));
+// Per-session switches for whether testers / developers must enter an access code. Missing column = code required.
+var CODE_TOGGLE_SETUP_SQL =
+  "alter table sessions add column if not exists tester_code_required boolean not null default true; alter table sessions add column if not exists developer_code_required boolean not null default true;";
+var isCodeToggleSetupError = (e) => /code_required/i.test(String(e?.message || e || ""));
+var testerCodeOn = (s) => s?.tester_code_required !== false;
+var devCodeOn = (s) => s?.developer_code_required !== false;
 // Tabs whose names look like instructions, overviews, issue logs or question lists start unticked
 // (the admin can still tick them).
 var NON_TEST_TAB_NAMES =
@@ -4475,7 +4481,7 @@ function AdminPortal() {
     (async () => {
       let { data: x, error: g } = await supabase
         .from("sessions")
-        .select("id, name, created_at, testers, developers, tester_code, developer_code")
+        .select("*")
         .order("created_at", {
           ascending: false,
         });
@@ -5220,6 +5226,27 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [i]);
+  // Clicking anywhere outside an open panel (and outside the Read me / Sample files buttons) closes it.
+  let readmePanelRef = useRef(null);
+  let filesPanelRef = useRef(null);
+  let barRef = useRef(null);
+  useEffect(() => {
+    if (!i && !readmeOpen) return;
+    let h = (b) => {
+      let tgt = b.target;
+      if (barRef.current?.contains(tgt)) return;
+      if (readmeOpen && !readmePanelRef.current?.contains(tgt)) setReadmeOpen(false);
+      if (i && !filesPanelRef.current?.contains(tgt)) {
+        u(false);
+        l(true);
+        try {
+          localStorage.setItem(o, "1");
+        } catch {}
+      }
+    };
+    document.addEventListener("pointerdown", h);
+    return () => document.removeEventListener("pointerdown", h);
+  }, [i, readmeOpen, o]);
   let hasFiles = d && a.length > 0;
   let filesOpen = hasFiles && i;
   if (!hasFiles && !readme) return null;
@@ -5270,6 +5297,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
             aria-hidden="true"
           />
           <aside
+            ref={readmePanelRef}
             className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${readmeOpen ? "translate-x-0" : "translate-x-full pointer-events-none"}`}
             role="dialog"
             aria-label="Read me"
@@ -5300,6 +5328,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
         aria-hidden="true"
       />
       <aside
+        ref={filesPanelRef}
         className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-96 flex flex-col bg-gray-900 border-l border-amber-700/60 shadow-2xl transition-transform duration-300 ease-out ${i ? "translate-x-0" : "translate-x-full pointer-events-none"}`}
         role="dialog"
         aria-label="Sample files"
@@ -5367,6 +5396,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
       </Fragment>
       )}
       <div
+        ref={barRef}
         className={`fixed z-30 bottom-4 flex items-center gap-2 transition-all duration-300 ease-out ${readmeOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[25rem]" : "right-4"} ${filesOpen || readmeOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
       >
         {readme && (
@@ -5882,6 +5912,9 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   let [b, _] = useState("");
   let [S, I] = useState(false);
   let [x, g] = useState("");
+  let [testerReq, setTesterReq] = useState(testerCodeOn(e));
+  let [devReq, setDevReq] = useState(devCodeOn(e));
+  let codesChanged = testerReq !== testerCodeOn(e) || devReq !== devCodeOn(e);
   let v = e.testers || [];
   let k = e.developers || [];
   useEffect(() => {
@@ -5924,7 +5957,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   let M = T && T !== e.name;
   let W = A !== j;
   let V = i.length > 0 || d.length > 0;
-  let F = !!T && (M || W || V) && !S;
+  let F = !!T && (M || W || V || codesChanged) && !S;
   let se = async () => {
     if (F) {
       I(true);
@@ -5937,8 +5970,12 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
             testers: [...v, ...i],
             developers: [...k, ...d],
             base_url: A || null,
+            ...(codesChanged ? { tester_code_required: testerReq, developer_code_required: devReq } : {}),
           })
           .eq("id", e.id);
+        if (E && isCodeToggleSetupError(E)) {
+          throw new Error(`Turning codes on or off needs a one-time Supabase setup. In the SQL Editor run: ${CODE_TOGGLE_SETUP_SQL}`);
+        }
         if (E) {
           throw E;
         }
@@ -5990,6 +6027,34 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
             <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
               Default for both portals. Testers and developers can still override this in their own Settings —
               their overrides take precedence.
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Access codes</div>
+            <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
+              {[
+                { label: "Testers", code: e.tester_code, on: testerReq, set: setTesterReq },
+                { label: "Developers", code: e.developer_code, on: devReq, set: setDevReq },
+              ].map((E) => (
+                <div key={E.label} className="flex items-center gap-3 px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-gray-100">{E.label} need a code to sign in</div>
+                    <div className="text-[11px] text-gray-500">
+                      {E.on ? (
+                        <Fragment>
+                          Code <span className="font-mono text-gray-300 tracking-wider">{E.code}</span>
+                        </Fragment>
+                      ) : (
+                        "Off, they just pick their name"
+                      )}
+                    </div>
+                  </div>
+                  <CodeSwitch on={E.on} onChange={E.set} label={`${E.label} need a code`} />
+                </div>
+              ))}
+            </div>
+            <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+              If you switch a code back on, anyone who signed in while it was off will be asked for it on their next visit.
             </div>
           </div>
           <div>
@@ -6198,6 +6263,8 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
   let [I, x] = useState("");
   let [g, v] = useState(randomCode());
   let [k, C] = useState(randomCode());
+  let [testerCodeReq, setTesterCodeReq] = useState(true);
+  let [devCodeReq, setDevCodeReq] = useState(true);
   let [m, f] = useState("");
   let [w, T] = useState(false);
   let [A, j] = useState("");
@@ -6370,7 +6437,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
     }
     x("");
   };
-  let K = a.trim() && l && g.length === 4 && k.length === 4 && !w;
+  let K = a.trim() && l && (!testerCodeReq || g.length === 4) && (!devCodeReq || k.length === 4) && !w;
   let te = async () => {
     T(true);
     j("");
@@ -6395,11 +6462,18 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
           developer_code: k,
           tester_col_header: l.testerColHeader || "Tester",
           base_url: m.trim() || null,
+          ...(testerCodeReq ? {} : { tester_code_required: false }),
+          ...(devCodeReq ? {} : { developer_code_required: false }),
           ...(uploadedSamples.length ? { sample_files: uploadedSamples } : {}),
           ...(useReadme && Q.find((N) => N.readmeText) ? { readme: Q.find((N) => N.readmeText).readmeText } : {}),
         })
         .select()
         .single();
+      if (X && isCodeToggleSetupError(X)) {
+        throw new Error(
+          `Turning codes off needs a one-time Supabase setup. In the SQL Editor run: ${CODE_TOGGLE_SETUP_SQL}  (or switch the codes back on and create the session).`,
+        );
+      }
       if (X && isReadmeSetupError(X)) {
         throw new Error(
           `The Read me needs a one-time Supabase setup. In the SQL Editor run: ${README_SETUP_SQL}  (or untick "Use as Read me" and create the session without it).`,
@@ -6704,8 +6778,8 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <CodeField label="Tester access code" value={g} onChange={v} onRegen={() => v(randomCode())} />
-          <CodeField label="Developer access code" value={k} onChange={C} onRegen={() => C(randomCode())} />
+          <CodeField label="Tester access code" value={g} onChange={v} onRegen={() => v(randomCode())} required={testerCodeReq} onRequiredChange={setTesterCodeReq} />
+          <CodeField label="Developer access code" value={k} onChange={C} onRegen={() => C(randomCode())} required={devCodeReq} onRequiredChange={setDevCodeReq} />
         </div>
         <SampleFilesPicker files={sampleFiles} setFiles={setSampleFiles} />
         <div>
@@ -6843,10 +6917,37 @@ function NameSuggestions({ suggestions: e, hiddenCount: t, onAdd: a, onHide: r, 
     );
   }
 }
-function CodeField({ label: e, value: t, onChange: a, onRegen: r }) {
+function CodeSwitch({ on: e, onChange: t, label: a }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={e}
+      aria-label={a}
+      onClick={() => t(!e)}
+      className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-sm border transition-colors ${e ? "bg-emerald-600 border-emerald-500" : "bg-gray-800 border-gray-700"}`}
+    >
+      <span className={`inline-block h-3.5 w-3.5 rounded-[1px] bg-white shadow transition-transform ${e ? "translate-x-[18px]" : "translate-x-[2px]"}`} />
+    </button>
+  );
+}
+function CodeField({ label: e, value: t, onChange: a, onRegen: r, required: q = true, onRequiredChange: rq }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">{e}</label>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">{e}</label>
+        {rq && (
+          <span className="flex items-center gap-2 text-[11px] text-gray-500">
+            {q ? "On" : "Off"}
+            <CodeSwitch on={q} onChange={rq} label={`${e} required`} />
+          </span>
+        )}
+      </div>
+      {!q ? (
+        <div className="px-3 py-2 bg-gray-900 border border-dashed border-gray-700 text-gray-500 text-xs text-center rounded-sm leading-[1.75rem]">
+          No code needed, they just pick their name
+        </div>
+      ) : (
       <div className="flex gap-2">
         <input
           type="text"
@@ -6865,6 +6966,7 @@ function CodeField({ label: e, value: t, onChange: a, onRegen: r }) {
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>
+      )}
     </div>
   );
 }
@@ -6900,6 +7002,8 @@ function SessionCreatedScreen({ session: e, onDone: t }) {
           url={a}
           testerCode={e.tester_code}
           devCode={e.developer_code}
+          testerCodeOff={!testerCodeOn(e)}
+          devCodeOff={!devCodeOn(e)}
           testers={e.testers || []}
           developers={e.developers || []}
         />
@@ -6925,7 +7029,7 @@ function SessionCreatedScreen({ session: e, onDone: t }) {
     </div>
   );
 }
-function ShareLinksPanel({ url: e, testerCode: t, devCode: a, testers: r, developers: o }) {
+function ShareLinksPanel({ url: e, testerCode: t, devCode: a, testerCodeOff: tOff, devCodeOff: dOff, testers: r, developers: o }) {
   let [s, l] = useState(null);
   let i = async (u, d) => {
     try {
@@ -6956,6 +7060,7 @@ function ShareLinksPanel({ url: e, testerCode: t, devCode: a, testers: r, develo
         <AccessCodeCard
           label="Tester code"
           code={t}
+          off={tOff}
           people={r}
           copied={s === "testerCode"}
           onCopy={() => i(t, "testerCode")}
@@ -6963,6 +7068,7 @@ function ShareLinksPanel({ url: e, testerCode: t, devCode: a, testers: r, develo
         <AccessCodeCard
           label="Developer code"
           code={a}
+          off={dOff}
           people={o}
           copied={s === "devCode"}
           onCopy={() => i(a, "devCode")}
@@ -6971,7 +7077,7 @@ function ShareLinksPanel({ url: e, testerCode: t, devCode: a, testers: r, develo
     </div>
   );
 }
-function AccessCodeCard({ label: e, code: t, people: a, copied: r, onCopy: o }) {
+function AccessCodeCard({ label: e, code: t, off: f, people: a, copied: r, onCopy: o }) {
   return (
     <div className="p-3 bg-gray-950 border border-gray-800 rounded-sm">
       <div className="flex items-center justify-between mb-2">
@@ -6980,6 +7086,11 @@ function AccessCodeCard({ label: e, code: t, people: a, copied: r, onCopy: o }) 
           {a.length} {a.length === 1 ? "person" : "people"}
         </div>
       </div>
+      {f ? (
+        <div className="px-3 py-2 mb-2 bg-gray-900 border border-dashed border-gray-700 text-gray-500 text-xs rounded-sm text-center">
+          Off, no code needed
+        </div>
+      ) : (
       <div className="flex items-center gap-2 mb-2">
         <div className="px-3 py-1.5 bg-gray-900 border border-gray-800 text-gray-100 font-mono text-lg tracking-widest rounded-sm flex-1 text-center">
           {t}
@@ -6992,6 +7103,7 @@ function AccessCodeCard({ label: e, code: t, people: a, copied: r, onCopy: o }) 
           <Copy className="w-3 h-3" /> {r ? "Copied!" : "Copy"}
         </button>
       </div>
+      )}
       {a.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {a.map((s, l) => (
@@ -7164,7 +7276,7 @@ function PortalPicker({ sessionId: e }) {
     (async () => {
       let { data: h, error: b } = await supabase
         .from("sessions")
-        .select("id, name")
+        .select("*")
         .eq("id", e)
         .maybeSingle();
       if (!p) {
@@ -7204,7 +7316,13 @@ function PortalPicker({ sessionId: e }) {
           </div>
           <div className="bg-gray-900/70 border border-gray-800 rounded-sm p-5">
             <div className="text-sm text-gray-300 mb-1">Pick your role to continue</div>
-            <div className="text-xs text-gray-500 mb-4">You'll be asked for an access code next.</div>
+            <div className="text-xs text-gray-500 mb-4">
+              {testerCodeOn(r) && devCodeOn(r)
+                ? "You'll be asked for an access code next."
+                : !testerCodeOn(r) && !devCodeOn(r)
+                  ? "You'll pick your name next."
+                  : "You may be asked for an access code next."}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => c("tester")}
@@ -7254,7 +7372,7 @@ function TesterEntry({ sessionId: e }) {
     (async () => {
       let { data: x, error: g } = await supabase
         .from("sessions")
-        .select("id, name, testers, tester_code, tester_col_header, base_url")
+        .select("*")
         .eq("id", e)
         .single();
       if (!I) {
@@ -7265,13 +7383,13 @@ function TesterEntry({ sessionId: e }) {
         o(x);
         try {
           let v = JSON.parse(localStorage.getItem(`uat-pro-tester-${e}`) || "{}");
-          if (v.code === x.tester_code && (x.testers || []).includes(v.name)) {
+          if ((!testerCodeOn(x) || v.code === x.tester_code) && (x.testers || []).includes(v.name)) {
             l(v.name);
             a("ready");
             return;
           }
         } catch {}
-        a("code");
+        a(testerCodeOn(x) ? "code" : "name");
       }
     })();
     return () => {
@@ -7291,7 +7409,7 @@ function TesterEntry({ sessionId: e }) {
       localStorage.setItem(
         `uat-pro-tester-${e}`,
         JSON.stringify({
-          code: r.tester_code,
+          code: testerCodeOn(r) ? r.tester_code : null,
           name: I,
         }),
       );
@@ -9191,7 +9309,7 @@ function DevEntry({ sessionId: e }) {
     (async () => {
       let { data: x, error: g } = await supabase
         .from("sessions")
-        .select("id, name, developers, developer_code, base_url")
+        .select("*")
         .eq("id", e)
         .single();
       if (!I) {
@@ -9202,13 +9320,13 @@ function DevEntry({ sessionId: e }) {
         o(x);
         try {
           let v = JSON.parse(localStorage.getItem(`uat-pro-dev-${e}`) || "{}");
-          if (v.code === x.developer_code && (x.developers || []).includes(v.name)) {
+          if ((!devCodeOn(x) || v.code === x.developer_code) && (x.developers || []).includes(v.name)) {
             l(v.name);
             a("ready");
             return;
           }
         } catch {}
-        a("code");
+        a(devCodeOn(x) ? "code" : "name");
       }
     })();
     return () => {
@@ -9228,7 +9346,7 @@ function DevEntry({ sessionId: e }) {
       localStorage.setItem(
         `uat-pro-dev-${e}`,
         JSON.stringify({
-          code: r.developer_code,
+          code: devCodeOn(r) ? r.developer_code : null,
           name: I,
         }),
       );

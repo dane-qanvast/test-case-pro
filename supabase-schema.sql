@@ -246,3 +246,10 @@ grant execute on function check_admin_code(text) to anon, authenticated;
 -- usually imported from the sheet's "Start here" tab.
 -- ─────────────────────────────────────────────────────────────────────────────
 alter table sessions add column if not exists readme text;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Access-code on/off switches (idempotent): per session, the admin can let
+-- testers and/or developers sign in by just picking their name.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table sessions add column if not exists tester_code_required boolean not null default true;
+alter table sessions add column if not exists developer_code_required boolean not null default true;
