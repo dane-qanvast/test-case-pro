@@ -5163,6 +5163,21 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
   let [zErr, setZErr] = useState("");
   let [readme, setReadme] = useState("");
   let [readmeOpen, setReadmeOpen] = useState(false);
+  // The Read me button is green until this tester opens it once in this session.
+  let readmeSeenKey = `uat-pro-readme-seen-${e}-${n}`;
+  let [readmeSeen, setReadmeSeen] = useState(() => {
+    try {
+      return localStorage.getItem(readmeSeenKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  let markReadmeSeen = () => {
+    setReadmeSeen(true);
+    try {
+      localStorage.setItem(readmeSeenKey, "1");
+    } catch {}
+  };
   useEffect(() => {
     let h = false;
     (async () => {
@@ -5187,7 +5202,8 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
       let { data: b, error: _ } = await supabase.from("sessions").select("sample_files").eq("id", e).single();
       if (h || _) return;
       r(b?.sample_files || []);
-      if (!s) {
+      // Only auto-open the sample files drawer when there are files to show.
+      if (!s && (b?.sample_files || []).length > 0) {
         requestAnimationFrame(() => u(true));
       }
       c(true);
@@ -5205,6 +5221,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
     return () => window.removeEventListener("keydown", h);
   }, [i]);
   let hasFiles = d && a.length > 0;
+  let filesOpen = hasFiles && i;
   if (!hasFiles && !readme) return null;
   let p = () => {
     l(true);
@@ -5350,16 +5367,17 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
       </Fragment>
       )}
       <div
-        className={`fixed z-30 bottom-4 flex items-center gap-2 transition-all duration-300 ease-out ${readmeOpen ? "right-4 sm:right-[29rem]" : i ? "right-4 sm:right-[25rem]" : "right-4"} ${i || readmeOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+        className={`fixed z-30 bottom-4 flex items-center gap-2 transition-all duration-300 ease-out ${readmeOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[25rem]" : "right-4"} ${filesOpen || readmeOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
       >
         {readme && (
           <button
             onClick={() => {
               u(false);
               setReadmeOpen(!readmeOpen);
+              markReadmeSeen();
             }}
             aria-pressed={readmeOpen}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${readmeOpen ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border rounded-sm shadow-lg transition-colors ${readmeOpen ? "bg-gray-900 border-amber-600 text-amber-200" : !readmeSeen ? "bg-emerald-600 border-emerald-500 text-white hover:bg-emerald-500" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
             title={readmeOpen ? "Close the read me" : "Instructions for this test round"}
           >
             <BookOpen className="w-3.5 h-3.5" /> Read me
