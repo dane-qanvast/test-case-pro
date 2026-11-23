@@ -5350,16 +5350,17 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
       </Fragment>
       )}
       <div
-        className={`fixed z-30 bottom-4 right-4 flex items-center gap-2 transition-all duration-300 ease-out ${i || readmeOpen ? "translate-y-6 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`}
+        className={`fixed z-30 bottom-4 flex items-center gap-2 transition-all duration-300 ease-out ${readmeOpen ? "right-4 sm:right-[29rem]" : i ? "right-4 sm:right-[25rem]" : "right-4"} ${i || readmeOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
       >
         {readme && (
           <button
             onClick={() => {
               u(false);
-              setReadmeOpen(true);
+              setReadmeOpen(!readmeOpen);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border border-gray-700 text-gray-300 rounded-sm shadow-lg transition-colors hover:text-gray-100 hover:border-gray-600"
-            title="Instructions for this test round"
+            aria-pressed={readmeOpen}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${readmeOpen ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            title={readmeOpen ? "Close the read me" : "Instructions for this test round"}
           >
             <BookOpen className="w-3.5 h-3.5" /> Read me
           </button>
@@ -5368,10 +5369,12 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
           <button
             onClick={() => {
               setReadmeOpen(false);
-              u(true);
+              if (i) close();
+              else u(true);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border border-gray-700 text-gray-300 rounded-sm shadow-lg transition-colors hover:text-gray-100 hover:border-gray-600"
-            title="Sample files for these tests"
+            aria-pressed={i}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${i ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            title={i ? "Close the sample files" : "Sample files for these tests"}
           >
             <Paperclip className="w-3.5 h-3.5" /> Sample files ({a.length})
           </button>
