@@ -489,7 +489,7 @@ var normalizePath = (e) => {
 };
 // Textarea with two pickers: "#" offers the test's screenshots (e.g. "#fig1" → Fig. 1, inserting "[Fig. N]"),
 // and "@" offers the session's testers and developers (inserting "@Name ", which pings them).
-function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showRefs: o = true, ...s }) {
+function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showRefs: o = true, allowFigures = true, ...s }) {
   let l = useContext(FigureContext);
   let people = useContext(PeopleContext);
   let i = useRef(null);
@@ -500,6 +500,7 @@ function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showR
     let g = x.selectionStart ?? x.value.length;
     let v = x.value.slice(0, g);
     let k = /(^|\s)([#@])(fig\.?\s?\d{0,3}|[^\s@#]{0,20})$/i.exec(v);
+    if (k && k[2] === "#" && !allowFigures) k = null;
     if (k) {
       d({ start: g - k[3].length - 1, end: g, query: k[3], kind: k[2] === "@" ? "people" : "figs" });
     } else {
@@ -13127,7 +13128,8 @@ function DevTestDetail({
                     u(m);
                   }}
                   rows={3}
-                  placeholder="@ to ping someone · # to link a screenshot"
+                  allowFigures={false}
+                  placeholder="@ to ping someone"
                   className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-600 rounded-sm text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
                 />
               </div>
