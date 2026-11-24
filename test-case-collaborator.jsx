@@ -43,6 +43,7 @@ import {
   X,
   Filter,
   Users,
+  Eye,
   PanelLeftOpen,
   ChevronLeft,
   ChevronRight,
@@ -1154,9 +1155,10 @@ var computeResyncPlan = (e, t) => {
 // every finding attached (step/expected ticks follow their wording).
 var applyResyncPlan = async (e, t, a) => {
   let r = new Date().toISOString();
+  // test case id -> every tester's finding for it
   let o = {};
   (a || []).forEach((m) => {
-    o[m.test_case_id] = m;
+    (o[m.test_case_id] ||= []).push(m);
   });
   let l = [];
   let i = [];
@@ -1173,8 +1175,8 @@ var applyResyncPlan = async (e, t, a) => {
     if (m.kind === "match") {
       let { initial_tester: w, ...T } = m.row;
       Object.assign(g, T, { removed_at: null });
-      let A = o[f.id];
-      if (m.contentChanged && A) {
+      let anyWork = false;
+      (m.contentChanged ? o[f.id] || [] : []).forEach((A) => {
         let j = { checks: A.step_checks || {}, notes: A.step_notes || {} };
         let M = remapChecksByText(f.steps || [], m.row.steps || [], j, (V) => String(V), stepKeyIndex);
         let W = remapChecksByText(
@@ -1190,10 +1192,11 @@ var applyResyncPlan = async (e, t, a) => {
         }
         d += F;
         let se = (A.status && A.status !== "Not Tested") || Object.keys(A.step_checks || {}).length > 0 || Object.keys(A.step_notes || {}).length > 0;
-        if (se) {
-          g.content_updated_at = r;
-          c++;
-        }
+        if (se) anyWork = true;
+      });
+      if (anyWork) {
+        g.content_updated_at = r;
+        c++;
       }
     }
     if (JSON.stringify(g) !== JSON.stringify(f)) i.push(g);
@@ -1209,7 +1212,7 @@ var applyResyncPlan = async (e, t, a) => {
   };
   await p("test_cases", i, (m, f) => m.upsert(f));
   await p("test_cases", l, (m, f) => m.insert(f));
-  await p("findings", u, (m, f) => m.upsert(f));
+  await p("findings", u, (m, f) => m.upsert(f, { onConflict: "test_case_id,tester_name" }));
   return { inserted: l.length, updated: i.length, droppedTicks: d, flagged: c };
 };
 // True when the sheet changed this test's steps/expected result after the tester last touched it.
@@ -4525,17 +4528,23 @@ function AdminPortal() {
         }
         k[w.session_id] = (k[w.session_id] || 0) + 1;
       });
+      // Each tester has their own row per test, so count each test once:
+      // tested = at least one tester has a result, failed = at least one tester failed it.
       let C = {};
       let m = {};
+      let seenT = new Set();
+      let seenF = new Set();
       (v.data || []).forEach((w) => {
         if (rm.has(w.test_case_id)) {
           return;
         }
         let T = w.status || "Not Tested";
-        if (T !== "Not Tested") {
+        if (T !== "Not Tested" && !seenT.has(w.test_case_id)) {
+          seenT.add(w.test_case_id);
           C[w.session_id] = (C[w.session_id] || 0) + 1;
         }
-        if (isFailureStatus(T)) {
+        if (isFailureStatus(T) && !seenF.has(w.test_case_id)) {
+          seenF.add(w.test_case_id);
           m[w.session_id] = (m[w.session_id] || 0) + 1;
         }
       });
@@ -5397,7 +5406,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
       )}
       <div
         ref={barRef}
-        className={`fixed z-30 bottom-4 flex items-center gap-2 transition-all duration-300 ease-out ${readmeOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[25rem]" : "right-4"} ${filesOpen || readmeOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+        className={`fixed z-30 bottom-14 flex items-center gap-2 transition-all duration-300 ease-out ${readmeOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[25rem]" : "right-4"} ${filesOpen || readmeOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
       >
         {readme && (
           <button
@@ -5580,9 +5589,10 @@ function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
         c((E.error || D.error).message);
       } else {
         l(E.data || []);
+        // test case id -> every tester's finding for it
         let O = {};
         (D.data || []).forEach((B) => {
-          O[B.test_case_id] = B;
+          (O[B.test_case_id] ||= []).push(B);
         });
         u(O);
         if ((E.data || []).length > 0 && !("removed_at" in E.data[0])) h(true);
@@ -5614,15 +5624,13 @@ function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
   };
   let T = (y) => _(b.map((E) => (E.key === y ? { ...E, include: !E.include } : E)));
   let A = useMemo(() => (b.some((y) => y.include && y.testCases) ? computeResyncPlan(s, b) : null), [s, b]);
-  let j = (y) => {
-    let E = i[y.id];
-    return (
-      !!E &&
-      ((E.status && E.status !== "Not Tested") ||
+  let j = (y) =>
+    (i[y.id] || []).some(
+      (E) =>
+        (E.status && E.status !== "Not Tested") ||
         Object.keys(E.step_checks || {}).length > 0 ||
-        Object.keys(E.step_notes || {}).length > 0)
+        Object.keys(E.step_notes || {}).length > 0,
     );
-  };
   let M = A
     ? A.entries.filter((y) => y.kind === "match" && y.contentChanged && j(y.existing)).length
     : 0;
@@ -5633,7 +5641,7 @@ function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
     g(true);
     c("");
     try {
-      let y = A && A.hasChanges ? await applyResyncPlan(e, A, Object.values(i)) : { flagged: 0 };
+      let y = A && A.hasChanges ? await applyResyncPlan(e, A, Object.values(i).flat()) : { flagged: 0 };
       let rs = b.find((E) => E.readmeText);
       if (rs && resyncReadme) {
         let { error: E } = await supabase.from("sessions").update({ readme: rs.readmeText }).eq("id", e.id);
@@ -7723,10 +7731,148 @@ var priorityBadgeClass = (e) => {
   }
 };
 var MAX_UPLOAD_BYTES = 10485760;
+// ---------------------------------------------------------------------------
+// Per-tester findings. Every tester keeps their own result for every test, so the
+// findings table holds one row per (test case, tester). In the portals they're
+// kept as { [testerName]: { [testCaseId]: finding } }.
+// ---------------------------------------------------------------------------
+var groupFindingsByTester = (rows) => {
+  let o = {};
+  (rows || []).forEach((r) => {
+    if (!r || !r.tester_name) return;
+    (o[r.tester_name] ||= {})[r.test_case_id] = r;
+  });
+  return o;
+};
+// Tab order: the session's tester list first, then anyone else who has results
+// (e.g. a name that was renamed or removed after they started testing).
+var testerTabNames = (sessionTesters, byTester) => {
+  let names = (sessionTesters || []).filter(Boolean);
+  Object.keys(byTester || {}).forEach((n) => {
+    if (n && !names.includes(n)) names.push(n);
+  });
+  return names;
+};
+// Applies one realtime change to the grouped findings. `skip(row)` lets the
+// tester portal ignore echoes of its own unsaved edits.
+var applyFindingEvent = (prev, evt, skip) => {
+  let row = evt.new && evt.new.test_case_id ? evt.new : evt.old;
+  if (!row || !row.test_case_id || !row.tester_name) return prev;
+  let n = row.tester_name;
+  if (evt.eventType === "DELETE") {
+    if (!prev[n] || !prev[n][row.test_case_id]) return prev;
+    let mine = { ...prev[n] };
+    delete mine[row.test_case_id];
+    return { ...prev, [n]: mine };
+  }
+  if (skip && skip(row)) return prev;
+  return { ...prev, [n]: { ...(prev[n] || {}), [row.test_case_id]: evt.new } };
+};
+var testerTabStats = (names, byTester, testCases) => {
+  let o = {};
+  names.forEach((n) => {
+    let f = byTester[n] || {};
+    let done = 0;
+    let issues = 0;
+    testCases.forEach((tc) => {
+      let st = f[tc.id]?.status || "Not Tested";
+      if (st !== "Not Tested") done++;
+      if (isIssueStatus(st)) issues++;
+    });
+    o[n] = { done, issues, total: testCases.length };
+  });
+  return o;
+};
+// True once the per-tester database update has been run (findings.tester_name exists).
+var findingsSchemaReady = async () => {
+  let { error } = await supabase.from("findings").select("tester_name").limit(1);
+  return !error;
+};
+var SCHEMA_UPDATE_MESSAGE =
+  "This session needs a one-time database update before anyone can keep testing. Ask the admin to run the latest SQL update in Supabase, then reload this page.";
+// Spreadsheet-style tabs along the bottom of the tester and dev portals, one per tester.
+function TesterTabBar({ names, active, onSelect, me, stats }) {
+  let refs = useRef({});
+  useEffect(() => {
+    let el = refs.current[active];
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [active]);
+  let onKeyDown = (ev) => {
+    if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+    let i = names.indexOf(active);
+    let next = names[(i + (ev.key === "ArrowRight" ? 1 : names.length - 1)) % names.length];
+    if (next) {
+      ev.preventDefault();
+      onSelect(next);
+      refs.current[next]?.focus();
+    }
+  };
+  if (names.length === 0) return null;
+  return (
+    <div className="flex-shrink-0 h-10 flex items-stretch bg-gray-900 border-t border-gray-800 select-none">
+      <div
+        className="flex items-center gap-1.5 pl-3 pr-3 text-[11px] text-gray-500 border-r border-gray-800 flex-shrink-0"
+        title="Each tester has their own results for every test"
+      >
+        <Users className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Testers</span>
+      </div>
+      <div role="tablist" aria-label="Testers" onKeyDown={onKeyDown} className="flex-1 min-w-0 flex items-stretch overflow-x-auto px-1.5 gap-px">
+        {names.map((n) => {
+          let on = n === active;
+          let st = stats[n] || { done: 0, total: 0, issues: 0 };
+          let isMe = me && n === me;
+          return (
+            <button
+              key={n}
+              ref={(el) => (refs.current[n] = el)}
+              role="tab"
+              aria-selected={on}
+              tabIndex={on ? 0 : -1}
+              onClick={() => onSelect(n)}
+              title={`${n}${isMe ? " (you)" : ""}: ${st.done} of ${st.total} tested${st.issues ? `, ${st.issues} with issues` : ""}`}
+              className={`relative flex items-center gap-2 px-3 -mt-px whitespace-nowrap text-xs rounded-b-md border-x border-b transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500 ${
+                on
+                  ? "bg-gray-950 text-gray-100 border-gray-800 border-t-2 border-t-emerald-500"
+                  : "bg-transparent text-gray-400 border-transparent hover:text-gray-200 hover:bg-gray-800/60"
+              }`}
+            >
+              <span className={on ? "font-semibold" : ""}>{n}</span>
+              {isMe && (
+                <span className="text-[10px] px-1 rounded-sm bg-emerald-900/50 text-emerald-300 border border-emerald-800">
+                  You
+                </span>
+              )}
+              <span className="tabular-nums text-[11px] text-gray-500">
+                {st.done}/{st.total}
+              </span>
+              {st.issues > 0 && (
+                <span
+                  className="min-w-[16px] h-4 px-1 rounded-sm bg-red-600 text-white text-[10px] font-bold tabular-nums flex items-center justify-center"
+                  aria-label={`${st.issues} with issues`}
+                >
+                  {st.issues}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 var getTesterStatus = (e) => TESTER_STATUSES.find((t) => t.value === e) || TESTER_STATUSES[0];
 function TesterPortal({ session: e, myName: t, onLogout: a }) {
   let [r, o] = useState([]);
-  let [s, l] = useState({});
+  // All testers' findings, grouped by tester. Edits only ever go to my own slot (t).
+  let [allF, setAllF] = useState({});
+  let [viewTab, setViewTab] = useState(t);
+  let [schemaOld, setSchemaOld] = useState(false);
+  let readOnly = viewTab !== t;
+  let mine = allF[t] || {};
+  let s = allF[viewTab] || {};
+  let l = (upd) =>
+    setAllF((prev) => ({ ...prev, [t]: typeof upd === "function" ? upd(prev[t] || {}) : upd }));
   let [i, u] = useState({});
   let [d, c] = useState(true);
   let [p, h] = useState("");
@@ -7735,7 +7881,8 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   let [v, k] = useState("");
   let [C, m] = useState(false);
   let [f, w] = useState("All");
-  let [T, A] = useState("mine");
+  // Everyone runs every test now, so the CSV's tester assignment is an optional "Suggested" filter.
+  let [T, A] = useState("all");
   let [j, M] = useState(true);
   let [W, V] = useState(null);
   let [F, se] = useState(false);
@@ -7764,10 +7911,8 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   }, [W, E]);
   let D = useRef(new Set());
   let O = useRef({});
-  let B = useRef(s);
-  useEffect(() => {
-    B.current = s;
-  }, [s]);
+  let B = useRef(mine);
+  B.current = mine;
   let [ne, he] = useState(() => new Set());
   let [ie, ue] = useState(() => new Set());
   let [pe, me] = useState({});
@@ -7786,12 +7931,18 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     let N = false;
     (async () => {
       c(true);
-      let [G, Q, z] = await Promise.all([
+      let [G, Q, z, ok] = await Promise.all([
         supabase.from("test_cases").select("*").eq("session_id", e.id).order("position"),
         supabase.from("findings").select("*").eq("session_id", e.id),
         supabase.from("done_marks").select("*").eq("session_id", e.id),
+        findingsSchemaReady(),
       ]);
       if (N) {
+        return;
+      }
+      if (!ok) {
+        setSchemaOld(true);
+        c(false);
         return;
       }
       if (G.error || Q.error || z.error) {
@@ -7800,11 +7951,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
         return;
       }
       o((G.data || []).filter((Le) => !Le.removed_at));
-      let re = {};
-      (Q.data || []).forEach((Le) => {
-        re[Le.test_case_id] = Le;
-      });
-      l(re);
+      setAllF(groupFindingsByTester(Q.data));
       let ce = {};
       (z.data || []).forEach((Le) => {
         ce[Le.test_case_id] ||= [];
@@ -7837,25 +7984,10 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           filter: `session_id=eq.${e.id}`,
         },
         (G) => {
-          let Q = G.new || G.old;
-          if (!!Q && !!Q.test_case_id) {
-            if (G.eventType === "DELETE") {
-              l((z) => {
-                let re = {
-                  ...z,
-                };
-                delete re[Q.test_case_id];
-                return re;
-              });
-              return;
-            }
-            if (!D.current.has(Q.test_case_id)) {
-              l((z) => ({
-                ...z,
-                [Q.test_case_id]: G.new,
-              }));
-            }
-          }
+          // Ignore echoes of my own edits that are still waiting to save.
+          setAllF((prev) =>
+            applyFindingEvent(prev, G, (row) => row.tester_name === t && D.current.has(row.test_case_id)),
+          );
         },
       )
       .subscribe();
@@ -7910,12 +8042,17 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     };
   }, [e.id]);
   let fe = (N, G) => {
+    // Other testers' tabs are read-only.
+    if (readOnly) {
+      return;
+    }
     if (r.find((z) => z.id === N)) {
       l((z) => {
         let ce = {
           ...(z[N] || {
             test_case_id: N,
             session_id: e.id,
+            tester_name: t,
             status: "Not Tested",
             tested_by: t,
             notes: "",
@@ -7981,6 +8118,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
         let re = {
           test_case_id: N,
           session_id: e.id,
+          tester_name: t,
           status: z.status || "Not Tested",
           tested_by: z.tested_by || t,
           notes: z.notes || "",
@@ -7994,7 +8132,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           updated_at: new Date().toISOString(),
         };
         let { error: ce } = await supabase.from("findings").upsert(re, {
-          onConflict: "test_case_id",
+          onConflict: "test_case_id,tester_name",
         });
         D.current.delete(N);
         he((Le) => {
@@ -8012,6 +8150,9 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     }
   };
   let Ce = async (N, G) => {
+    if (readOnly) {
+      return;
+    }
     let Q = Array.from(G).filter((q) => q.type && q.type.startsWith("image/"));
     if (Q.length === 0) {
       return;
@@ -8094,6 +8235,9 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     });
   };
   let be = async (N, G) => {
+    if (readOnly) {
+      return;
+    }
     let Q = B.current[N]?.screenshots || [];
     let z = Q[G];
     let fnd = B.current[N] || {};
@@ -8151,7 +8295,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     return () => window.removeEventListener("paste", N);
   }, []);
   let H = r.filter((N) => {
-    if ((W && !W.has(N.id)) || (T === "mine" && N.initial_tester && N.initial_tester !== t)) {
+    if ((W && !W.has(N.id)) || (T === "mine" && N.initial_tester && N.initial_tester !== viewTab)) {
       return false;
     }
     let Q = s[N.id]?.status || "Not Tested";
@@ -8205,9 +8349,16 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   if (d) {
     return <Notice>Loading test cases…</Notice>;
   }
+  if (schemaOld) {
+    return <Notice variant="error">{SCHEMA_UPDATE_MESSAGE}</Notice>;
+  }
   if (p) {
     return <Notice variant="error">Could not load session: {p}</Notice>;
   }
+  // My own tab comes first.
+  let tabNames = [t, ...testerTabNames(e.testers, allF).filter((n) => n !== t)];
+  let tabStats = testerTabStats(tabNames, allF, r);
+  // Reset clears my own tab only.
   let de = async () => {
     let N = r.map((Q) => Q.id);
     if (N.length === 0) {
@@ -8215,8 +8366,8 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     }
     let G = [];
     for (let Q of N) {
-      let z = s[Q];
-      if (z?.updated_by === t && Array.isArray(z.screenshots)) {
+      let z = mine[Q];
+      if (Array.isArray(z?.screenshots)) {
         for (let re of z.screenshots) {
           if (re?.path) {
             G.push(re.path);
@@ -8225,7 +8376,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
       }
     }
     try {
-      let { error: Q } = await supabase.from("findings").delete().in("test_case_id", N).eq("updated_by", t);
+      let { error: Q } = await supabase.from("findings").delete().eq("session_id", e.id).eq("tester_name", t);
       if (Q) {
         throw Q;
       }
@@ -8236,17 +8387,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           console.warn("Some screenshot files could not be removed:", z);
         }
       }
-      l((z) => {
-        let re = {
-          ...z,
-        };
-        for (let ce of Object.keys(re)) {
-          if (re[ce]?.updated_by === t) {
-            delete re[ce];
-          }
-        }
-        return re;
-      });
+      l({});
     } catch (Q) {
       console.error("Reset failed:", Q);
       alert("Could not reset your inputs. Check your connection and try again.");
@@ -8254,12 +8395,14 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   };
   return (
     <BaseUrlContext.Provider value={b}>
-      <div className="h-screen flex bg-gray-950 overflow-hidden text-gray-100">
+      <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
+      <div className="flex-1 min-h-0 flex">
         <TesterSidebar
           open={j}
           onClose={() => M(false)}
           sessionName={e.name}
           myName={t}
+          viewName={viewTab}
           onLogout={a}
           onReset={de}
           testCases={r}
@@ -8303,8 +8446,11 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
             <TesterTestDetail
               testCase={P}
               finding={X}
+              readOnly={readOnly}
+              viewName={viewTab}
+              onBackToMine={() => setViewTab(t)}
               devMarks={i[P.id] || []}
-              isSaving={ne.has(P.id)}
+              isSaving={!readOnly && ne.has(P.id)}
               isUploading={ie.has(P.id)}
               screenshotErrors={pe[P.id] || null}
               onChange={(N) => fe(P.id, N)}
@@ -8334,6 +8480,8 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
         />
         <TesterSampleFilesBar sessionId={e.id} sessionName={e.name} myName={t} />
       </div>
+      <TesterTabBar names={tabNames} active={viewTab} onSelect={setViewTab} me={t} stats={tabStats} />
+      </div>
     </BaseUrlContext.Provider>
   );
 }
@@ -8342,6 +8490,7 @@ function TesterSidebar({
   onClose: t,
   sessionName: a,
   myName: r,
+  viewName: vn = r,
   onLogout: o,
   onReset: s,
   testCases: l,
@@ -8402,6 +8551,7 @@ function TesterSidebar({
             Signed in as <span className="text-gray-100 font-medium">{r}</span> <span className="text-gray-500">(Tester)</span>
           </div>
           <div className="text-xs text-gray-500 mb-1">
+            {vn !== r && <span className="text-gray-300">{vn}: </span>}
             {u} / {l.length} done
           </div>
           <div className="w-full bg-gray-800 rounded-full h-1 mb-3">
@@ -8414,19 +8564,20 @@ function TesterSidebar({
           </div>
           <div className="inline-flex w-full border border-gray-700 rounded-sm overflow-hidden mb-2">
             <button
-              onClick={() => C("mine")}
-              className={`flex-1 px-2 py-1 text-xs transition-colors ${k === "mine" ? "bg-emerald-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-800"}`}
-            >
-              My tests{" "}
-              <span className="tabular-nums opacity-60">
-                ({l.filter((O) => !O.initial_tester || O.initial_tester === r).length})
-              </span>
-            </button>
-            <button
               onClick={() => C("all")}
-              className={`flex-1 px-2 py-1 text-xs transition-colors border-l border-gray-700 ${k === "all" ? "bg-emerald-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-800"}`}
+              className={`flex-1 px-2 py-1 text-xs transition-colors ${k === "all" ? "bg-emerald-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-800"}`}
             >
               All tests <span className="tabular-nums opacity-60">({l.length})</span>
+            </button>
+            <button
+              onClick={() => C("mine")}
+              title={`Tests the sheet's Tester column suggests for ${vn === r ? "you" : vn}`}
+              className={`flex-1 px-2 py-1 text-xs transition-colors border-l border-gray-700 ${k === "mine" ? "bg-emerald-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-800"}`}
+            >
+              Suggested{" "}
+              <span className="tabular-nums opacity-60">
+                ({l.filter((O) => !O.initial_tester || O.initial_tester === vn).length})
+              </span>
             </button>
           </div>
           {I ? (
@@ -8618,14 +8769,6 @@ function TesterSidebar({
                       </div>
                     )}
                   </div>
-                  {B?.tested_by && B.tested_by !== "" && (B.status || "Not Tested") !== "Not Tested" && (
-                    <span
-                      className="text-[10px] text-gray-500 mt-1 flex-shrink-0"
-                      title={`Last edited by ${B.tested_by}`}
-                    >
-                      {B.tested_by.charAt(0)}
-                    </span>
-                  )}
                 </button>
               );
             })
@@ -8641,7 +8784,7 @@ function TesterSidebar({
             roleLabel="Signed in"
             onSwitchRequested={() => V(true)}
             onResetRequested={s ? () => se(true) : undefined}
-            resetDescription="Delete every status, severity, note, observation, step check, recording, and screenshot you've logged in this session. Other testers' work is not affected."
+            resetDescription="Delete every status, severity, note, observation, step check, recording, and screenshot in your own tab. Other testers' tabs are not affected."
             onClose={() => D(false)}
           />
         )}
@@ -8679,6 +8822,9 @@ function TesterSidebar({
 function TesterTestDetail({
   testCase: e,
   finding: t,
+  readOnly: ro = false,
+  viewName: vn = "",
+  onBackToMine: backToMine,
   devMarks: a,
   isSaving: r,
   isUploading: o,
@@ -8781,19 +8927,35 @@ function TesterTestDetail({
               </div>
             )}
           </div>
-          <div className="pt-1 flex-shrink-0">
-            <SaveIndicator saving={!!r} />
-          </div>
+          {!ro && (
+            <div className="pt-1 flex-shrink-0">
+              <SaveIndicator saving={!!r} />
+            </div>
+          )}
         </div>
-        {p.updated_by && p.updated_at && (p.status || "Not Tested") !== "Not Tested" && (
+        {ro && (
+          <div className="mb-4 flex items-center gap-2.5 px-3 py-2 bg-sky-950/40 border border-sky-800 rounded-md text-xs text-sky-100">
+            <Eye className="w-4 h-4 flex-shrink-0 text-sky-400" />
+            <span className="flex-1 min-w-0">
+              You're viewing <span className="font-semibold">{vn}</span>'s results. This tab is read-only.
+            </span>
+            {backToMine && (
+              <button
+                onClick={backToMine}
+                className="flex-shrink-0 px-2.5 py-1 rounded-md border border-sky-700 text-sky-100 hover:bg-sky-900/60"
+              >
+                Back to my tab
+              </button>
+            )}
+          </div>
+        )}
+        {p.updated_at && (p.status || "Not Tested") !== "Not Tested" && (
           <div
             className="mb-5 text-[11px] text-gray-500 flex items-center gap-1.5"
             title={new Date(p.updated_at).toLocaleString()}
           >
             <Clock className="w-3 h-3 flex-shrink-0" />
-            <span>
-              Last edit by <span className="text-gray-300">{p.updated_by}</span> · {timeAgo(p.updated_at)}
-            </span>
+            <span>Last edited {timeAgo(p.updated_at)}</span>
           </div>
         )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -8815,8 +8977,8 @@ function TesterTestDetail({
                         step={f}
                         state={T}
                         note={A}
-                        onToggle={() => k(w)}
-                        onNote={(j) => C(w, j)}
+                        onToggle={ro ? null : () => k(w)}
+                        onNote={ro ? null : (j) => C(w, j)}
                         key={w}
                       />
                     );
@@ -8828,9 +8990,9 @@ function TesterTestDetail({
               <ExpectedResultChecklist
                 value={c.expected_result}
                 checks={p.step_checks}
-                onToggle={(f) => k(expectedCheckKey(f))}
+                onToggle={ro ? null : (f) => k(expectedCheckKey(f))}
                 notes={p.step_notes}
-                onNote={(f, w) => C(f, w)}
+                onNote={ro ? null : (f, w) => C(f, w)}
               />
             )}
             {c.downstream_check && c.downstream_check !== "—" && (
@@ -8864,8 +9026,9 @@ function TesterTestDetail({
                           status: f.value,
                         })
                       }
+                      disabled={ro}
                       aria-pressed={w}
-                      className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${w ? f.badge : "bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200 hover:border-gray-700"}`}
+                      className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${w ? f.badge : `bg-gray-900 text-gray-400 border-gray-800 ${ro ? "opacity-40" : "hover:text-gray-200 hover:border-gray-700"}`}`}
                       key={f.value}
                     >
                       {f.label}
@@ -8886,9 +9049,10 @@ function TesterTestDetail({
                           bug_severity: w ? "" : f.value,
                         })
                       }
+                      disabled={ro}
                       aria-pressed={w}
-                      title={w ? "Click to clear" : f.description}
-                      className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${w ? f.badge : "bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200 hover:border-gray-700"}`}
+                      title={ro ? f.description : w ? "Click to clear" : f.description}
+                      className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${w ? f.badge : `bg-gray-900 text-gray-400 border-gray-800 ${ro ? "opacity-40" : "hover:text-gray-200 hover:border-gray-700"}`}`}
                       key={f.value}
                     >
                       {f.value}
@@ -8916,7 +9080,8 @@ function TesterTestDetail({
                   })
                 }
                 rows={4}
-                placeholder="Observations, summary of issues found, deviations from expected result…"
+                readOnly={ro}
+                placeholder={ro ? "No notes" : "Observations, summary of issues found, deviations from expected result…"}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
               />
             </div>
@@ -8932,7 +9097,8 @@ function TesterTestDetail({
                   })
                 }
                 rows={3}
-                placeholder="Anything else worth flagging — UX, performance, side effects…"
+                readOnly={ro}
+                placeholder={ro ? "No observations" : "Anything else worth flagging — UX, performance, side effects…"}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
               />
             </div>
@@ -8945,6 +9111,10 @@ function TesterTestDetail({
                   </span>
                 )}
               </div>
+              {ro ? (
+                (p.recordings || []).length === 0 && <div className="text-xs text-gray-600 italic">No recordings</div>
+              ) : (
+              <>
               <div className="flex gap-2">
                 <input
                   type="url"
@@ -8972,6 +9142,8 @@ function TesterTestDetail({
                 <span className="text-gray-300 font-medium">"Anyone with the link"</span>, then paste the
                 share URL here.<span className="text-gray-600"> Loom / YouTube / Vimeo URLs also work.</span>
               </div>
+              </>
+              )}
               {(p.recordings || []).length > 0 && (
                 <div className="mt-2 space-y-1.5">
                   {(p.recordings || []).map((f, w) => {
@@ -9005,7 +9177,7 @@ function TesterTestDetail({
                         >
                           <ExternalLink className="w-3 h-3" />
                         </a>
-                        <button
+                        {!ro && <button
                           onClick={() =>
                             l({
                               recordings: (p.recordings || []).filter((j, M) => M !== w),
@@ -9015,7 +9187,7 @@ function TesterTestDetail({
                           title="Remove"
                         >
                           ×
-                        </button>
+                        </button>}
                       </div>
                     );
                   })}
@@ -9032,7 +9204,11 @@ function TesterTestDetail({
                   </span>
                 )}
               </div>
-              <ScreenshotDropzone disabled={!!o} isUploading={!!o} onFiles={(f) => i && i(f)} />
+              {ro ? (
+                (p.screenshots || []).length === 0 && <div className="text-xs text-gray-600 italic">No screenshots</div>
+              ) : (
+                <ScreenshotDropzone disabled={!!o} isUploading={!!o} onFiles={(f) => i && i(f)} />
+              )}
               {s && s.length > 0 && (
                 <div className="mt-2 p-2.5 bg-red-950/40 border border-red-800 rounded-sm flex items-start gap-2">
                   <CircleAlert className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -9061,7 +9237,7 @@ function TesterTestDetail({
                     <ScreenshotThumb
                       shot={f}
                       idx={w}
-                      onRemove={() => u && u(w)}
+                      onRemove={ro ? null : () => u && u(w)}
                       onOpen={(T) => x(T)}
                       key={f.path || f.url || w}
                     />
@@ -9078,7 +9254,7 @@ function TesterTestDetail({
           screenshots={p.screenshots || []}
           startIdx={I}
           onClose={() => x(null)}
-          editable={true}
+          editable={!ro}
           onAnnotationsChange={(f, w) => {
             let A = (p.screenshots || []).map((j, M) =>
               M === f
@@ -9261,7 +9437,11 @@ function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s })
               </span>
             )}
           </div>
-          {l || r ? (
+          {!s ? (
+            r ? (
+              <div className="mt-2 px-2 py-1.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-xs whitespace-pre-wrap">{r}</div>
+            ) : null
+          ) : l || r ? (
             <MentionTextarea
               autoFocus={l}
               value={r || ""}
@@ -9279,15 +9459,18 @@ function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s })
         </div>
         <div className="relative group flex-shrink-0">
           <button
-            onClick={o}
-            className={`w-5 h-5 mt-0.5 rounded-sm border-2 flex items-center justify-center transition-colors ${u ? "bg-green-600 border-green-600" : v ? "bg-orange-500 border-orange-500" : d ? "bg-red-600 border-red-600" : "border-gray-600 hover:border-gray-500"}`}
+            onClick={o || undefined}
+            disabled={!o}
+            className={`w-5 h-5 mt-0.5 rounded-sm border-2 flex items-center justify-center transition-colors ${u ? "bg-green-600 border-green-600" : v ? "bg-orange-500 border-orange-500" : d ? "bg-red-600 border-red-600" : o ? "border-gray-600 hover:border-gray-500" : "border-gray-700"}`}
           >
             {(u || v) && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
             {d && <X className="w-3 h-3 text-white" strokeWidth={3} />}
           </button>
+          {o && (
           <span className="hidden group-hover:block absolute z-50 right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-950 border border-gray-700 rounded-sm text-[11px] text-gray-100 whitespace-nowrap shadow-lg pointer-events-none">
             {c}
           </span>
+          )}
         </div>
       </div>
     </div>
@@ -9398,7 +9581,24 @@ function DevEntry({ sessionId: e }) {
 }
 function DevPortal({ session: e, myName: t, onLogout: a }) {
   let [r, o] = useState([]);
-  let [s, l] = useState({});
+  // All testers' findings, grouped by tester; the bottom tabs pick whose results to show.
+  let [allF, setAllF] = useState({});
+  let [schemaOld, setSchemaOld] = useState(false);
+  let tabKey = `uat-pro-dev-tab-${e.id}-${t}`;
+  let [devTab, setDevTabState] = useState(() => {
+    try {
+      return localStorage.getItem(tabKey) || "";
+    } catch {
+      return "";
+    }
+  });
+  let setDevTab = (n) => {
+    setDevTabState(n);
+    try {
+      localStorage.setItem(tabKey, n);
+    } catch {}
+  };
+  let s = allF[devTab] || {};
   let [i, u] = useState({});
   let [d, c] = useState(true);
   let [p, h] = useState("");
@@ -9435,12 +9635,18 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
     let $ = false;
     (async () => {
       c(true);
-      let [H, K, te] = await Promise.all([
+      let [H, K, te, ok] = await Promise.all([
         supabase.from("test_cases").select("*").eq("session_id", e.id).order("position"),
         supabase.from("findings").select("*").eq("session_id", e.id),
         supabase.from("done_marks").select("*").eq("session_id", e.id),
+        findingsSchemaReady(),
       ]);
       if ($) {
+        return;
+      }
+      if (!ok) {
+        setSchemaOld(true);
+        c(false);
         return;
       }
       if (H.error || K.error || te.error) {
@@ -9449,11 +9655,13 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
         return;
       }
       o((H.data || []).filter((de) => !de.removed_at));
-      let P = {};
-      (K.data || []).forEach((de) => {
-        P[de.test_case_id] = de;
-      });
-      l(P);
+      let grouped = groupFindingsByTester(K.data);
+      setAllF(grouped);
+      // Open on the tab this dev used last, else the first tester.
+      let names = testerTabNames(e.testers, grouped);
+      let tab = names.includes(devTab) ? devTab : names[0] || "";
+      if (tab !== devTab) setDevTab(tab);
+      let P = grouped[tab] || {};
       let X = {};
       (te.data || []).forEach((de) => {
         X[de.test_case_id] ||= [];
@@ -9491,23 +9699,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           filter: `session_id=eq.${e.id}`,
         },
         (H) => {
-          let K = H.new || H.old;
-          if (K?.test_case_id) {
-            if (H.eventType === "DELETE") {
-              l((te) => {
-                let P = {
-                  ...te,
-                };
-                delete P[K.test_case_id];
-                return P;
-              });
-            } else {
-              l((te) => ({
-                ...te,
-                [K.test_case_id]: H.new,
-              }));
-            }
-          }
+          setAllF((prev) => applyFindingEvent(prev, H));
         },
       )
       .subscribe();
@@ -9757,9 +9949,14 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   if (d) {
     return <Notice>Loading session…</Notice>;
   }
+  if (schemaOld) {
+    return <Notice variant="error">{SCHEMA_UPDATE_MESSAGE}</Notice>;
+  }
   if (p) {
     return <Notice variant="error">Could not load session: {p}</Notice>;
   }
+  let tabNames = testerTabNames(e.testers, allF);
+  let tabStats = testerTabStats(tabNames, allF, r);
   let xe = async () => {
     try {
       let { error: $ } = await supabase
@@ -9787,7 +9984,8 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   };
   return (
     <BaseUrlContext.Provider value={b}>
-      <div className="h-screen flex bg-gray-950 overflow-hidden text-gray-100">
+      <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
+      <div className="flex-1 min-h-0 flex">
         <DevSidebar
           open={T}
           onClose={() => A(false)}
@@ -9837,6 +10035,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
             <DevTestDetail
               testCase={ue}
               finding={pe}
+              testerName={devTab}
               marks={me}
               myName={t}
               myStatus={Y}
@@ -9865,6 +10064,8 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           currentFocusedIds={j}
           onApply={($) => M($)}
         />
+      </div>
+      <TesterTabBar names={tabNames} active={devTab} onSelect={setDevTab} stats={tabStats} />
       </div>
     </BaseUrlContext.Provider>
   );
@@ -12023,6 +12224,7 @@ function DevMarkCard({ mark: e }) {
 function DevTestDetail({
   testCase: e,
   finding: t,
+  testerName: tn = "",
   marks: a,
   myName: r,
   myStatus: o,
@@ -12154,14 +12356,8 @@ function DevTestDetail({
             <div className="bg-gray-900/40 border border-gray-800 rounded-sm p-4">
               <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-3">
                 Tester findings
+                {tn && <span className="normal-case tracking-normal font-normal text-gray-400"> from {tn}</span>}
               </div>
-              {/* Hide the tester's name once the result is set back to "Not run". */}
-              {c.tested_by && (c.status || "Not Tested") !== "Not Tested" && (
-                <div className="mb-3">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Tester</div>
-                  <div className="text-sm text-gray-200">{c.tested_by}</div>
-                </div>
-              )}
 
               <div className="mb-3">
                 <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Notes</div>
