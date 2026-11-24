@@ -7789,6 +7789,14 @@ var testerTabStats = (names, byTester, testCases) => {
   });
   return o;
 };
+// Dev portal: tester tabs ordered by most tests completed (ties keep the session's order).
+var sortTabsByDone = (names, byTester, testCases) => {
+  let st = testerTabStats(names, byTester, testCases);
+  return names
+    .map((n, idx) => ({ n, idx }))
+    .sort((x, y) => st[y.n].done - st[x.n].done || x.idx - y.idx)
+    .map((x) => x.n);
+};
 // True once the per-tester database update has been run (findings.tester_name exists).
 var findingsSchemaReady = async () => {
   let { error } = await supabase.from("findings").select("tester_name").limit(1);
@@ -9687,7 +9695,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
       let grouped = groupFindingsByTester(K.data);
       setAllF(grouped);
       // Open on the tab this dev used last, else the first tester.
-      let names = testerTabNames(e.testers, grouped);
+      let names = sortTabsByDone(testerTabNames(e.testers, grouped), grouped, (H.data || []).filter((de) => !de.removed_at));
       let tab = names.includes(devTab) ? devTab : names[0] || "";
       if (tab !== devTab) setDevTab(tab);
       let P = grouped[tab] || {};
@@ -9996,7 +10004,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   if (p) {
     return <Notice variant="error">Could not load session: {p}</Notice>;
   }
-  let tabNames = testerTabNames(e.testers, allF);
+  let tabNames = sortTabsByDone(testerTabNames(e.testers, allF), allF, r);
   let tabStats = testerTabStats(tabNames, allF, r);
   let xe = async () => {
     try {
@@ -12404,7 +12412,7 @@ function DevTestDetail({
                               )}
                             </div>
                             {w && (
-                              <div className="mt-1.5 bg-amber-950/30 border-l-2 border-amber-500 px-2 py-1 text-xs text-amber-100 rounded-sm whitespace-pre-wrap">
+                              <div className={`mt-1.5 border-l-2 px-2 py-1 text-xs rounded-sm whitespace-pre-wrap ${T ? "bg-green-950/40 border-green-500 text-green-100" : A ? "bg-red-950/40 border-red-500 text-red-100" : "bg-amber-950/30 border-amber-500 text-amber-100"}`}>
                                 {normalizePath(w)}
                               </div>
                             )}
