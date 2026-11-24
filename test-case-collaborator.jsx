@@ -987,7 +987,7 @@ var CODE_TOGGLE_SETUP_SQL =
   "alter table sessions add column if not exists tester_code_required boolean not null default true; alter table sessions add column if not exists developer_code_required boolean not null default true;";
 var isCodeToggleSetupError = (e) => /code_required/i.test(String(e?.message || e || ""));
 var testerCodeOn = (s) => s?.tester_code_required !== false;
-// Dev "Fixed" has two stages: not merged yet (testers just see a quiet "Fix in progress") and
+// Dev "Fixed" has two stages: not merged yet (testers just see a quiet "Fixed – not merged") and
 // retest ready (testers get the Review Fix flag). Marks without a stage count as retest ready.
 var FIX_STAGE_SETUP_SQL = "alter table done_marks add column if not exists fix_stage text;";
 var isFixStageSetupError = (e) => /fix_stage/i.test(String(e?.message || e || ""));
@@ -8277,7 +8277,10 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   // Everyone runs every test now, so the CSV's tester assignment is an optional "Suggested" filter.
   let [T, A] = useState("all");
   let [j, M] = useState(true);
-  useSearchShortcut(() => M(true), () => m(true));
+  useSearchShortcut(() => M(true), () => m(true), () => {
+    k("");
+    m(false);
+  });
   let [W, V] = useState(null);
   let [F, se] = useState(false);
   let [filterPriority, setFilterPriority] = useState("All");
@@ -9182,10 +9185,10 @@ function TesterSidebar({
                         )}
                         {fp && (
                           <span
-                            className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-gray-800 text-gray-400 border border-gray-700"
+                            className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-transparent text-emerald-400 border border-emerald-600"
                             title="A developer has fixed this, but it isn't on the test site yet. No need to re-test for now."
                           >
-                            Fix in progress
+                            Fixed – not merged
                           </span>
                         )}
                         {me && (
@@ -9542,7 +9545,7 @@ function TesterTestDetail({
             </div>
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Recordings{" "}
+                Screen recordings{" "}
                 {(p.recordings || []).length > 0 && (
                   <span className="normal-case font-normal text-gray-500">
                     ({(p.recordings || []).length})
@@ -10046,7 +10049,10 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let [C, m] = useState(false);
   let [f, w] = useState("all");
   let [T, A] = useState(true);
-  useSearchShortcut(() => A(true), () => m(true));
+  useSearchShortcut(() => A(true), () => m(true), () => {
+    k("");
+    m(false);
+  });
   let [j, M] = useState(null);
   let [W, V] = useState(false);
   let F = `uat-pro-dev-focus-${e.id}-${t}`;
@@ -10711,7 +10717,7 @@ ${c.steps.length ? `<h3>Steps</h3><ol class="checks">${c.steps.map((g) => l(g, S
 ${h.expected_result ? `<h3>Expected result</h3>${c.expectedItems ? `${c.expectedIntro ? `<p>${r(c.expectedIntro)}</p>` : ""}<ul class="checks">${c.expectedItems.map((g) => l(g, EXP_MARK)).join("")}</ul>` : `<p class="exp">${r(h.expected_result)}</p>`}` : ""}
 ${b.notes ? `<h3>Tester notes</h3><p class="box">${r(b.notes)}</p>` : ""}
 ${b.other_observations ? `<h3>Other observations</h3><p class="box">${r(b.other_observations)}</p>` : ""}
-${x ? `<h3>Recordings</h3><ul class="links">${x}</ul>` : ""}
+${x ? `<h3>Screen recordings</h3><ul class="links">${x}</ul>` : ""}
 ${I ? `<h3>Screenshots</h3>${I}` : ""}
 </section>`;
     })
@@ -10853,7 +10859,7 @@ var buildIssuesDocx = async (e, t, a) => {
       l.push(new Paragraph({ shading: { fill: "F5F5F5" }, children: r(h.other_observations) }));
     }
     if ((h.recordings || []).length) {
-      l.push(o("Recordings"));
+      l.push(o("Screen recordings"));
       h.recordings.forEach((_) =>
         l.push(
           new Paragraph({
@@ -11869,11 +11875,17 @@ function SettingsModal({
 // ⌘K / Ctrl+K: open the sidebar (if collapsed) and jump to its search box.
 var isMacLike = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || "");
 var SEARCH_SHORTCUT_LABEL = isMacLike ? "⌘K" : "Ctrl+K";
-function useSearchShortcut(openSidebar, openSearch) {
+// Pressing it again while the search box is open closes the search (same as its × button).
+function useSearchShortcut(openSidebar, openSearch, closeSearch = () => {}) {
   useEffect(() => {
     let h = (e) => {
       if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && String(e.key).toLowerCase() === "k") {
         e.preventDefault();
+        let open = document.querySelector("[data-sidebar-search]");
+        if (open) {
+          closeSearch();
+          return;
+        }
         openSidebar();
         openSearch();
         let tries = 0;
@@ -12834,8 +12846,8 @@ function DevMarkCard({ mark: e, forTester: ft = false }) {
       <div className="flex items-center gap-2 mb-1">
         <span className="text-sm font-medium text-gray-200">{e.developer_name}</span>
         {t && nm && (
-          <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-gray-800 text-gray-400 border border-gray-700 whitespace-nowrap">
-            {ft ? "Fix in progress" : "Fixed · Not merged"}
+          <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-transparent text-emerald-400 border border-emerald-600 whitespace-nowrap">
+            {ft ? "Fixed – not merged" : "Fixed · Not merged"}
           </span>
         )}
         {t && !nm && (
@@ -12931,7 +12943,7 @@ function DevTestDetail({
             <div className="flex justify-end">
               <div role="radiogroup" aria-label="Fix stage" className="flex items-center gap-4 text-xs">
                 {[
-                  { key: "not_merged", label: "Fixed – not merged", hint: "Testers see “Fix in progress” and don't re-test yet" },
+                  { key: "not_merged", label: "Fixed – not merged", hint: "Testers see “Fixed – not merged” and don't re-test yet" },
                   { key: "retest_ready", label: "Fixed – retest ready", hint: "Testers are asked to re-test" },
                 ].map((C) => {
                   let on = (myStage === "not_merged" ? "not_merged" : "retest_ready") === C.key;
@@ -13040,7 +13052,7 @@ function DevTestDetail({
                 <div className="mb-3">
                   <style>{`@keyframes recPulse{0%,100%{background-color:#047857;box-shadow:0 0 0 0 rgba(16,185,129,0)}50%{background-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.25)}}.rec-pulse{animation:recPulse 1.6s ease-in-out infinite}@media (prefers-reduced-motion: reduce){.rec-pulse{animation:none;background-color:#059669}}`}</style>
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
-                    Recordings ({(c.recordings || []).length})
+                    Screen recordings ({(c.recordings || []).length})
                   </div>
                   <div className="space-y-1.5">
                     {(c.recordings || []).map((C, m) => {
