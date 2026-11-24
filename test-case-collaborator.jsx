@@ -8562,6 +8562,8 @@ function TesterSidebar({
               }}
             />
           </div>
+          {/* Only show the All tests / Suggested switch when the sheet's Tester column actually narrows the list. */}
+          {l.filter((O) => !O.initial_tester || O.initial_tester === vn).length < l.length && (
           <div className="inline-flex w-full border border-gray-700 rounded-sm overflow-hidden mb-2">
             <button
               onClick={() => C("all")}
@@ -8580,6 +8582,7 @@ function TesterSidebar({
               </span>
             </button>
           </div>
+          )}
           {I ? (
             <SidebarSearch value={_} onChange={S} onClose={() => x(false)} className="mb-2" />
           ) : (
