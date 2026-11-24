@@ -336,12 +336,18 @@ var PING_SETUP_SQL = `create table if not exists pings (
   read_at timestamptz
 );
 create index if not exists idx_pings_to on pings(session_id, to_name, created_at desc);
+-- Same as the app's other tables: no row level security (access is gated by the session codes).
+alter table pings disable row level security;
+grant select, insert, update on pings to anon, authenticated;
 do $$ begin
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'pings') then
     alter publication supabase_realtime add table pings;
   end if;
 end $$;`;
-var isPingSetupError = (e) => /pings/i.test(String(e?.message || e || "")) && /exist|relation|schema cache|find the table/i.test(String(e?.message || e || ""));
+var isPingSetupError = (e) => {
+  let t = String(e?.message || e || "");
+  return (/pings/i.test(t) && /exist|relation|schema cache|find the table/i.test(t)) || /row-level security|permission denied/i.test(t);
+};
 // Everyone in the session who can be pinged, plus who "I" am.
 var PeopleContext = createContext({ names: [], me: "" });
 var sessionPeople = (e) => {
@@ -384,6 +390,10 @@ var sendPings = async ({ sessionId: e, testCaseId: t, from: a, fromRole: r, test
     })),
   );
   if (c) console.error(isPingSetupError(c) ? "Pings need the one-time Supabase setup (see the bell panel)." : "Ping failed:", c);
+  // Tell the sender how it went (shown as a small toast by the bell group).
+  try {
+    window.dispatchEvent(new CustomEvent("uat-ping-sent", { detail: { names: d, ok: !c, setup: !!c && isPingSetupError(c), message: c ? String(c.message || c) : "" } }));
+  } catch {}
 };
 // The note fields of a tester's result that can hold pings, keyed so before/after can be compared.
 var findingNoteFields = (e) => {
@@ -5398,6 +5408,23 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
     };
   }, [e, meLower]);
   let unread = pings.filter((r) => !r.read_at).length;
+  // Confirmation (or failure) toast after I ping someone.
+  let [pingToast, setPingToast] = useState(null);
+  useEffect(() => {
+    let tm;
+    let h = (ev) => {
+      let dt = ev.detail || {};
+      setPingToast(dt);
+      if (dt.setup) setPingState("setup");
+      clearTimeout(tm);
+      tm = setTimeout(() => setPingToast(null), dt.ok ? 3500 : 9000);
+    };
+    window.addEventListener("uat-ping-sent", h);
+    return () => {
+      window.removeEventListener("uat-ping-sent", h);
+      clearTimeout(tm);
+    };
+  }, []);
   // A fresh ping makes the bell ring hard for a moment; while anything is unread it keeps nudging every few seconds.
   let [ringBurst, setRingBurst] = useState(0);
   let prevUnread = useRef(null);
@@ -5755,6 +5782,39 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           )}
         </div>
       </aside>
+      {pingToast && (
+        <div
+          role="status"
+          className={`fixed z-40 bottom-28 right-4 max-w-sm px-3 py-2 text-xs rounded-sm border shadow-lg flex items-start gap-2 ${pingToast.ok ? "bg-gray-900 border-emerald-700 text-emerald-200" : "bg-red-950/90 border-red-700 text-red-100"}`}
+        >
+          {pingToast.ok ? <Check className="w-3.5 h-3.5 mt-px flex-shrink-0" strokeWidth={3} /> : <AlertTriangle className="w-3.5 h-3.5 mt-px flex-shrink-0" />}
+          <span className="flex-1">
+            {pingToast.ok ? (
+              <>Pinged {(pingToast.names || []).join(", ")}</>
+            ) : pingToast.setup ? (
+              <>
+                Couldn't ping {(pingToast.names || []).join(", ")}: Supabase needs a one-time setup.{" "}
+                <button
+                  className="underline font-medium"
+                  onClick={() => {
+                    setPingToast(null);
+                    u(false);
+                    setReadmeOpen(false);
+                    setPingsOpen(true);
+                  }}
+                >
+                  Show the SQL
+                </button>
+              </>
+            ) : (
+              <>Couldn't ping {(pingToast.names || []).join(", ")}. {pingToast.message}</>
+            )}
+          </span>
+          <button onClick={() => setPingToast(null)} className="opacity-60 hover:opacity-100" aria-label="Dismiss">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       <div
         ref={barRef}
         className={`fixed z-30 bottom-14 flex items-center gap-2 transition-all duration-300 ease-out ${sidePanelOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[25rem]" : "right-4"} ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}

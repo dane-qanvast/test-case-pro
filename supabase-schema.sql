@@ -301,3 +301,30 @@ create index if not exists idx_findings_tester on findings(session_id, tester_na
 -- 'retest_ready' = testers are asked to re-test. Empty counts as retest ready.
 -- ─────────────────────────────────────────────────────────────────────────────
 alter table done_marks add column if not exists fix_stage text;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Pings (idempotent): typing "@Name" in a note notifies that tester/developer.
+-- Shown under the bell in both portals; live via realtime.
+-- ─────────────────────────────────────────────────────────────────────────────
+create table if not exists pings (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references sessions(id) on delete cascade,
+  test_case_id uuid not null references test_cases(id) on delete cascade,
+  to_name text not null,
+  from_name text not null,
+  from_role text,
+  tester_tab text,
+  field text,
+  snippet text,
+  created_at timestamptz not null default now(),
+  read_at timestamptz
+);
+create index if not exists idx_pings_to on pings(session_id, to_name, created_at desc);
+-- Same as the app's other tables: no row level security (access is gated by the session codes).
+alter table pings disable row level security;
+grant select, insert, update on pings to anon, authenticated;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'pings') then
+    alter publication supabase_realtime add table pings;
+  end if;
+end $$;
