@@ -798,6 +798,12 @@ var CODE_TOGGLE_SETUP_SQL =
   "alter table sessions add column if not exists tester_code_required boolean not null default true; alter table sessions add column if not exists developer_code_required boolean not null default true;";
 var isCodeToggleSetupError = (e) => /code_required/i.test(String(e?.message || e || ""));
 var testerCodeOn = (s) => s?.tester_code_required !== false;
+// Dev "Fixed" has two stages: not merged yet (testers just see a quiet "Fix in progress") and
+// retest ready (testers get the Review Fix flag). Marks without a stage count as retest ready.
+var FIX_STAGE_SETUP_SQL = "alter table done_marks add column if not exists fix_stage text;";
+var isFixStageSetupError = (e) => /fix_stage/i.test(String(e?.message || e || ""));
+var isNotMerged = (m) => m?.status === "fixed" && m.fix_stage === "not_merged";
+var isRetestReady = (m) => m?.status === "fixed" && m.fix_stage !== "not_merged";
 var devCodeOn = (s) => s?.developer_code_required !== false;
 // Tabs whose names look like instructions, overviews, issue logs or question lists start unticked
 // (the admin can still tick them).
@@ -7960,6 +7966,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           done_at: Le.done_at,
           status: Le.status || "fixed",
           note: Le.note || "",
+          fix_stage: Le.fix_stage || null,
         });
       });
       u(ce);
@@ -8020,6 +8027,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
                     done_at: Q.done_at,
                     status: Q.status || "fixed",
                     note: Q.note || "",
+                    fix_stage: Q.fix_stage || null,
                   },
                 ],
               };
@@ -8075,10 +8083,12 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
       if (
         G.status &&
         REGRESSION_STATUSES.includes(G.status) &&
-        (i[N] || []).filter((re) => re.status === "fixed").length > 0
+        (i[N] || []).filter((re) => isRetestReady(re)).length > 0
       ) {
+        // Failing again clears "retest ready" fixes; "not merged" ones stay, since that fix isn't live yet.
+        let clearDevs = (i[N] || []).filter((re) => isRetestReady(re)).map((re) => re.developer_name);
         u((re) => {
-          let ce = (re[N] || []).filter((We) => We.status !== "fixed");
+          let ce = (re[N] || []).filter((We) => !isRetestReady(We));
           let Le = {
             ...re,
           };
@@ -8094,7 +8104,8 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
             .from("done_marks")
             .delete()
             .eq("test_case_id", N)
-            .eq("status", "fixed");
+            .eq("status", "fixed")
+            .in("developer_name", clearDevs);
           if (re) {
             console.error("Failed to clear fixed marks after rejection:", re);
           }
@@ -8322,10 +8333,14 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     );
   });
   let K = new Set();
+  let fixPending = new Set();
   let te = {};
   r.forEach((N) => {
     let G = i[N.id] || [];
-    let Q = G.filter((re) => re.status === "fixed");
+    let Q = G.filter((re) => isRetestReady(re));
+    if (G.some((re) => isNotMerged(re))) {
+      fixPending.add(N.id);
+    }
     if (Q.length > 0) {
       let re = Math.max(...Q.map((We) => new Date(We.done_at).getTime()));
       let ce = s[N.id];
@@ -8410,6 +8425,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           completed={ve}
           visibleCases={H}
           reviewFixIds={K}
+          fixPendingIds={fixPending}
           wipByTest={te}
           selectedId={x}
           onSelect={g}
@@ -8498,6 +8514,7 @@ function TesterSidebar({
   completed: u,
   visibleCases: d,
   reviewFixIds: c,
+  fixPendingIds: fixPendingIds = new Set(),
   wipByTest: p,
   selectedId: h,
   onSelect: b,
@@ -8715,7 +8732,8 @@ function TesterSidebar({
                   : pe.length > 1
                     ? `${pe[0]} +${pe.length - 1} Fixing`
                     : null;
-              let Y = (O.feature && O.feature !== "—") || ue || me;
+              let fp = !ue && fixPendingIds.has(O.id);
+              let Y = (O.feature && O.feature !== "—") || ue || me || fp;
               return (
                 <button
                   data-tc-id={O.id}
@@ -8752,6 +8770,14 @@ function TesterSidebar({
                             title="A dev marked this fixed after your last edit — re-test when you can."
                           >
                             Review Fix
+                          </span>
+                        )}
+                        {fp && (
+                          <span
+                            className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-gray-800 text-gray-400 border border-gray-700"
+                            title="A developer has fixed this, but it isn't on the test site yet. No need to re-test for now."
+                          >
+                            Fix in progress
                           </span>
                         )}
                         {me && (
@@ -9011,7 +9037,7 @@ function TesterTestDetail({
                 </div>
                 <div className="space-y-2">
                   {g.map((f) => (
-                    <DevMarkCard mark={f} key={f.developer_name} />
+                    <DevMarkCard mark={f} key={f.developer_name} forTester />
                   ))}
                 </div>
               </div>
@@ -9673,6 +9699,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           done_at: de.done_at,
           status: de.status || "fixed",
           note: de.note || "",
+          fix_stage: de.fix_stage || null,
         });
       });
       u(X);
@@ -9735,6 +9762,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
                     done_at: K.done_at,
                     status: K.status || "fixed",
                     note: K.note || "",
+                    fix_stage: K.fix_stage || null,
                   },
                 ],
               };
@@ -9756,8 +9784,10 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
       supabase.removeChannel($);
     };
   }, [e.id]);
-  let B = async ($, H) => {
+  let B = async ($, H, stage) => {
     let K = (se.current[$] || []).find((ve) => ve.developer_name === t);
+    // A new Fixed mark starts as "not merged"; the dev switches it to "retest ready" once it's on the test site.
+    let fixStage = H === "fixed" ? stage || (K?.status === "fixed" ? K.fix_stage || "retest_ready" : "not_merged") : null;
     let te = K?.note || "";
     if (!H && !te) {
       if (!K) {
@@ -9789,6 +9819,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
             done_at: P,
             status: H,
             note: te,
+            fix_stage: fixStage,
           },
         ],
       };
@@ -9801,11 +9832,15 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
         done_at: P,
         status: H,
         note: te,
+        fix_stage: fixStage,
       },
       {
         onConflict: "test_case_id,developer_name",
       },
     );
+    if (X && isFixStageSetupError(X)) {
+      alert(`Saving "Not merged / Retest ready" needs a one-time Supabase setup. In the SQL Editor run:\n\n${FIX_STAGE_SETUP_SQL}`);
+    }
     if (X) {
       console.error("Set status failed:", X);
     }
@@ -9815,6 +9850,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
       let te = K[$] || [];
       let P = te.find((N) => N.developer_name === t);
       let X = P?.status || null;
+      let keepStage = P?.fix_stage || null;
       let ve = P?.done_at || new Date().toISOString();
       let de = te.filter((N) => N.developer_name !== t);
       if (!H && !X) {
@@ -9832,6 +9868,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
               done_at: ve,
               status: X,
               note: H,
+              fix_stage: keepStage,
             },
           ],
         };
@@ -9866,6 +9903,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
             done_at: K.done_at,
             status: K.status,
             note: K.note,
+            ...(K.fix_stage ? { fix_stage: K.fix_stage } : {}),
           },
           {
             onConflict: "test_case_id,developer_name",
@@ -10042,9 +10080,11 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
               marks={me}
               myName={t}
               myStatus={Y}
+              myFixStage={me.find(($) => $.developer_name === t)?.fix_stage || null}
               myNote={me.find(($) => $.developer_name === t)?.note || ""}
               noteIsSaving={D.has(ue.id)}
               onSetStatus={($) => B(ue.id, $)}
+              onSetFixStage={($) => B(ue.id, "fixed", $)}
               onSetNote={($) => ne(ue.id, $)}
             />
           ) : (
@@ -10871,14 +10911,17 @@ function DevSidebar({
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-0.5 mt-0.5 flex-shrink-0">
-                    {ue === "fixed" && (
-                      <span
-                        className="w-4 h-4 bg-emerald-600 rounded-sm flex items-center justify-center"
-                        title="You marked this fixed"
-                      >
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                      </span>
-                    )}
+                    {ue === "fixed" && (() => {
+                      let nm = isNotMerged(he.find((be) => be.developer_name === r));
+                      return (
+                        <span
+                          className={`w-4 h-4 rounded-sm flex items-center justify-center ${nm ? "border border-emerald-600" : "bg-emerald-600"}`}
+                          title={nm ? "You marked this fixed, not merged yet" : "You marked this fixed, ready to retest"}
+                        >
+                          <Check className={`w-3 h-3 ${nm ? "text-emerald-400" : "text-white"}`} strokeWidth={3} />
+                        </span>
+                      );
+                    })()}
                     {ue === "in_progress" && (
                       <span
                         className="w-4 h-4 bg-amber-600 rounded-sm flex items-center justify-center"
@@ -10957,7 +11000,7 @@ function DevSidebar({
   }
 }
 function summarizeDevMarks(e) {
-  let t = e.filter((o) => o.status === "fixed").map((o) => o.developer_name);
+  let t = e.filter((o) => o.status === "fixed").map((o) => o.developer_name + (isNotMerged(o) ? " (not merged)" : ""));
   let a = e.filter((o) => o.status === "in_progress").map((o) => o.developer_name);
   let r = [];
   if (t.length) {
@@ -12195,16 +12238,22 @@ function RecordingPlayer({ recordings: e, startIdx: t = 0, onClose: a }) {
     return null;
   }
 }
-function DevMarkCard({ mark: e }) {
+function DevMarkCard({ mark: e, forTester: ft = false }) {
   let t = e.status === "fixed";
+  let nm = isNotMerged(e);
   let a = e.status === "in_progress";
   return (
     <div className="px-3 py-2 bg-gray-900/60 border border-gray-800 rounded-sm">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-sm font-medium text-gray-200">{e.developer_name}</span>
-        {t && (
+        {t && nm && (
+          <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-gray-800 text-gray-400 border border-gray-700 whitespace-nowrap">
+            {ft ? "Fix in progress" : "Fixed · Not merged"}
+          </span>
+        )}
+        {t && !nm && (
           <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-emerald-900/40 text-emerald-300 border border-emerald-700 whitespace-nowrap">
-            Fixed
+            {ft ? "Fixed · Ready to retest" : "Fixed · Retest ready"}
           </span>
         )}
         {a && (
@@ -12231,6 +12280,8 @@ function DevTestDetail({
   marks: a,
   myName: r,
   myStatus: o,
+  myFixStage: myStage = null,
+  onSetFixStage: setStage = () => {},
   myNote: s,
   noteIsSaving: l,
   onSetStatus: i,
@@ -12285,9 +12336,27 @@ function DevTestDetail({
               title={o === "fixed" ? "Click to clear status" : "Mark this as fixed"}
             >
               <Check className="w-3.5 h-3.5" strokeWidth={3} />
-              {o === "fixed" ? "Fixed" : "Mark as Fixed"}
+              {o === "fixed" ? (myStage === "not_merged" ? "Fixed · Not merged" : "Fixed · Retest ready") : "Mark as Fixed"}
             </button>
           </div>
+          {o === "fixed" && (
+            <div className="basis-full flex justify-end">
+              <div role="radiogroup" aria-label="Fix stage" className="flex items-center gap-4 text-xs">
+                {[
+                  { key: "not_merged", label: "Fixed – not merged", hint: "Testers see “Fix in progress” and don't re-test yet" },
+                  { key: "retest_ready", label: "Fixed – retest ready", hint: "Testers are asked to re-test" },
+                ].map((C) => {
+                  let on = (myStage === "not_merged" ? "not_merged" : "retest_ready") === C.key;
+                  return (
+                    <label key={C.key} title={C.hint} className={`flex items-center gap-1.5 cursor-pointer ${on ? "text-gray-100" : "text-gray-400 hover:text-gray-200"}`}>
+                      <input type="radio" name={`fix-stage-${d.id}`} checked={on} onChange={() => setStage(C.key)} className="accent-emerald-500 w-3.5 h-3.5" />
+                      {C.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-5">

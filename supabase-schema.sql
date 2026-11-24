@@ -294,3 +294,10 @@ begin
 end $$;
 
 create index if not exists idx_findings_tester on findings(session_id, tester_name);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Fix stage for a developer's "Fixed" mark (idempotent):
+-- 'not_merged' = fixed in code, not on the test site yet (testers see "Fix in progress")
+-- 'retest_ready' = testers are asked to re-test. Empty counts as retest ready.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table done_marks add column if not exists fix_stage text;
