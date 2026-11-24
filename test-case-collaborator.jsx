@@ -61,6 +61,8 @@ import {
   ArrowLeft,
   Monitor,
   GitBranch,
+  Bell,
+  AtSign,
 } from "lucide-react";
 var EDITION = "Pro";
 var SUPABASE_URL = "https://badylykbhmujmeaysixg.supabase.co";
@@ -317,6 +319,117 @@ function PathChipText({ text: e }) {
     );
   }
 }
+// ---------------------------------------------------------------------------
+// Pings: typing "@Name" in any note notifies that tester or developer (bell in the bottom-right group).
+// ---------------------------------------------------------------------------
+var PING_SETUP_SQL = `create table if not exists pings (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references sessions(id) on delete cascade,
+  test_case_id uuid not null references test_cases(id) on delete cascade,
+  to_name text not null,
+  from_name text not null,
+  from_role text,
+  tester_tab text,
+  field text,
+  snippet text,
+  created_at timestamptz not null default now(),
+  read_at timestamptz
+);
+create index if not exists idx_pings_to on pings(session_id, to_name, created_at desc);
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'pings') then
+    alter publication supabase_realtime add table pings;
+  end if;
+end $$;`;
+var isPingSetupError = (e) => /pings/i.test(String(e?.message || e || "")) && /exist|relation|schema cache|find the table/i.test(String(e?.message || e || ""));
+// Everyone in the session who can be pinged, plus who "I" am.
+var PeopleContext = createContext({ names: [], me: "" });
+var sessionPeople = (e) => {
+  let t = [];
+  [...(e?.testers || []), ...(e?.developers || [])].forEach((a) => {
+    let r = String(a || "").trim();
+    if (r && !t.some((o) => o.toLowerCase() === r.toLowerCase())) t.push(r);
+  });
+  return t;
+};
+var escapeRe = (e) => e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// A mention only counts once something follows the name (a space, punctuation or a new line),
+// so half-typed names like "@Sam" (on the way to "@Samantha") don't ping anyone.
+var mentionCount = (e, t) => {
+  if (!e || !e.includes("@")) return 0;
+  let a = new RegExp(`(^|[^\\w@])@${escapeRe(t)}(?=[^\\w])`, "gi");
+  return (e.match(a) || []).length;
+};
+var newlyMentioned = (e, t, a) => a.filter((r) => mentionCount(t, r) > mentionCount(e, r));
+var pingSnippet = (e, t) => {
+  let a = String(e || "");
+  let r = a.toLowerCase().indexOf("@" + t.toLowerCase());
+  let o = Math.max(0, r - 50);
+  let s = a.slice(o, o + 160).replace(/\s+/g, " ").trim();
+  return (o > 0 ? "…" : "") + s + (o + 160 < a.length ? "…" : "");
+};
+var sendPings = async ({ sessionId: e, testCaseId: t, from: a, fromRole: r, testerTab: o, field: s, oldText: l, newText: i, names: u }) => {
+  let d = newlyMentioned(l || "", i || "", u || []).filter((c) => c.toLowerCase() !== String(a || "").toLowerCase());
+  if (!d.length || !supabase) return;
+  let { error: c } = await supabase.from("pings").insert(
+    d.map((p) => ({
+      session_id: e,
+      test_case_id: t,
+      to_name: p,
+      from_name: a,
+      from_role: r,
+      tester_tab: o || null,
+      field: s || null,
+      snippet: pingSnippet(i, p),
+    })),
+  );
+  if (c) console.error(isPingSetupError(c) ? "Pings need the one-time Supabase setup (see the bell panel)." : "Ping failed:", c);
+};
+// The note fields of a tester's result that can hold pings, keyed so before/after can be compared.
+var findingNoteFields = (e) => {
+  let t = { notes: e?.notes || "", other_observations: e?.other_observations || "" };
+  Object.entries(e?.step_notes || {}).forEach(([a, r]) => (t[`step_notes.${a}`] = r || ""));
+  return t;
+};
+var noteFieldLabel = (e) => {
+  if (e === "notes") return "Tester notes";
+  if (e === "other_observations") return "Other observations";
+  let t = e.replace("step_notes.", "");
+  if (t.startsWith("exp-")) return "Expected result note";
+  let a = parseInt(t, 10);
+  return isNaN(a) ? "Note" : `Step ${a + 1} note`;
+};
+function MentionChip({ name: e }) {
+  let { me: t } = useContext(PeopleContext);
+  let a = t && e.toLowerCase() === t.toLowerCase();
+  return (
+    <span
+      className={`inline-flex items-center align-baseline px-1 py-px text-[0.95em] font-semibold rounded-sm border ${a ? "bg-amber-950/60 text-amber-200 border-amber-700" : "bg-violet-950/60 text-violet-200 border-violet-800"}`}
+      title={a ? "You were pinged here" : `Pinged ${e}`}
+    >
+      @{e}
+    </span>
+  );
+}
+// Renders text with known "@Name" mentions as chips (longest names first, so "Sam Lee" beats "Sam").
+function MentionText({ text: e }) {
+  let { names: t } = useContext(PeopleContext);
+  if (!e || !e.includes("@") || !t?.length) return normalizePathOnly(e);
+  let a = [...t].sort((u, d) => d.length - u.length);
+  let r = new RegExp(`(^|[^\\w@])@(${a.map(escapeRe).join("|")})(?![\\w])`, "gi");
+  let o = [];
+  let s = 0;
+  let l;
+  while ((l = r.exec(e)) !== null) {
+    let u = l.index + l[1].length;
+    if (u > s) o.push(<Fragment key={`m${s}`}>{normalizePathOnly(e.slice(s, u))}</Fragment>);
+    let d = a.find((c) => c.toLowerCase() === l[2].toLowerCase()) || l[2];
+    o.push(<MentionChip name={d} key={`c${u}`} />);
+    s = u + 1 + l[2].length;
+  }
+  if (s < e.length) o.push(<Fragment key={`m${s}`}>{normalizePathOnly(e.slice(s))}</Fragment>);
+  return o;
+}
 // "[Fig. N]" in notes links to the Nth screenshot of the test (see FigureContext / MentionTextarea).
 var FIG_TOKEN_RE = /\[Fig\. (\d+)\]/g;
 var FigureContext = createContext(null);
@@ -357,26 +470,28 @@ var normalizePath = (e) => {
   }
   let t = String(e);
   if (!t.includes("[Fig. ")) {
-    return normalizePathOnly(t);
+    return t.includes("@") ? <MentionText text={t} /> : normalizePathOnly(t);
   }
   let a = [];
   let r = 0;
   let o;
   for (FIG_TOKEN_RE.lastIndex = 0; (o = FIG_TOKEN_RE.exec(t)) !== null;) {
     if (o.index > r) {
-      a.push(<Fragment key={`t${r}`}>{normalizePathOnly(t.substring(r, o.index))}</Fragment>);
+      a.push(<MentionText text={t.substring(r, o.index)} key={`t${r}`} />);
     }
     a.push(<FigChip n={parseInt(o[1], 10)} key={`f${o.index}`} />);
     r = o.index + o[0].length;
   }
   if (r < t.length) {
-    a.push(<Fragment key={`t${r}`}>{normalizePathOnly(t.substring(r))}</Fragment>);
+    a.push(<MentionText text={t.substring(r)} key={`t${r}`} />);
   }
   return a;
 };
-// Textarea that offers the test's screenshots when you type "@" (e.g. "@F" → Fig. 1), inserting "[Fig. N]".
+// Textarea with two pickers: "#" offers the test's screenshots (e.g. "#fig1" → Fig. 1, inserting "[Fig. N]"),
+// and "@" offers the session's testers and developers (inserting "@Name ", which pings them).
 function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showRefs: o = true, ...s }) {
   let l = useContext(FigureContext);
+  let people = useContext(PeopleContext);
   let i = useRef(null);
   let [u, d] = useState(null);
   let [c, p] = useState(0);
@@ -384,15 +499,39 @@ function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showR
   let b = (x) => {
     let g = x.selectionStart ?? x.value.length;
     let v = x.value.slice(0, g);
-    let k = /(^|\s)@(fig\.?\s?\d{0,3}|[^\s@]{0,20})$/i.exec(v);
+    let k = /(^|\s)([#@])(fig\.?\s?\d{0,3}|[^\s@#]{0,20})$/i.exec(v);
     if (k) {
-      d({ start: g - k[2].length - 1, end: g, query: k[2] });
+      d({ start: g - k[3].length - 1, end: g, query: k[3], kind: k[2] === "@" ? "people" : "figs" });
     } else {
       d(null);
     }
     p(0);
   };
-  let _ = u
+  let peopleMatches =
+    u && u.kind === "people"
+      ? (people.names || [])
+          .filter((x) => x.toLowerCase() !== String(people.me || "").toLowerCase())
+          .filter((x) => {
+            let g = u.query.toLowerCase();
+            return !g || x.toLowerCase().startsWith(g) || x.toLowerCase().includes(g);
+          })
+      : [];
+  let insertPerson = (x) => {
+    if (!u) return;
+    let g = `@${x} `;
+    let v = (e || "").slice(0, u.start) + g + (e || "").slice(u.end);
+    let k = u.start + g.length;
+    d(null);
+    t({ target: { value: v } });
+    requestAnimationFrame(() => {
+      let C = i.current;
+      if (C) {
+        C.focus();
+        C.setSelectionRange(k, k);
+      }
+    });
+  };
+  let _ = u && u.kind === "figs"
     ? h
         .map((x, g) => ({ idx: g, name: x.name || "" }))
         .filter((x) => {
@@ -442,6 +581,23 @@ function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showR
               d(null);
               return;
             }
+            if (u.kind === "people" && peopleMatches.length > 0) {
+              if (x.key === "ArrowDown") {
+                x.preventDefault();
+                p((g) => (g + 1) % peopleMatches.length);
+                return;
+              }
+              if (x.key === "ArrowUp") {
+                x.preventDefault();
+                p((g) => (g - 1 + peopleMatches.length) % peopleMatches.length);
+                return;
+              }
+              if (x.key === "Enter" || x.key === "Tab") {
+                x.preventDefault();
+                insertPerson(peopleMatches[Math.min(c, peopleMatches.length - 1)]);
+                return;
+              }
+            }
             if (_.length > 0) {
               if (x.key === "ArrowDown") {
                 x.preventDefault();
@@ -469,11 +625,43 @@ function MentionTextarea({ value: e, onChange: t, onKeyDown: a, onBlur: r, showR
         }}
         {...s}
       />
-      {u && (
+      {u && u.kind === "people" && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl overflow-hidden">
+          {peopleMatches.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-gray-400">
+              {(people.names || []).length > 1 ? `No one matches "${u.query}".` : "No one else is in this session yet."}
+            </div>
+          ) : (
+            <div className="max-h-56 overflow-y-auto py-1">
+              {peopleMatches.map((x, g) => (
+                <button
+                  type="button"
+                  key={x}
+                  onMouseDown={(v) => {
+                    v.preventDefault();
+                    insertPerson(x);
+                  }}
+                  onMouseEnter={() => p(g)}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 text-left text-xs ${g === c ? "bg-gray-800 text-gray-100" : "text-gray-300"}`}
+                >
+                  <span className="w-6 h-6 rounded-sm bg-violet-950/70 border border-violet-800 text-violet-200 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                    {x.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="truncate">{x}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="px-2.5 py-1 border-t border-gray-800 text-[10px] text-gray-500">
+            ↑↓ to choose · Enter to ping · Esc to close
+          </div>
+        </div>
+      )}
+      {u && u.kind === "figs" && (
         <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl overflow-hidden">
           {h.length === 0 ? (
             <div className="px-3 py-2 text-xs text-gray-400">
-              No screenshots on this test yet. Upload one under Screenshots, then type @ to link it.
+              No screenshots on this test yet. Upload one under Screenshots, then type # to link it.
             </div>
           ) : _.length === 0 ? (
             <div className="px-3 py-2 text-xs text-gray-400">No screenshot matches "{u.query}".</div>
@@ -5168,7 +5356,66 @@ var downloadBlob = (e, t) => {
   r.remove();
   setTimeout(() => URL.revokeObjectURL(a), 4000);
 };
-function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
+function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = "tester", testCases = [], onOpenPing = () => {} }) {
+  let isDevBar = role === "developer";
+  // ---- Pings for me (bell) ----
+  let [pings, setPings] = useState([]);
+  let [pingState, setPingState] = useState("loading");
+  let [pingsOpen, setPingsOpen] = useState(false);
+  let pingsPanelRef = useRef(null);
+  let meLower = String(n || "").toLowerCase();
+  useEffect(() => {
+    if (!supabase || !e || !n) return;
+    let dead = false;
+    (async () => {
+      let { data, error } = await supabase
+        .from("pings")
+        .select("*")
+        .eq("session_id", e)
+        .ilike("to_name", n)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (dead) return;
+      if (error) {
+        setPingState(isPingSetupError(error) ? "setup" : "error");
+        return;
+      }
+      setPings((data || []).filter((r) => String(r.to_name).toLowerCase() === meLower));
+      setPingState("ready");
+    })();
+    let ch = supabase
+      .channel(`pings-${e}-${meLower}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pings", filter: `session_id=eq.${e}` }, (pl) => {
+        let row = pl.new;
+        if (!row || String(row.to_name || "").toLowerCase() !== meLower) return;
+        setPings((r) => (r.some((o) => o.id === row.id) ? r.map((o) => (o.id === row.id ? row : o)) : [row, ...r]));
+      })
+      .subscribe();
+    return () => {
+      dead = true;
+      supabase.removeChannel(ch);
+    };
+  }, [e, meLower]);
+  let unread = pings.filter((r) => !r.read_at).length;
+  // A fresh ping makes the bell ring hard for a moment; while anything is unread it keeps nudging every few seconds.
+  let [ringBurst, setRingBurst] = useState(0);
+  let prevUnread = useRef(null);
+  useEffect(() => {
+    if (prevUnread.current !== null && unread > prevUnread.current) setRingBurst((r) => r + 1);
+    prevUnread.current = unread;
+  }, [unread]);
+  // Show the unread count in the browser tab too, so it's noticed from another tab.
+  useEffect(() => {
+    let base = document.title.replace(/^\(\d+\+?\) /, "");
+    document.title = unread > 0 ? `(${unread > 99 ? "99+" : unread}) ${base}` : base;
+  }, [unread]);
+  let markRead = async (ids) => {
+    if (!ids.length) return;
+    let now = new Date().toISOString();
+    setPings((r) => r.map((o) => (ids.includes(o.id) && !o.read_at ? { ...o, read_at: now } : o)));
+    let { error } = await supabase.from("pings").update({ read_at: now }).in("id", ids);
+    if (error) console.error("Couldn't mark pings read:", error);
+  };
   let [a, r] = useState([]);
   let o = `uat-pro-samples-ack-${e}-${n}`;
   let [s, l] = useState(() => {
@@ -5203,7 +5450,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
     let h = false;
     (async () => {
       let { data: b, error: _ } = await supabase.from("sessions").select("readme").eq("id", e).single();
-      if (!h && !_ && b?.readme && b.readme.trim()) setReadme(b.readme);
+      if (!h && !_ && !isDevBar && b?.readme && b.readme.trim()) setReadme(b.readme);
     })();
     return () => {
       h = true;
@@ -5224,7 +5471,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
       if (h || _) return;
       r(b?.sample_files || []);
       // Only auto-open the sample files drawer when there are files to show.
-      if (!s && (b?.sample_files || []).length > 0) {
+      if (!s && !isDevBar && (b?.sample_files || []).length > 0) {
         requestAnimationFrame(() => u(true));
       }
       c(true);
@@ -5246,11 +5493,12 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
   let filesPanelRef = useRef(null);
   let barRef = useRef(null);
   useEffect(() => {
-    if (!i && !readmeOpen) return;
+    if (!i && !readmeOpen && !pingsOpen) return;
     let h = (b) => {
       let tgt = b.target;
       if (barRef.current?.contains(tgt)) return;
       if (readmeOpen && !readmePanelRef.current?.contains(tgt)) setReadmeOpen(false);
+      if (pingsOpen && !pingsPanelRef.current?.contains(tgt)) setPingsOpen(false);
       if (i && !filesPanelRef.current?.contains(tgt)) {
         u(false);
         l(true);
@@ -5261,10 +5509,16 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
     };
     document.addEventListener("pointerdown", h);
     return () => document.removeEventListener("pointerdown", h);
-  }, [i, readmeOpen, o]);
-  let hasFiles = d && a.length > 0;
+  }, [i, readmeOpen, pingsOpen, o]);
+  useEffect(() => {
+    if (!pingsOpen) return;
+    let h = (b) => b.key === "Escape" && setPingsOpen(false);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [pingsOpen]);
+  let hasFiles = !isDevBar && d && a.length > 0;
   let filesOpen = hasFiles && i;
-  if (!hasFiles && !readme) return null;
+  let sidePanelOpen = readmeOpen || pingsOpen;
   let p = () => {
     l(true);
     try {
@@ -5411,13 +5665,136 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
       </Fragment>
       )}
       <div
-        ref={barRef}
-        className={`fixed z-30 bottom-14 flex items-center gap-2 transition-all duration-300 ease-out ${readmeOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[25rem]" : "right-4"} ${filesOpen || readmeOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+        className={`fixed inset-0 z-30 bg-black/40 sm:hidden transition-opacity duration-300 ${pingsOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setPingsOpen(false)}
+        aria-hidden="true"
+      />
+      <aside
+        ref={pingsPanelRef}
+        className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${pingsOpen ? "translate-x-0" : "translate-x-full pointer-events-none"}`}
+        role="dialog"
+        aria-label="Pings"
+        aria-hidden={!pingsOpen}
       >
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-800">
+          <Bell className="w-4 h-4 text-amber-400" />
+          <div className="text-base font-bold text-gray-100">Pings</div>
+          {unread > 0 && <span className="text-xs text-gray-500">{unread} unread</span>}
+          {unread > 0 && (
+            <button
+              onClick={() => markRead(pings.filter((r) => !r.read_at).map((r) => r.id))}
+              className="ml-auto text-xs text-gray-400 hover:text-gray-200"
+            >
+              Mark all as read
+            </button>
+          )}
+          <button onClick={() => setPingsOpen(false)} className={`${unread > 0 ? "" : "ml-auto"} p-1 text-gray-500 hover:text-gray-200`} title="Close" aria-label="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {pingState === "setup" ? (
+            <div className="p-5 text-sm text-gray-300 space-y-3">
+              <div>Pings need a one-time Supabase setup. In Supabase, open the SQL Editor, paste this and click Run:</div>
+              <pre className="text-[11px] leading-relaxed bg-gray-950 border border-gray-800 rounded-sm p-3 overflow-x-auto text-gray-300 whitespace-pre">{PING_SETUP_SQL}</pre>
+              <button
+                onClick={() => navigator.clipboard?.writeText(PING_SETUP_SQL)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-800 border border-gray-700 text-gray-200 rounded-sm hover:bg-gray-700"
+              >
+                <Copy className="w-3 h-3" /> Copy SQL
+              </button>
+            </div>
+          ) : pingState === "error" ? (
+            <div className="p-5 text-sm text-red-300">Couldn't load pings. Try refreshing the page.</div>
+          ) : pings.length === 0 ? (
+            <div className="p-6 text-center text-sm text-gray-400">
+              <AtSign className="w-6 h-6 mx-auto mb-2 text-gray-600" />
+              No pings yet. When someone types <span className="text-violet-300 font-semibold">@{n}</span> in a note, it shows up here.
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-800">
+              {pings.map((pg) => {
+                let tc = testCases.find((r) => r.id === pg.test_case_id);
+                return (
+                  <button
+                    key={pg.id}
+                    onClick={() => {
+                      markRead([pg.id]);
+                      setPingsOpen(false);
+                      onOpenPing(pg);
+                    }}
+                    className={`w-full text-left px-5 py-3 flex gap-3 transition-colors hover:bg-gray-800/60 ${pg.read_at ? "" : "bg-violet-950/20"}`}
+                  >
+                    <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${pg.read_at ? "bg-transparent" : "bg-red-500"}`} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline gap-2">
+                        <span className={`text-sm ${pg.read_at ? "text-gray-300" : "text-gray-100 font-semibold"}`}>
+                          {pg.from_name} <span className="font-normal text-gray-400">pinged you</span>
+                        </span>
+                        <span className="ml-auto text-[11px] text-gray-500 whitespace-nowrap">{timeAgo(pg.created_at)}</span>
+                      </span>
+                      <span className="block text-xs mt-0.5 truncate">
+                        <span className="font-mono text-emerald-400">{tc?.test_id || "Test"}</span>
+                        <span className="text-gray-400"> · {tc?.title || "Removed test"}</span>
+                      </span>
+                      <span className="block text-[11px] text-gray-500 mt-0.5">
+                        {pg.field || "Note"}
+                        {pg.tester_tab && pg.from_role === "tester" ? "" : pg.tester_tab ? ` · ${pg.tester_tab}'s results` : ""}
+                      </span>
+                      {pg.snippet && (
+                        <span className="block mt-1.5 text-xs text-gray-300 leading-snug border-l-2 border-gray-700 pl-2 line-clamp-3">
+                          <MentionText text={pg.snippet} />
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </aside>
+      <div
+        ref={barRef}
+        className={`fixed z-30 bottom-14 flex items-center gap-2 transition-all duration-300 ease-out ${sidePanelOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[25rem]" : "right-4"} ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+      >
+        <button
+          onClick={() => {
+            u(false);
+            setReadmeOpen(false);
+            setPingsOpen(!pingsOpen);
+          }}
+          aria-pressed={pingsOpen}
+          aria-label={unread ? `Pings, ${unread} unread` : "Pings"}
+          className={`relative inline-flex items-center justify-center w-9 h-[34px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${pingsOpen ? "bg-gray-900 border-amber-600 text-amber-200" : unread > 0 ? "bg-amber-950/80 border-amber-500 text-amber-300 hover:bg-amber-900/80" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+          title={pingsOpen ? "Close pings" : unread ? `${unread} unread ping${unread === 1 ? "" : "s"}` : "Pings: when someone @mentions you"}
+        >
+          <style>{`
+            @keyframes uat-bell-ring { 0%,100% { transform: rotate(0) } 10% { transform: rotate(16deg) } 20% { transform: rotate(-14deg) } 30% { transform: rotate(11deg) } 40% { transform: rotate(-8deg) } 50% { transform: rotate(5deg) } 60% { transform: rotate(-2deg) } 70% { transform: rotate(0) } }
+            @keyframes uat-bell-nudge { 0%,82%,100% { transform: rotate(0) } 85% { transform: rotate(14deg) } 88% { transform: rotate(-12deg) } 91% { transform: rotate(8deg) } 94% { transform: rotate(-5deg) } 97% { transform: rotate(2deg) } }
+            .uat-bell-ring { animation: uat-bell-ring 0.9s ease-in-out 2; transform-origin: 50% 10%; }
+            .uat-bell-nudge { animation: uat-bell-nudge 4s ease-in-out infinite; transform-origin: 50% 10%; }
+            @media (prefers-reduced-motion: reduce) { .uat-bell-ring, .uat-bell-nudge { animation: none; } }
+          `}</style>
+          <Bell
+            key={ringBurst}
+            className={`w-4 h-4 ${!pingsOpen && unread > 0 ? (ringBurst > 0 ? "uat-bell-ring" : "uat-bell-nudge") : ""}`}
+            onAnimationEnd={(r) => r.animationName === "uat-bell-ring" && setRingBurst(0)}
+          />
+          {unread > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px]">
+              {!pingsOpen && <span className="absolute inset-0 bg-red-500 rounded-sm animate-ping opacity-60" />}
+              <span className="relative min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-bold rounded-sm flex items-center justify-center">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            </span>
+          )}
+        </button>
         {readme && (
           <button
             onClick={() => {
               u(false);
+              setPingsOpen(false);
               setReadmeOpen(!readmeOpen);
               markReadmeSeen();
             }}
@@ -5432,6 +5809,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n }) {
           <button
             onClick={() => {
               setReadmeOpen(false);
+              setPingsOpen(false);
               if (i) close();
               else u(true);
             }}
@@ -7898,6 +8276,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   // Everyone runs every test now, so the CSV's tester assignment is an optional "Suggested" filter.
   let [T, A] = useState("all");
   let [j, M] = useState(true);
+  useSearchShortcut(() => M(true), () => m(true));
   let [W, V] = useState(null);
   let [F, se] = useState(false);
   let [filterPriority, setFilterPriority] = useState("All");
@@ -8063,6 +8442,14 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
       return;
     }
     if (r.find((z) => z.id === N)) {
+      // Ping anyone newly @mentioned in a note.
+      let before = findingNoteFields(s[N]);
+      let after = findingNoteFields({ ...(s[N] || {}), ...G });
+      Object.keys(after).forEach((k) => {
+        if (after[k] !== (before[k] || "") && after[k].includes("@")) {
+          sendPings({ sessionId: e.id, testCaseId: N, from: t, fromRole: "tester", testerTab: t, field: noteFieldLabel(k), oldText: before[k] || "", newText: after[k], names: sessionPeople(e) });
+        }
+      });
       l((z) => {
         let ce = {
           ...(z[N] || {
@@ -8418,6 +8805,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   };
   return (
     <BaseUrlContext.Provider value={b}>
+    <PeopleContext.Provider value={{ names: sessionPeople(e), me: t }}>
       <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
       <div className="flex-1 min-h-0 flex">
         <TesterSidebar
@@ -8502,10 +8890,21 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           currentFocusedIds={W}
           onApply={(N) => V(N)}
         />
-        <TesterSampleFilesBar sessionId={e.id} sessionName={e.name} myName={t} />
+        <TesterSampleFilesBar
+          sessionId={e.id}
+          sessionName={e.name}
+          myName={t}
+          role="tester"
+          testCases={r}
+          onOpenPing={(pg) => {
+            if (pg.tester_tab && tabNames.includes(pg.tester_tab)) setViewTab(pg.tester_tab);
+            g(pg.test_case_id);
+          }}
+        />
       </div>
       <TesterTabBar names={tabNames} active={viewTab} onSelect={setViewTab} me={t} stats={tabStats} />
       </div>
+    </PeopleContext.Provider>
     </BaseUrlContext.Provider>
   );
 }
@@ -8621,7 +9020,7 @@ function TesterSidebar({
                 }
               }}
               className={`flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${I || _ ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
-              title="Search test cases"
+              title={`Search test cases (${SEARCH_SHORTCUT_LABEL})`}
             >
               <Search className="w-3.5 h-3.5" />
             </button>
@@ -8949,7 +9348,8 @@ function TesterTestDetail({
   return (
     <FigureContext.Provider value={{ shots: p.screenshots || [], open: (f) => x(f) }}>
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      {/* Extra bottom space so the floating Read me / Sample files buttons never cover the last section. */}
+      <div className="max-w-6xl mx-auto px-6 pt-6 pb-24">
         <div className="mb-3 pb-4 border-b border-gray-800 flex items-start gap-4">
           <div className="flex-1 min-w-0">
             <Breadcrumb tc={c} />
@@ -9107,7 +9507,7 @@ function TesterTestDetail({
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
                 Tester Notes{" "}
-                <span className="normal-case tracking-normal font-normal text-gray-500">· type @ to link a screenshot</span>
+                <span className="normal-case tracking-normal font-normal text-gray-500">· @ to ping someone · # to link a screenshot</span>
               </div>
               <MentionTextarea
                 value={p.notes || ""}
@@ -9349,7 +9749,7 @@ function ExpectedItemNote({ note: e, onNote: t }) {
         onChange={(o) => t(prettyArrows(o.target.value))}
         onBlur={() => r(false)}
         rows={2}
-        placeholder="Note for this item… (type @ to link a screenshot)"
+        placeholder="Note for this item… (@ to ping, # to link a screenshot)"
         className="w-full px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-sm text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
       />
     </div>
@@ -9485,7 +9885,7 @@ function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s })
               onChange={(p) => s(prettyArrows(p.target.value))}
               onBlur={() => i(false)}
               rows={2}
-              placeholder="Note for this step… (type @ to link a screenshot)"
+              placeholder="Note for this step… (@ to ping, # to link a screenshot)"
               className="mt-2 w-full px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
             />
           ) : (
@@ -9645,6 +10045,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let [C, m] = useState(false);
   let [f, w] = useState("all");
   let [T, A] = useState(true);
+  useSearchShortcut(() => A(true), () => m(true));
   let [j, M] = useState(null);
   let [W, V] = useState(false);
   let F = `uat-pro-dev-focus-${e.id}-${t}`;
@@ -9854,6 +10255,12 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
     }
   };
   let ne = ($, H) => {
+    {
+      let old = (i[$] || []).find((N) => N.developer_name === t)?.note || "";
+      if (H && H !== old && H.includes("@")) {
+        sendPings({ sessionId: e.id, testCaseId: $, from: t, fromRole: "developer", testerTab: null, field: "Developer note", oldText: old, newText: H, names: sessionPeople(e) });
+      }
+    }
     u((K) => {
       let te = K[$] || [];
       let P = te.find((N) => N.developer_name === t);
@@ -10033,6 +10440,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   };
   return (
     <BaseUrlContext.Provider value={b}>
+    <PeopleContext.Provider value={{ names: sessionPeople(e), me: t }}>
       <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
       <div className="flex-1 min-h-0 flex">
         <DevSidebar
@@ -10119,9 +10527,21 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           currentFocusedIds={j}
           onApply={($) => M($)}
         />
+        <TesterSampleFilesBar
+          sessionId={e.id}
+          sessionName={e.name}
+          myName={t}
+          role="developer"
+          testCases={r}
+          onOpenPing={(pg) => {
+            if (pg.tester_tab && tabNames.includes(pg.tester_tab)) setDevTab(pg.tester_tab);
+            g(pg.test_case_id);
+          }}
+        />
       </div>
       <TesterTabBar names={tabNames} active={devTab} onSelect={setDevTab} stats={tabStats} />
       </div>
+    </PeopleContext.Provider>
     </BaseUrlContext.Provider>
   );
 }
@@ -10799,7 +11219,7 @@ function DevSidebar({
               <button
                 onClick={() => g(true)}
                 className={`flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${S ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
-                title="Search test cases"
+                title={`Search test cases (${SEARCH_SHORTCUT_LABEL})`}
               >
                 <Search className="w-3.5 h-3.5" />
               </button>
@@ -10949,6 +11369,31 @@ function DevSidebar({
                     >
                       {D.title || "Untitled"}
                     </div>
+                    {(me > 0 || Y > 0) && (
+                      <div className="mt-1 text-[11px] leading-snug text-gray-500 truncate" title={summarizeDevMarks(pe)}>
+                        {me > 0 && (
+                          <span>
+                            <Check className="inline w-3 h-3 -mt-0.5 mr-0.5 text-emerald-500" strokeWidth={3} />
+                            Fixed by{" "}
+                            {pe
+                              .filter((be) => be.status === "fixed")
+                              .map((be) => be.developer_name + (isNotMerged(be) ? " (not merged)" : ""))
+                              .join(", ")}
+                          </span>
+                        )}
+                        {me > 0 && Y > 0 && " · "}
+                        {Y > 0 && (
+                          <span>
+                            <Clock className="inline w-3 h-3 -mt-0.5 mr-0.5 text-amber-500" strokeWidth={2.5} />
+                            Fixing:{" "}
+                            {pe
+                              .filter((be) => be.status === "in_progress")
+                              .map((be) => be.developer_name)
+                              .join(", ")}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-0.5 mt-0.5 flex-shrink-0">
                     {ue === "fixed" && (() => {
@@ -10979,13 +11424,6 @@ function DevSidebar({
                         title="You're working on this"
                       >
                         <Clock className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                      </span>
-                    )}
-                    {(me > 0 || Y > 0) && (
-                      <span className="text-[9px] text-gray-500" title={summarizeDevMarks(pe)}>
-                        {me > 0 && `+${me}\u2713`}
-                        {me > 0 && Y > 0 && " "}
-                        {Y > 0 && `+${Y}\u2026`}
                       </span>
                     )}
                   </div>
@@ -11427,6 +11865,31 @@ function SettingsModal({
 }
 // Search bar that takes over the sidebar's search/filter row while open.
 // The X button (or Escape) clears the search and brings the row back.
+// ⌘K / Ctrl+K: open the sidebar (if collapsed) and jump to its search box.
+var isMacLike = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || "");
+var SEARCH_SHORTCUT_LABEL = isMacLike ? "⌘K" : "Ctrl+K";
+function useSearchShortcut(openSidebar, openSearch) {
+  useEffect(() => {
+    let h = (e) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && String(e.key).toLowerCase() === "k") {
+        e.preventDefault();
+        openSidebar();
+        openSearch();
+        let tries = 0;
+        let focus = () => {
+          let el = document.querySelector("[data-sidebar-search]");
+          if (el) {
+            el.focus();
+            el.select();
+          } else if (tries++ < 10) requestAnimationFrame(focus);
+        };
+        requestAnimationFrame(focus);
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, []);
+}
 function SidebarSearch({ value: e, onChange: t, onClose: a, className: r = "" }) {
   let o = () => {
     t("");
@@ -11438,6 +11901,7 @@ function SidebarSearch({ value: e, onChange: t, onClose: a, className: r = "" })
         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
         <input
           autoFocus={true}
+          data-sidebar-search=""
           type="text"
           placeholder="Search ID, title, module, feature…"
           value={e}
@@ -11447,8 +11911,11 @@ function SidebarSearch({ value: e, onChange: t, onClose: a, className: r = "" })
               o();
             }
           }}
-          className="w-full h-8 pl-8 pr-2 text-base sm:text-xs bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="w-full h-8 pl-8 pr-12 text-base sm:text-xs bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
+        <kbd className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 px-1 text-[10px] font-sans text-gray-500 border border-gray-700 rounded-sm pointer-events-none">
+          {SEARCH_SHORTCUT_LABEL}
+        </kbd>
       </div>
       <button
         onClick={o}
@@ -12427,7 +12894,7 @@ function DevTestDetail({
   return (
     <FigureContext.Provider value={{ shots: c.screenshots || [], open: (f) => v(f) }}>
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="max-w-6xl mx-auto px-6 pt-6 pb-24">
         <div className="mb-6 pb-4 border-b border-gray-800 flex items-start gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             <Breadcrumb tc={d} />
@@ -12652,7 +13119,7 @@ function DevTestDetail({
                   </div>
                   <SaveIndicator saving={!!l} />
                 </div>
-                <textarea
+                <MentionTextarea
                   value={_}
                   onChange={(C) => {
                     let m = prettyArrows(C.target.value);
@@ -12660,7 +13127,8 @@ function DevTestDetail({
                     u(m);
                   }}
                   rows={3}
-                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-600 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
+                  placeholder="@ to ping someone · # to link a screenshot"
+                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-600 rounded-sm text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
                 />
               </div>
               {k.length > 0 && (
