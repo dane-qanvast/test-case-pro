@@ -334,3 +334,9 @@ end $$;
 -- e.g. "OpenMaison · Tester – UAT Collaborator". Empty = first word of the name.
 -- ─────────────────────────────────────────────────────────────────────────────
 alter table sessions add column if not exists short_name text;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- The session's Google Sheet link (idempotent), shown as "Open Google Sheet"
+-- in the Focus tests window. Saved automatically when importing from a link.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table sessions add column if not exists sheet_url text;

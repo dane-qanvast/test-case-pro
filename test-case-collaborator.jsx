@@ -1009,6 +1009,15 @@ function StatusText({ value: e }) {
 // ---- App name + browser tab title ----
 var APP_NAME = "UAT Collaborator";
 var SHORT_NAME_SETUP_SQL = "alter table sessions add column if not exists short_name text;";
+// The session's Google Sheet, kept so testers and devs can open it from the Focus tests window.
+var SHEET_URL_SETUP_SQL = "alter table sessions add column if not exists sheet_url text;";
+var isSheetUrlSetupError = (e) => /sheet_url/i.test(String(e?.message || e || ""));
+// Saves the sheet link on the session; quietly does nothing if the column isn't set up yet.
+var saveSessionSheetUrl = async (sid, url) => {
+  if (!supabase || !sid || !url) return;
+  let { error } = await supabase.from("sessions").update({ sheet_url: url }).eq("id", sid);
+  if (error) console.warn(isSheetUrlSetupError(error) ? `To keep the Google Sheet link, run in Supabase: ${SHEET_URL_SETUP_SQL}` : error);
+};
 var isShortNameSetupError = (e) => /short_name/i.test(String(e?.message || e || ""));
 // Short product name for the tab, e.g. "OpenMaison": the session's Short name, else the first word of its name.
 var sessionShortName = (s) => String(s?.short_name || "").trim() || String(s?.name || "").trim().split(/\s+/)[0] || "Session";
@@ -4005,7 +4014,7 @@ ${CSV_GENERATION_PROMPT}`);
     </div>
   );
 }
-function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: r, onApply: o }) {
+function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: r, onApply: o, sheetUrl = "" }) {
   let [s, l] = useState(() => new Set());
   let [i, u] = useState("");
   let [d, c] = useState("flat");
@@ -4135,9 +4144,23 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
               {s.size} of {a.length} selected
             </div>
           </div>
-          <button onClick={t} className="text-gray-400 hover:text-gray-100 p-1" title="Close">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-3">
+            {sheetUrl && (
+              <a
+                href={sheetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-emerald-300 border border-emerald-800 bg-emerald-950/40 rounded-sm hover:bg-emerald-900/50 hover:text-emerald-200 transition-colors"
+                title="Open the test sheet in a new tab (row numbers match)"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Open Google Sheet
+              </a>
+            )}
+            <button onClick={t} className="text-gray-400 hover:text-gray-100 p-1" title="Close">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <div className="px-5 py-3 border-b border-gray-800 flex items-center gap-2 flex-wrap flex-shrink-0">
           <div className="relative flex-1 min-w-[200px]">
@@ -4995,7 +5018,7 @@ function SheetLinkImport({ onFile: e, disabled: t }) {
     i("");
     try {
       let c = await fetchSheetFromLink(d);
-      await e(c);
+      await e(c, d);
       r("");
     } catch (c) {
       i(c.message || "Import failed");
@@ -6250,7 +6273,13 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
                     className="hidden"
                   />
                 </div>
-                <SheetLinkImport disabled={S || x} onFile={(y) => w([y])} />
+                <SheetLinkImport
+                  disabled={S || x}
+                  onFile={(y, url) => {
+                    saveSessionSheetUrl(e.id, url);
+                    w([y]);
+                  }}
+                />
                 {b.length > 0 && (
                   <div className="border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
                     {b.map((y) => {
@@ -6381,6 +6410,9 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   let [r, o] = useState(e.name || "");
   let [shortName, setShortName] = useState(e.short_name || "");
   let shortChanged = shortName.trim() !== String(e.short_name || "").trim();
+  let [sheetUrl, setSheetUrl] = useState(e.sheet_url || "");
+  let sheetUrlChanged = sheetUrl.trim() !== String(e.sheet_url || "").trim();
+  let sheetUrlBad = !!sheetUrl.trim() && !/^https?:\/\//i.test(sheetUrl.trim());
   let [s, l] = useState(e.base_url || "");
   let [i, u] = useState([]);
   let [d, c] = useState([]);
@@ -6433,7 +6465,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   let M = T && T !== e.name;
   let W = A !== j;
   let V = i.length > 0 || d.length > 0;
-  let F = !!T && (M || W || V || codesChanged || shortChanged) && !S;
+  let F = !!T && (M || W || V || codesChanged || shortChanged || sheetUrlChanged) && !sheetUrlBad && !S;
   let se = async () => {
     if (F) {
       I(true);
@@ -6448,8 +6480,12 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
             base_url: A || null,
             ...(codesChanged ? { tester_code_required: testerReq, developer_code_required: devReq } : {}),
             ...(shortChanged ? { short_name: shortName.trim() || null } : {}),
+            ...(sheetUrlChanged ? { sheet_url: sheetUrl.trim() || null } : {}),
           })
           .eq("id", e.id);
+        if (E && isSheetUrlSetupError(E)) {
+          throw new Error(`Saving the Google Sheet link needs a one-time Supabase setup. In the SQL Editor run: ${SHEET_URL_SETUP_SQL}`);
+        }
         if (E && isShortNameSetupError(E)) {
           throw new Error(`Saving a short name needs a one-time Supabase setup. In the SQL Editor run: ${SHORT_NAME_SETUP_SQL}`);
         }
@@ -6504,6 +6540,23 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
             />
             <div className="text-[11px] text-gray-500 mt-1">
               Tabs will read “{shortName.trim() || sessionShortName({ name: r })} · Tester – {APP_NAME}”. Leave empty to use the first word of the session name.
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+              Google Sheet link <span className="normal-case font-normal text-gray-500">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={sheetUrl}
+              onChange={(E) => setSheetUrl(E.target.value)}
+              placeholder="https://docs.google.com/spreadsheets/d/…"
+              className={`w-full px-3 py-2 bg-gray-800 border text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500 ${sheetUrlBad ? "border-red-600" : "border-gray-700"}`}
+            />
+            <div className={`text-[11px] mt-1 ${sheetUrlBad ? "text-red-400" : "text-gray-500"}`}>
+              {sheetUrlBad
+                ? "Paste the full link, starting with https://"
+                : "Testers and developers get an “Open Google Sheet” link in the Focus tests window. Filled in automatically when you import from a link."}
             </div>
           </div>
           <div>
@@ -6749,6 +6802,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   );
 }
 function CreateSessionWizard({ onCancel: e, onCreated: t }) {
+  let [wizSheetUrl, setWizSheetUrl] = useState("");
   let [a, r] = useState("");
   let [o, s] = useState(null);
   let [l, i] = useState(null);
@@ -6982,6 +7036,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
         }
         throw X;
       }
+      if (wizSheetUrl) await saveSessionSheetUrl(P.id, wizSheetUrl);
       let ve = l.testCases.map((N) => ({
         session_id: P.id,
         position: N.position,
@@ -7114,7 +7169,12 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
               className="hidden"
             />
           </div>
-          <SheetLinkImport onFile={(P) => xe([P])} />
+          <SheetLinkImport
+            onFile={(P, url) => {
+              setWizSheetUrl(url);
+              xe([P]);
+            }}
+          />
           {(Q.length > 1 || Q.some((P) => P.skipped)) && (
             <div className="mt-2 border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2 bg-gray-900/60 text-[11px] text-gray-400">
@@ -8997,6 +9057,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           }))}
           currentFocusedIds={W}
           onApply={(N) => V(N)}
+          sheetUrl={e.sheet_url || ""}
         />
         <TesterSampleFilesBar
           sessionId={e.id}
@@ -10639,6 +10700,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           }))}
           currentFocusedIds={j}
           onApply={($) => M($)}
+          sheetUrl={e.sheet_url || ""}
         />
         <TesterSampleFilesBar
           sessionId={e.id}
