@@ -997,6 +997,15 @@ var CODE_TOGGLE_SETUP_SQL =
   "alter table sessions add column if not exists tester_code_required boolean not null default true; alter table sessions add column if not exists developer_code_required boolean not null default true;";
 var isCodeToggleSetupError = (e) => /code_required/i.test(String(e?.message || e || ""));
 var testerCodeOn = (s) => s?.tester_code_required !== false;
+// Tester result shown as coloured text in the sidebar lists ("Not run" shows nothing).
+var STATUS_TEXT = { Pass: ["Pass", "text-green-400"], Fail: ["Fail", "text-red-400"], Blocked: ["Blocked", "text-orange-400"], "Needs Review": ["Needs review", "text-yellow-400"] };
+// When every test shares one module (e.g. they all came from a tab called "UAT"), the label adds nothing, so lists hide it.
+var sameModuleForAll = (e) => new Set((e || []).map((t) => String(t.module || "").trim().toLowerCase())).size <= 1;
+function StatusText({ value: e }) {
+  let t = STATUS_TEXT[e];
+  if (!t) return null;
+  return <span className={`flex-shrink-0 font-semibold ${t[1]}`}>· {t[0]}</span>;
+}
 // ---- App name + browser tab title ----
 var APP_NAME = "UAT Collaborator";
 var SHORT_NAME_SETUP_SQL = "alter table sessions add column if not exists short_name text;";
@@ -1310,38 +1319,22 @@ var computeResyncPlan = (e, t) => {
   });
   let c = e.filter((v) => !u.has(v.id) && !v.removed_at && o.has(resyncNorm(v.module)));
   let p = e.filter((v) => !u.has(v.id) && !v.removed_at && !o.has(resyncNorm(v.module)));
-  // Final order: keep the session's tab order; ticked tabs follow the sheet's order inside them.
+  // Final order: the uploaded tests follow the sheet's row order exactly (across all ticked tabs),
+  // placed where those tests already sat in the session. Tests from tabs that weren't uploaded
+  // keep their place before or after them.
   let h = [...e].filter((v) => !v.removed_at).sort((v, k) => (v.position ?? 0) - (k.position ?? 0));
-  let b = [];
-  let _ = new Set();
-  h.forEach((v) => {
-    let k = resyncNorm(v.module);
-    if (!_.has(k)) {
-      _.add(k);
-      b.push({ key: k, label: v.module });
-    }
+  let rank = new Map(h.map((v, k) => [v.id, k]));
+  let anchor = Infinity;
+  h.forEach((v, k) => {
+    if (u.has(v.id) || o.has(resyncNorm(v.module))) anchor = Math.min(anchor, k);
   });
-  let S = [];
-  r.forEach((v) => {
-    let k = resyncNorm(v.module);
-    if (!S.some((C) => C.key === k)) S.push({ key: k, label: v.module });
-  });
-  S.forEach((v) => {
-    if (_.has(v.key)) return;
-    let k = d.find((m) => resyncNorm(m.incoming.module) === v.key && m.existing && !m.existing.removed_at);
-    let C = k ? b.findIndex((m) => m.key === resyncNorm(k.existing.module)) : -1;
-    if (C >= 0) b.splice(C + 1, 0, v);
-    else b.push(v);
-    _.add(v.key);
-  });
-  let I = [];
-  b.forEach((v) => {
-    if (o.has(v.key)) {
-      d.filter((k) => resyncNorm(k.incoming.module) === v.key).forEach((k) => I.push(k));
-    } else {
-      p.filter((k) => resyncNorm(k.module) === v.key).forEach((k) => I.push({ kind: "keep", existing: k }));
-    }
-  });
+  let keepBefore = p.filter((v) => rank.get(v.id) < anchor).sort((v, k) => rank.get(v.id) - rank.get(k.id));
+  let keepAfter = p.filter((v) => !(rank.get(v.id) < anchor)).sort((v, k) => rank.get(v.id) - rank.get(k.id));
+  let I = [
+    ...keepBefore.map((v) => ({ kind: "keep", existing: v })),
+    ...d,
+    ...keepAfter.map((v) => ({ kind: "keep", existing: v })),
+  ];
   let x = new Map();
   I.forEach((v, k) => {
     if (v.existing) x.set(v.existing.id, k);
@@ -9276,7 +9269,8 @@ function TesterSidebar({
                           UPDATED
                         </span>
                       )}
-                      {O.module && <span className="truncate">· {O.module}</span>}
+                      {O.module && !sameModuleForAll(l) && <span className="truncate">· {O.module}</span>}
+                      <StatusText value={ne} />
                       {O.focus && <span className="truncate text-gray-600">· {O.focus}</span>}
                     </div>
                     <div
@@ -11476,7 +11470,8 @@ function DevSidebar({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-0.5">
                       <span className="font-mono text-emerald-400">{D.test_id || "—"}</span>
-                      {D.module && <span className="truncate">· {D.module}</span>}
+                      {D.module && !sameModuleForAll(l) && <span className="truncate">· {D.module}</span>}
+                      <StatusText value={B} />
                       {getSeverity(O?.bug_severity) && (
                         <span className="ml-auto">
                           <SeverityBadge value={O.bug_severity} size="xs" />
