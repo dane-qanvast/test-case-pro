@@ -328,3 +328,9 @@ do $$ begin
     alter publication supabase_realtime add table pings;
   end if;
 end $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Optional short name per session (idempotent), shown in browser tab titles,
+-- e.g. "OpenMaison · Tester – UAT Collaborator". Empty = first word of the name.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table sessions add column if not exists short_name text;

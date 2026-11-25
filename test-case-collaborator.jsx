@@ -1,4 +1,4 @@
-// Test Case Collaborator — editable source (Pro + Light editions).
+// UAT Collaborator (formerly Test Case Collaborator) — editable source (Pro + Light editions).
 // Rebuilt on 2026-09-25 from the live build (GitHub commit db05d95, 2 Jun 2026).
 // Edit this file, then run `npm install` once and `npm run build` to produce index.html.
 // Note: local variable names inside functions are short (e, t, a...) because they
@@ -997,6 +997,34 @@ var CODE_TOGGLE_SETUP_SQL =
   "alter table sessions add column if not exists tester_code_required boolean not null default true; alter table sessions add column if not exists developer_code_required boolean not null default true;";
 var isCodeToggleSetupError = (e) => /code_required/i.test(String(e?.message || e || ""));
 var testerCodeOn = (s) => s?.tester_code_required !== false;
+// ---- App name + browser tab title ----
+var APP_NAME = "UAT Collaborator";
+var SHORT_NAME_SETUP_SQL = "alter table sessions add column if not exists short_name text;";
+var isShortNameSetupError = (e) => /short_name/i.test(String(e?.message || e || ""));
+// Short product name for the tab, e.g. "OpenMaison": the session's Short name, else the first word of its name.
+var sessionShortName = (s) => String(s?.short_name || "").trim() || String(s?.name || "").trim().split(/\s+/)[0] || "Session";
+// Tab title = "(unread pings) <base>"; the portals set the base, the bell sets the count.
+var tabTitle = { base: APP_NAME, count: 0 };
+var applyTabTitle = () => {
+  if (typeof document === "undefined") return;
+  let c = tabTitle.count;
+  document.title = (c > 0 ? `(${c > 99 ? "99+" : c}) ` : "") + tabTitle.base;
+};
+var setTabTitleBase = (b) => {
+  tabTitle.base = b || APP_NAME;
+  applyTabTitle();
+};
+var setTabTitleCount = (n) => {
+  tabTitle.count = n || 0;
+  applyTabTitle();
+};
+function usePortalTabTitle(session, roleLabel) {
+  let sn = sessionShortName(session);
+  useEffect(() => {
+    setTabTitleBase(`${sn} · ${roleLabel} – ${APP_NAME}`);
+    return () => setTabTitleBase(APP_NAME);
+  }, [sn, roleLabel]);
+}
 // Dev "Fixed" has two stages: not merged yet (testers just see a quiet "Fixed – not merged") and
 // retest ready (testers get the Review Fix flag). Marks without a stage count as retest ready.
 var FIX_STAGE_SETUP_SQL = "alter table done_marks add column if not exists fix_stage text;";
@@ -4606,7 +4634,7 @@ function AdminGate({ children: e }) {
         <div className="w-11 h-11 bg-emerald-600 rounded-sm flex items-center justify-center mx-auto mb-4">
           <FileText className="w-6 h-6 text-white" />
         </div>
-        <div className="font-bold text-gray-100 text-lg">Test Case Collaborator</div>
+        <div className="font-bold text-gray-100 text-lg">UAT Collaborator</div>
         <div className="text-xs text-gray-500 mb-6">Admin</div>
         {t === "checking" ? (
           <div className="text-sm text-gray-400">Checking…</div>
@@ -4790,7 +4818,7 @@ function AdminPortal() {
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="font-bold text-gray-100 leading-tight">Test Case Collaborator</div>
+                <div className="font-bold text-gray-100 leading-tight">UAT Collaborator</div>
                 <div className="text-[11px] text-gray-500 leading-tight">Admin</div>
               </div>
             </div>
@@ -5434,8 +5462,8 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
   }, [unread]);
   // Show the unread count in the browser tab too, so it's noticed from another tab.
   useEffect(() => {
-    let base = document.title.replace(/^\(\d+\+?\) /, "");
-    document.title = unread > 0 ? `(${unread > 99 ? "99+" : unread}) ${base}` : base;
+    setTabTitleCount(unread);
+    return () => setTabTitleCount(0);
   }, [unread]);
   let markRead = async (ids) => {
     if (!ids.length) return;
@@ -6358,6 +6386,8 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
     if (!D) setRemovedTests((O) => O.filter((B) => B.id !== E));
   };
   let [r, o] = useState(e.name || "");
+  let [shortName, setShortName] = useState(e.short_name || "");
+  let shortChanged = shortName.trim() !== String(e.short_name || "").trim();
   let [s, l] = useState(e.base_url || "");
   let [i, u] = useState([]);
   let [d, c] = useState([]);
@@ -6410,7 +6440,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   let M = T && T !== e.name;
   let W = A !== j;
   let V = i.length > 0 || d.length > 0;
-  let F = !!T && (M || W || V || codesChanged) && !S;
+  let F = !!T && (M || W || V || codesChanged || shortChanged) && !S;
   let se = async () => {
     if (F) {
       I(true);
@@ -6424,8 +6454,12 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
             developers: [...k, ...d],
             base_url: A || null,
             ...(codesChanged ? { tester_code_required: testerReq, developer_code_required: devReq } : {}),
+            ...(shortChanged ? { short_name: shortName.trim() || null } : {}),
           })
           .eq("id", e.id);
+        if (E && isShortNameSetupError(E)) {
+          throw new Error(`Saving a short name needs a one-time Supabase setup. In the SQL Editor run: ${SHORT_NAME_SETUP_SQL}`);
+        }
         if (E && isCodeToggleSetupError(E)) {
           throw new Error(`Turning codes on or off needs a one-time Supabase setup. In the SQL Editor run: ${CODE_TOGGLE_SETUP_SQL}`);
         }
@@ -6460,8 +6494,24 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               type="text"
               value={r}
               onChange={(E) => o(E.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
             />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+              Short name <span className="normal-case font-normal text-gray-500">(optional, for the browser tab)</span>
+            </label>
+            <input
+              type="text"
+              value={shortName}
+              maxLength={24}
+              onChange={(E) => setShortName(E.target.value)}
+              placeholder={sessionShortName({ name: r })}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+            />
+            <div className="text-[11px] text-gray-500 mt-1">
+              Tabs will read “{shortName.trim() || sessionShortName({ name: r })} · Tester – {APP_NAME}”. Leave empty to use the first word of the session name.
+            </div>
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
@@ -7695,7 +7745,7 @@ function DesktopOnlyNotice({ onContinueAnyway: e }) {
         <div className="w-12 h-12 mx-auto mb-3 bg-emerald-900/40 border border-emerald-800 rounded-sm flex items-center justify-center">
           <Monitor className="w-6 h-6 text-emerald-300" />
         </div>
-        <div className="text-xs uppercase tracking-widest text-emerald-400 mb-2">Test Case Collaborator</div>
+        <div className="text-xs uppercase tracking-widest text-emerald-400 mb-2">UAT Collaborator</div>
         <h2 className="text-lg font-bold text-gray-100 mb-2">Best on desktop</h2>
         <p className="text-sm text-gray-400 leading-relaxed">
           This portal is built for larger screens — running through steps, reviewing screenshots, and
@@ -8337,6 +8387,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   // Everyone runs every test now, so the CSV's tester assignment is an optional "Suggested" filter.
   let [T, A] = useState("all");
   let [j, M] = useState(true);
+  usePortalTabTitle(e, "Tester");
   useSearchShortcut(() => M(true), () => m(true), () => {
     k("");
     m(false);
@@ -10109,6 +10160,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let [C, m] = useState(false);
   let [f, w] = useState("all");
   let [T, A] = useState(true);
+  usePortalTabTitle(e, "Dev");
   useSearchShortcut(() => A(true), () => m(true), () => {
     k("");
     m(false);
