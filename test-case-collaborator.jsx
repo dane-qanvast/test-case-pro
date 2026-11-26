@@ -4560,6 +4560,72 @@ function readRoute() {
 }
 var randomCode = () => String(Math.floor(1000 + Math.random() * 9000));
 var portalUrl = (e, t) => `${window.location.origin + window.location.pathname}?role=${e}&session=${t}`;
+// ---- Links to one test ----
+// "?session=…&test=SA-01&tab=Dane" opens the role picker, then that test (on that tester's tab).
+var testLinkUrl = (sid, testId, tab) =>
+  `${window.location.origin + window.location.pathname}?session=${sid}&test=${encodeURIComponent(testId)}${tab ? `&tab=${encodeURIComponent(tab)}` : ""}`;
+var deepLinkParams = () => {
+  let e = new URLSearchParams(window.location.search);
+  return { test: e.get("test") || "", tab: e.get("tab") || "" };
+};
+// Keeps ?test / ?tab when the picker switches to a portal URL.
+var withDeepLink = (url) => {
+  let { test, tab } = deepLinkParams();
+  return url + (test ? `&test=${encodeURIComponent(test)}` : "") + (tab ? `&tab=${encodeURIComponent(tab)}` : "");
+};
+// Opens the linked test once the portal has loaded its tests, then tidies the address bar.
+function useOpenLinkedTest(testCases, tabNames, selectTest, setTab) {
+  let done = useRef(false);
+  useEffect(() => {
+    if (done.current || !testCases?.length) return;
+    let { test, tab } = deepLinkParams();
+    if (!test && !tab) {
+      done.current = true;
+      return;
+    }
+    if (tab && tabNames?.length && !tabNames.includes(tab)) {
+      // tab list not ready yet, or unknown tab: still open the test
+    }
+    if (tab && tabNames?.includes(tab)) setTab(tab);
+    if (test) {
+      let t = test.toLowerCase();
+      let hit = testCases.find((r) => String(r.test_id || "").toLowerCase() === t) || testCases.find((r) => r.id === test);
+      if (hit) selectTest(hit.id);
+    }
+    done.current = true;
+    let e = new URLSearchParams(window.location.search);
+    e.delete("test");
+    e.delete("tab");
+    window.history.replaceState(null, "", `${window.location.pathname}?${e.toString()}`);
+  }, [testCases, tabNames]);
+}
+// Set by the portals so each test header can offer "Copy link".
+var TestLinkContext = createContext(null);
+function CopyTestLink({ tc: e }) {
+  let mk = useContext(TestLinkContext);
+  let [done, setDone] = useState(false);
+  if (!mk || !e?.test_id) return null;
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        let u = mk(e);
+        try {
+          await navigator.clipboard.writeText(u);
+        } catch {
+          window.prompt("Copy this link:", u);
+        }
+        setDone(true);
+        setTimeout(() => setDone(false), 1800);
+      }}
+      className={`ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[10px] font-sans transition-colors ${done ? "bg-emerald-950/60 border-emerald-700 text-emerald-300" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600"}`}
+      title="Copy a link that opens this test"
+    >
+      {done ? <Check className="w-3 h-3" strokeWidth={3} /> : <Copy className="w-3 h-3" />}
+      {done ? "Link copied" : "Copy link"}
+    </button>
+  );
+}
 var sessionUrl = (e) => `${window.location.origin + window.location.pathname}?session=${e}`;
 var navigateTo = (e) => {
   window.location.assign(e);
@@ -7849,7 +7915,7 @@ function PortalPicker({ sessionId: e }) {
     };
   }, [e]);
   let c = (p) => {
-    window.history.replaceState(null, "", portalUrl(p, e));
+    window.history.replaceState(null, "", withDeepLink(portalUrl(p, e)));
     l(p);
   };
   if (s === "tester") {
@@ -8441,6 +8507,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   let [T, A] = useState("all");
   let [j, M] = useState(true);
   usePortalTabTitle(e, "Tester");
+  useOpenLinkedTest(r, testerTabNames(e.testers, allF), g, setViewTab);
   useSearchShortcut(() => M(true), () => m(true), () => {
     k("");
     m(false);
@@ -8974,6 +9041,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   return (
     <BaseUrlContext.Provider value={b}>
     <PeopleContext.Provider value={{ names: sessionPeople(e), me: t }}>
+    <TestLinkContext.Provider value={(tc) => testLinkUrl(e.id, tc.test_id, viewTab)}>
       <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
       <div className="flex-1 min-h-0 flex">
         <TesterSidebar
@@ -9073,6 +9141,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
       </div>
       <TesterTabBar names={tabNames} active={viewTab} onSelect={setViewTab} me={t} stats={tabStats} />
       </div>
+    </TestLinkContext.Provider>
     </PeopleContext.Provider>
     </BaseUrlContext.Provider>
   );
@@ -10216,6 +10285,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let [f, w] = useState("all");
   let [T, A] = useState(true);
   usePortalTabTitle(e, "Dev");
+  useOpenLinkedTest(r, testerTabNames(e.testers, allF), g, setDevTab);
   useSearchShortcut(() => A(true), () => m(true), () => {
     k("");
     m(false);
@@ -10615,6 +10685,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   return (
     <BaseUrlContext.Provider value={b}>
     <PeopleContext.Provider value={{ names: sessionPeople(e), me: t }}>
+    <TestLinkContext.Provider value={(tc) => testLinkUrl(e.id, tc.test_id, devTab)}>
       <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
       <div className="flex-1 min-h-0 flex">
         <DevSidebar
@@ -10716,6 +10787,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
       </div>
       <TesterTabBar names={tabNames} active={devTab} onSelect={setDevTab} stats={tabStats} />
       </div>
+    </TestLinkContext.Provider>
     </PeopleContext.Provider>
     </BaseUrlContext.Provider>
   );
@@ -11824,6 +11896,7 @@ function Breadcrumb({ tc: e }) {
           <span className="font-mono">{e.dev_branch_name}</span>
         </span>
       )}
+      <CopyTestLink tc={e} />
     </div>
   );
 }
