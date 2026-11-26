@@ -1004,7 +1004,7 @@ var sameModuleForAll = (e) => new Set((e || []).map((t) => String(t.module || ""
 function StatusText({ value: e }) {
   let t = STATUS_TEXT[e];
   if (!t) return null;
-  return <span className={`flex-shrink-0 font-semibold ${t[1]}`}>· {t[0]}</span>;
+  return <span className={`flex-shrink-0 ${t[1]}`}>· {t[0]}</span>;
 }
 // ---- App name + browser tab title ----
 var APP_NAME = "UAT Collaborator";
