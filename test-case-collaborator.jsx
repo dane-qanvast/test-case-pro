@@ -71,6 +71,7 @@ import {
   Link,
   Ellipsis,
   FileUp,
+  Globe,
 } from "lucide-react";
 var EDITION = "Pro";
 var SUPABASE_URL = "https://badylykbhmujmeaysixg.supabase.co";
@@ -4400,6 +4401,51 @@ function ManagerNotes({ text }) {
     </div>
   );
 }
+// Steps column: numbered list, first 4 shown, "Show all" for the rest.
+function ManagerSteps({ steps }) {
+  let [open, setOpen] = useState(false);
+  let list = (Array.isArray(steps) ? steps : []).filter((x) => String(x || "").trim());
+  if (!list.length) return <span className="text-gray-600">—</span>;
+  let shown = open ? list : list.slice(0, 4);
+  return (
+    <div>
+      <ol className="space-y-0.5">
+        {shown.map((x, i) => (
+          <li key={i} className="flex gap-1.5">
+            <span className="font-mono text-[11px] text-gray-500 w-4 text-right flex-shrink-0 leading-5">{i + 1}.</span>
+            <span className="text-gray-200">{normalizePath(x)}</span>
+          </li>
+        ))}
+      </ol>
+      {list.length > 4 && (
+        <button onClick={() => setOpen(!open)} className="mt-0.5 ml-[22px] text-[11px] text-gray-400 hover:text-gray-100">
+          {open ? "Show fewer" : `Show all ${list.length} steps`}
+        </button>
+      )}
+    </div>
+  );
+}
+// Under a tester's notes: the steps they flagged (needs review / unable to proceed) or left a note on.
+function ManagerStepFlags({ f, steps }) {
+  let checks = f?.step_checks || {};
+  let notes = f?.step_notes || {};
+  let rows = (Array.isArray(steps) ? steps : [])
+    .map((x, i) => ({ i, mark: checks[i], note: (notes[i] || "").trim() }))
+    .filter((r) => r.mark === "review" || r.mark === "blocked" || r.note);
+  if (!rows.length) return null;
+  return (
+    <div className="mt-1.5 space-y-1">
+      {rows.map((r) => (
+        <div key={r.i} className="text-xs">
+          <span className="text-gray-400">Step {r.i + 1}</span>
+          {r.mark === "blocked" && <span className="ml-1.5 font-semibold text-red-300">Unable to proceed</span>}
+          {r.mark === "review" && <span className="ml-1.5 font-semibold text-yellow-300">Needs review</span>}
+          {r.note && <div className="text-gray-300 whitespace-pre-wrap">{normalizePath(r.note)}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
 function ManagerDevChip({ m }) {
   let fx = m.status === "fixed";
   let nm = isNotMerged(m);
@@ -4417,6 +4463,7 @@ function ManagerView({ sessionId, accessKey }) {
   let [q, setQ] = useState("");
   let [show, setShow] = useState("all");
   let [viewer, setViewer] = useState(null); // { kind: "shots" | "recs", list, idx }
+  let [expanded, setExpanded] = useState({}); // testers with no results start collapsed; click to open
   let load = async () => {
     try {
       let { data: s, error: e1 } = await supabase.from("sessions").select("*").eq("id", sessionId).single();
@@ -4485,7 +4532,10 @@ function ManagerView({ sessionId, accessKey }) {
     return hay.includes(needle);
   });
   let groups = groupByModule(visible);
-  let colCount = 3 + testers.length * 3 + 1;
+  // A tester with nothing logged yet takes one narrow column instead of three.
+  let hasResults = (n) => findings.some((f) => f.tester_name === n && ((f.status && f.status !== "Not Tested") || (f.notes || "").trim()));
+  let isOpen = (n) => hasResults(n) || expanded[n];
+  let colCount = 4 + testers.reduce((a, n) => a + (isOpen(n) ? 3 : 1), 0) + 1;
   let th = "px-3 py-2 text-left text-xs font-medium text-gray-400 whitespace-nowrap border-b border-r border-gray-800 bg-gray-900";
   let td = "px-3 py-2 align-top border-b border-r border-gray-800 text-[13px]";
   return (
@@ -4553,17 +4603,36 @@ function ManagerView({ sessionId, accessKey }) {
           <thead className="sticky top-0 z-20">
             <tr>
               <th className={`${th} sticky left-0 z-10 min-w-[300px]`} rowSpan={2}>Test</th>
+              <th className={`${th} min-w-[280px]`} rowSpan={2}>Steps</th>
               <th className={th} rowSpan={2}>Priority</th>
               <th className={th} rowSpan={2}>Overall</th>
-              {testers.map((n) => (
-                <th key={n} className={`${th} text-center text-gray-200`} colSpan={3}>
-                  {n}
-                </th>
-              ))}
+              {testers.map((n) =>
+                isOpen(n) ? (
+                  <th key={n} className={`${th} text-center text-gray-200`} colSpan={3}>
+                    {n}
+                    {!hasResults(n) && (
+                      <button onClick={() => setExpanded((x) => ({ ...x, [n]: false }))} className="ml-2 text-[11px] font-normal text-gray-500 hover:text-gray-200" title="Collapse">
+                        Collapse
+                      </button>
+                    )}
+                  </th>
+                ) : (
+                  <th key={n} className={`${th} align-top`} rowSpan={2}>
+                    <button
+                      onClick={() => setExpanded((x) => ({ ...x, [n]: true }))}
+                      className="text-left text-gray-300 hover:text-gray-100"
+                      title={`${n} hasn’t logged any results yet. Click to show their columns.`}
+                    >
+                      <span className="block font-medium">{n}</span>
+                      <span className="block text-[11px] font-normal text-gray-500">No results yet</span>
+                    </button>
+                  </th>
+                ),
+              )}
               <th className={th} rowSpan={2}>Developers</th>
             </tr>
             <tr>
-              {testers.map((n) => (
+              {testers.filter(isOpen).map((n) => (
                 <Fragment key={n}>
                   <th className={th}>Result</th>
                   <th className={`${th} min-w-[260px]`}>Notes</th>
@@ -4599,18 +4668,30 @@ function ManagerView({ sessionId, accessKey }) {
                         <div className="flex items-start gap-2">
                           <span className="font-mono text-[11px] text-gray-500 mt-0.5 flex-shrink-0">{t.test_id || "—"}</span>
                           <div className="min-w-0">
-                            <div className="text-gray-100 font-medium">{t.title || "Untitled"}</div>
+                            <a
+                              href={testLinkUrl(sessionId, t.test_id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-gray-100 font-medium hover:underline underline-offset-2"
+                              title="Open this test in the app (you’ll be asked to sign in)"
+                            >
+                              {t.title || "Untitled"}
+                            </a>
                             {(t.feature && t.feature !== "—") || t.focus ? (
                               <div className="text-[11px] text-gray-500 mt-0.5">{[t.feature !== "—" && t.feature, t.focus].filter(Boolean).join(" · ")}</div>
                             ) : null}
                           </div>
                         </div>
                       </td>
+                      <td className={`${td} min-w-[280px] max-w-[380px]`}>
+                        <ManagerSteps steps={t.steps} />
+                      </td>
                       <td className={`${td} font-mono text-xs text-gray-400`}>{t.priority || "—"}</td>
                       <td className={td}>
                         <StatusPill status={o} />
                       </td>
                       {testers.map((n) => {
+                        if (!isOpen(n)) return <td key={n} className={`${td} bg-gray-900/40`} />;
                         let f = F[t.id]?.[n];
                         let st = f?.status || "Not Tested";
                         let shots = (f?.screenshots || []).filter((z) => z && z.url);
@@ -4627,6 +4708,7 @@ function ManagerView({ sessionId, accessKey }) {
                             <td className={`${td} min-w-[260px] max-w-[420px]`}>
                               <FigureContext.Provider value={{ shots, open: (i) => setViewer({ kind: "shots", list: shots, idx: i }) }}>
                                 <ManagerNotes text={f?.notes} />
+                                <ManagerStepFlags f={f} steps={t.steps} />
                               </FigureContext.Provider>
                             </td>
                             <td className={td}>
@@ -9081,7 +9163,7 @@ var findingsSchemaReady = async () => {
 var SCHEMA_UPDATE_MESSAGE =
   "This session needs a one-time database update before anyone can keep testing. Ask the admin to run the latest SQL update in Supabase, then reload this page.";
 // Spreadsheet-style tabs along the bottom of the tester and dev portals, one per tester.
-function TesterTabBar({ names, active, onSelect, me, stats, lockOthers = false, hints = null }) {
+function TesterTabBar({ names, active, onSelect, me, stats, lockOthers = false, overviewUrl = undefined }) {
   let refs = useRef({});
   useEffect(() => {
     let el = refs.current[active];
@@ -9146,16 +9228,29 @@ function TesterTabBar({ names, active, onSelect, me, stats, lockOthers = false, 
           );
         })}
       </div>
-      {hints && (
-        <div className="hidden lg:flex items-center gap-3 px-3.5 text-xs text-gray-500 whitespace-nowrap">
-          {hints.map((hn, idx) => (
-            <span key={idx} className="flex items-center gap-1">
-              {hn.keys.map((k) => (
-                <KeyHint k={k} key={k} />
-              ))}
-              <span className="ml-0.5">{hn.label}</span>
+      {/* Test Overview: the read-only sheet view of every test and result (when the admin has turned the links on). */}
+      {overviewUrl !== undefined && (
+        <div className="flex items-center pr-2 pl-1 flex-shrink-0">
+          {overviewUrl ? (
+            <a
+              href={overviewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Test Overview: every test and result in one sheet (opens in a new tab)"
+              aria-label="Open Test Overview"
+              className="w-8 h-8 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100"
+            >
+              <Globe className="w-[18px] h-[18px]" />
+            </a>
+          ) : (
+            <span
+              title="Test Overview is turned off for this session. Ask your admin to turn it on."
+              aria-label="Test Overview is turned off"
+              className="w-8 h-8 flex items-center justify-center rounded-sm text-gray-600 cursor-default"
+            >
+              <Globe className="w-[18px] h-[18px]" />
             </span>
-          ))}
+          )}
         </div>
       )}
     </div>
@@ -9768,12 +9863,12 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           hasBaseUrlOverride={S}
           resetBaseUrl={I}
         />
-        <div className="flex-1 min-w-0 flex flex-col relative" data-side-closed={!j && !isNarrow ? "" : undefined}>
-          {/* On phones the "Show test list" button joins the floating Pings / Read me row, at its left end. */}
+        <div className="flex-1 min-w-0 flex flex-col relative" >
+          {/* The "Show test list" button sits at the left end of the floating Pings / Read me row. */}
           {!j && (
             <button
               onClick={() => M(true)}
-              className={`flex items-center justify-center bg-gray-900 border rounded-sm text-gray-400 hover:text-gray-100 ${isNarrow ? "fixed bottom-14 left-4 z-30 w-9 h-[34px] border-gray-700 shadow-lg" : "absolute top-3.5 left-3 z-20 w-8 h-8 border-gray-800 hover:border-gray-700"}`}
+              className="fixed bottom-14 left-4 z-30 w-9 h-[34px] flex items-center justify-center bg-gray-900 border border-gray-700 rounded-sm shadow-lg text-gray-400 hover:text-gray-100"
               title="Show test list"
             >
               <PanelLeftOpen className="w-4 h-4" />
@@ -9808,10 +9903,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
             me={t}
             stats={tabStats}
             lockOthers={true}
-            hints={[
-              { keys: ["P", "F", "B", "R"], label: "status" },
-              { keys: ["↑", "↓"], label: "previous / next" },
-            ]}
+            overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
           />
         </div>
         <FocusModeModal
@@ -11085,23 +11177,24 @@ function TesterTestDetail({
             )}
           </div>
         )}
-        <div className="flex-shrink-0 flex items-center gap-1.5 px-4 sm:px-6 pt-2.5 text-xs text-gray-500">
-          {p.updated_at && cur !== "Not Tested" ? (
-            <span title={new Date(p.updated_at).toLocaleString()}>
-              Last edit{p.updated_by ? ` by ${p.updated_by}` : ""} · {timeAgo(p.updated_at)}
-            </span>
-          ) : (
-            <span>Not edited yet</span>
-          )}
-          {!ro && (
-            <span className="ml-auto">
-              <SaveIndicator saving={!!r} />
-            </span>
-          )}
-        </div>
         <div className="flex-1 overflow-y-auto">
           {/* Extra bottom space so the floating Pings / Read me / Sample files buttons never cover the last section. */}
           <div className="max-w-[1180px] px-4 sm:px-6 pt-3 pb-24">
+            {/* Last edit / Saved scrolls with the page, so nothing gets clipped under a fixed strip. */}
+            <div className="flex items-center gap-1.5 mb-3 text-xs text-gray-500">
+              {p.updated_at && cur !== "Not Tested" ? (
+                <span title={new Date(p.updated_at).toLocaleString()}>
+                  Last edit{p.updated_by ? ` by ${p.updated_by}` : ""} · {timeAgo(p.updated_at)}
+                </span>
+              ) : (
+                <span>Not edited yet</span>
+              )}
+              {!ro && (
+                <span className="ml-auto">
+                  <SaveIndicator saving={!!r} />
+                </span>
+              )}
+            </div>
             {sheetUpdateUnseen(c, p) && (
               <div className="mb-4">
                 <Callout tone="info" icon={AlertTriangle}>
@@ -12122,12 +12215,12 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           hasBaseUrlOverride={S}
           resetBaseUrl={I}
         />
-        <div className="flex-1 min-w-0 flex flex-col relative" data-side-closed={!T && !isNarrow ? "" : undefined}>
-          {/* On phones the "Show test list" button joins the floating Pings / Read me row, at its left end. */}
+        <div className="flex-1 min-w-0 flex flex-col relative" >
+          {/* The "Show test list" button sits at the left end of the floating Pings / Read me row. */}
           {!T && (
             <button
               onClick={() => A(true)}
-              className={`flex items-center justify-center bg-gray-900 border rounded-sm text-gray-400 hover:text-gray-100 ${isNarrow ? "fixed bottom-14 left-4 z-30 w-9 h-[34px] border-gray-700 shadow-lg" : "absolute top-3.5 left-3 z-20 w-8 h-8 border-gray-800 hover:border-gray-700"}`}
+              className="fixed bottom-14 left-4 z-30 w-9 h-[34px] flex items-center justify-center bg-gray-900 border border-gray-700 rounded-sm shadow-lg text-gray-400 hover:text-gray-100"
               title="Show test list"
             >
               <PanelLeftOpen className="w-4 h-4" />
@@ -12160,10 +12253,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
             active={devTab}
             onSelect={setDevTab}
             stats={tabStats}
-            hints={[
-              { keys: ["I", "F", "R"], label: "mark" },
-              { keys: ["↑", "↓"], label: "previous / next" },
-            ]}
+            overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
           />
         </div>
         <FocusModeModal
@@ -14781,17 +14871,18 @@ function DevTestDetail({
             </HeaderRight>
           }
         />
-        <div className="flex-shrink-0 flex items-center gap-1.5 px-4 sm:px-6 pt-2.5 text-xs text-gray-500">
-          {c.updated_at && p !== "Not Tested" ? (
-            <span title={new Date(c.updated_at).toLocaleString()}>
-              Last edit{c.updated_by ? ` by ${c.updated_by}` : ""} · {timeAgo(c.updated_at)}
-            </span>
-          ) : (
-            <span>{tn ? `${tn} hasn’t tested this yet` : "Not tested yet"}</span>
-          )}
-        </div>
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-[1180px] px-4 sm:px-6 pt-3 pb-24">
+            {/* Last edit / Saved scrolls with the page, so nothing gets clipped under a fixed strip. */}
+            <div className="flex items-center gap-1.5 mb-3 text-xs text-gray-500">
+              {c.updated_at && p !== "Not Tested" ? (
+                <span title={new Date(c.updated_at).toLocaleString()}>
+                  Last edit{c.updated_by ? ` by ${c.updated_by}` : ""} · {timeAgo(c.updated_at)}
+                </span>
+              ) : (
+                <span>{tn ? `${tn} hasn’t tested this yet` : "Not tested yet"}</span>
+              )}
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
               <TestDefinitionColumn c={d} p={c} ro={true} stepsCheckLeft={true} devNotes={dsn} myDevName={r} onDevNote={onDsn} />
               <div className="flex flex-col gap-5 min-w-0">

@@ -13,7 +13,7 @@ const NAMES = {
   FileText: "description", FileDown: "file_download", Plus: "add", Settings2: "settings",
   GripVertical: "drag_indicator", Pencil: "edit", Trash2: "delete", Upload: "upload",
   ArrowLeft: "arrow_back", Monitor: "desktop_windows", GitBranch: "fork_right", Bell: "notifications",
-  AtSign: "alternate_email", List: "view_list", LayoutList: "view_agenda", Sun: "light_mode", Moon: "dark_mode", SlidersHorizontal: "tune", Link: "link", Ellipsis: "more_horiz", FileUp: "file_upload",
+  AtSign: "alternate_email", List: "view_list", LayoutList: "view_agenda", Sun: "light_mode", Moon: "dark_mode", SlidersHorizontal: "tune", Link: "link", Ellipsis: "more_horiz", FileUp: "file_upload", Globe: "public",
 };
 
 // Lucide icons are sized with Tailwind classes like "w-4 h-4" (16px). Material Symbols glyphs
@@ -58,5 +58,5 @@ export const {
   BookOpen, Play, RefreshCw, CircleHelp, ExternalLink, Check, Copy, PanelLeftClose, Search, X,
   Filter, Users, Eye, PanelLeftOpen, ChevronLeft, ChevronRight, Home, RotateCcw, Download, FileText,
   FileDown, Plus, Settings2, GripVertical, Pencil, Trash2, Upload, ArrowLeft, Monitor, GitBranch,
-  Bell, AtSign, List, LayoutList, Sun, Moon, SlidersHorizontal, Link, Ellipsis, FileUp,
+  Bell, AtSign, List, LayoutList, Sun, Moon, SlidersHorizontal, Link, Ellipsis, FileUp, Globe,
 } = exp;
