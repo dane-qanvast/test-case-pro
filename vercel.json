@@ -1,0 +1,4 @@
+{
+  "installCommand": "echo \"Nothing to install: index.html is already built\"",
+  "buildCommand": "echo \"Nothing to build: index.html is already built\""
+}
