@@ -4142,7 +4142,7 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={t}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl max-h-[calc(100vh-32px)] flex flex-col shadow-2xl"
         onClick={(D) => D.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 flex-shrink-0">
@@ -6349,7 +6349,7 @@ function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => !x && t()}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl max-h-[calc(100vh-32px)] flex flex-col shadow-2xl"
         onClick={(y) => y.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 flex-shrink-0">
@@ -6746,7 +6746,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={t}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-xl max-h-[calc(100vh-32px)] flex flex-col shadow-2xl"
         onClick={(E) => E.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 flex-shrink-0">
@@ -9102,7 +9102,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
       }),
       z.path)
     ) {
-      let { error: re } = await supabase.storage.from("screenshots").remove([z.path]);
+      let { error: re } = await supabase.storage.from("screenshots").remove([z.path, z.annotated_path].filter(Boolean));
       if (re) {
         console.error("Screenshot storage delete failed:", re);
       }
@@ -9225,6 +9225,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
         for (let re of z.screenshots) {
           if (re?.path) {
             G.push(re.path);
+            if (re.annotated_path) G.push(re.annotated_path);
           }
         }
       }
@@ -10338,6 +10339,24 @@ function TestDefinitionColumn({ c, p, ro, onToggleStep, onStepNote, stepsCheckLe
     </div>
   );
 }
+// ---- Annotated screenshot copies ----
+// The original screenshot is never changed. When a tester adds or edits arrows / circles / labels,
+// a flattened copy with the drawings baked in is saved next to it (annotated_url), so the findings
+// report can link to an image that shows them anywhere. annotated_for records which annotations the
+// copy matches, so a stale copy is never used.
+var annotationsKey = (a) => JSON.stringify(a || []);
+var annotatedCopyFresh = (shot) => !!shot?.annotated_url && shot.annotated_for === annotationsKey(shot.annotations);
+var bakeAnnotatedShot = async (shot) => {
+  let r = await renderAnnotatedShot(shot);
+  if (!r.bytes) throw new Error("Couldn’t read the screenshot to draw its annotations");
+  let path = `${shot.path}.annotated-${Date.now()}.jpg`;
+  let { error } = await supabase.storage.from("screenshots").upload(path, new Blob([r.bytes], { type: "image/jpeg" }), { contentType: "image/jpeg" });
+  if (error) throw error;
+  let {
+    data: { publicUrl },
+  } = supabase.storage.from("screenshots").getPublicUrl(path);
+  return { annotated_url: publicUrl, annotated_path: path, annotated_for: annotationsKey(shot.annotations) };
+};
 function TesterTestDetail({
   testCase: e,
   finding: t,
@@ -10430,6 +10449,51 @@ function TesterTestDetail({
     }
   };
   let cur = p.status || "Not Tested";
+  // Keep annotated copies in step with the annotations (own tab only). Waits until the tester pauses,
+  // then saves a flattened copy of each screenshot whose drawings changed; older screenshots get theirs
+  // the first time this runs for them.
+  let shotsRef = useRef(p.screenshots || []);
+  shotsRef.current = p.screenshots || [];
+  let bakeTimer = useRef(null);
+  let bakeBusy = useRef(false);
+  let needsBake = (sh) => sh?.path && ((sh.annotations || []).length ? !annotatedCopyFresh(sh) : !!sh.annotated_url);
+  let runBake = async () => {
+    if (bakeBusy.current) return;
+    bakeBusy.current = true;
+    try {
+      for (let guard = 0; guard < 20; guard++) {
+        let list = shotsRef.current;
+        let idx = list.findIndex(needsBake);
+        if (idx < 0) break;
+        let sh = list[idx];
+        let patch;
+        if ((sh.annotations || []).length) {
+          patch = await bakeAnnotatedShot(sh);
+        } else {
+          patch = { annotated_url: null, annotated_path: null, annotated_for: null };
+        }
+        if (sh.annotated_path) supabase.storage.from("screenshots").remove([sh.annotated_path]).catch(() => {});
+        // Re-read the latest list, and only apply if the drawings didn't change while saving.
+        let now = shotsRef.current;
+        let j = now.findIndex((z) => z.path === sh.path);
+        if (j < 0) continue;
+        if (annotationsKey(now[j].annotations) !== annotationsKey(sh.annotations)) continue;
+        let next = now.map((z, k) => (k === j ? { ...z, ...patch } : z));
+        shotsRef.current = next;
+        l({ screenshots: next });
+      }
+    } catch (err) {
+      console.warn("Saving the annotated screenshot copy failed:", err);
+    } finally {
+      bakeBusy.current = false;
+    }
+  };
+  useEffect(() => {
+    if (ro || !(p.screenshots || []).some(needsBake)) return;
+    clearTimeout(bakeTimer.current);
+    bakeTimer.current = setTimeout(runBake, 1500);
+    return () => clearTimeout(bakeTimer.current);
+  }, [ro, annotationsKey((p.screenshots || []).map((z) => [z.path, z.annotations, z.annotated_for, !!z.annotated_url]))]);
   // A dev's fix that's live on the test site and newer than this tab's last edit.
   let rr = (a || [])
     .filter((f) => isRetestReady(f))
@@ -12082,8 +12146,8 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
   let k = (C) => l(s.includes(C) ? s.filter((m) => m !== C) : [...s, C]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !p && o()}>
-      <div className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-md shadow-2xl" onClick={(C) => C.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800">
+      <div className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-md shadow-2xl max-h-[calc(100vh-32px)] overflow-y-auto" onClick={(C) => C.stopPropagation()}>
+        <div className="sticky top-0 z-10 bg-gray-900 flex items-center justify-between px-5 py-3 border-b border-gray-800">
           <h2 className="text-base font-bold text-gray-100">Export tests</h2>
           <button onClick={o} disabled={!!p} className="text-gray-400 hover:text-gray-100 p-1" title="Close">
             <X className="w-5 h-5" />
@@ -12649,7 +12713,7 @@ function MarkRetestReadyModal({ tests: e, onClose: t, onConfirm: a }) {
     });
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => !busy && t()}>
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-sm shadow-xl flex flex-col max-h-[85vh]" onClick={(r) => r.stopPropagation()}>
+      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-sm shadow-xl flex flex-col max-h-[calc(100vh-32px)]" onClick={(r) => r.stopPropagation()}>
         <div className="px-5 py-4 border-b border-gray-800 flex items-start gap-3">
           <div className="flex-1">
             <div className="text-base font-bold text-gray-100">Mark retest ready</div>
@@ -12857,7 +12921,7 @@ function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={l}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-sm shadow-2xl"
+        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-sm shadow-2xl max-h-[calc(100vh-32px)] overflow-y-auto"
         onClick={(i) => i.stopPropagation()}
       >
         <div className="px-5 py-4">

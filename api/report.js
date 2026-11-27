@@ -39,6 +39,17 @@ const expectedItems = (txt) => {
 };
 const fixLabel = (m) =>
   m.status === "in_progress" ? "In progress" : m.status === "fixed" ? (m.fix_stage === "not_merged" ? "Fixed (not on the test site yet)" : "Ready to retest") : m.status || "Note";
+// Annotations on a screenshot, in words (labels are often the most useful part for an AI reader).
+const describeAnnotations = (list) => {
+  const a = Array.isArray(list) ? list : [];
+  if (!a.length) return "";
+  const n = (type) => a.filter((x) => x && x.type === type).length;
+  const plural = (k, w) => (k ? `${k} ${w}${k === 1 ? "" : "s"}` : "");
+  const shapes = [plural(n("arrow"), "arrow"), plural(n("circle"), "circle")].filter(Boolean);
+  const labels = a.filter((x) => x && x.type === "text" && String(x.text || "").trim()).map((x) => `label "${String(x.text).trim().replace(/\s+/g, " ")}"`);
+  return [...shapes, ...labels].join(", ");
+};
+const annotatedFresh = (s) => !!s.annotated_url && s.annotated_for === JSON.stringify(s.annotations || []);
 const day = (t) => (t ? new Date(t).toISOString().replace("T", " ").slice(0, 16) + " UTC" : "");
 
 export default async function handler(req, res) {
@@ -161,7 +172,14 @@ export default async function handler(req, res) {
       if (shots.length || recs.length) {
         blocks.push({ t: "label", text: "Evidence" });
         UL([
-          ...shots.map((s, i) => LINK(`Fig. ${i + 1} (screenshot)`, s.url)),
+          ...shots.flatMap((s, i) => {
+            const d = describeAnnotations(s.annotations);
+            if (!d) return [LINK(`Fig. ${i + 1} (screenshot)`, s.url)];
+            // Link the copy with the drawings baked in when it's up to date; the original otherwise.
+            return annotatedFresh(s)
+              ? [LINK(`Fig. ${i + 1} (screenshot with annotations: ${d})`, s.annotated_url), LINK(`Fig. ${i + 1} original, without annotations`, s.url)]
+              : [LINK(`Fig. ${i + 1} (screenshot; annotations shown in the app only: ${d})`, s.url)];
+          }),
           ...recs.map((r, i) => LINK(`Recording ${i + 1}`, r.url)),
         ]);
       }
