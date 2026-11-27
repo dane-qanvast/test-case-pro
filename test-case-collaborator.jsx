@@ -5930,8 +5930,9 @@ var downloadBlob = (e, t) => {
   r.remove();
   setTimeout(() => URL.revokeObjectURL(a), 4000);
 };
-// Floating bar buttons are icon-only (hover shows a tooltip); the label shows only
-// while the button needs attention (unread pings, an unread Read me, sample files not yet looked at) or its panel is open.
+// Floating buttons are stacked icon-only squares (hover shows a tooltip); the label shows while its panel is open.
+// Something waiting (unread pings, an unread Read me, sample files not yet looked at) shows as a badge or dot instead,
+// so the stack stays one button wide and never covers the page.
 function BarLabel({ show, children }) {
   return (
     <span
@@ -6438,7 +6439,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       )}
       <div
         ref={barRef}
-        className={`fixed z-30 bottom-14 flex items-center gap-2 transition-all duration-300 ease-out ${sidePanelOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[29rem]" : "right-4"} ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+        className={`fixed z-30 bottom-14 flex flex-col items-end gap-2 transition-all duration-300 ease-out ${sidePanelOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[29rem]" : "right-4"} ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
       >
         <button
           onClick={() => {
@@ -6466,7 +6467,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             className={`w-4 h-4 ${!pingsOpen && unread > 0 ? (ringBurst > 0 ? "uat-bell-ring" : "uat-bell-nudge") : ""}`}
             onAnimationEnd={(r) => r.animationName === "uat-bell-ring" && setRingBurst(0)}
           />
-          <BarLabel show={pingsOpen || unread > 0}>Pings</BarLabel>
+          <BarLabel show={pingsOpen}>Pings</BarLabel>
           {unread > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px]">
               {!pingsOpen && <span className="absolute inset-0 bg-gray-100 rounded-sm animate-ping opacity-40" />}
@@ -6486,11 +6487,12 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
               markReadmeSeen();
             }}
             aria-pressed={readmeOpen}
-            className={`group inline-flex items-center h-[34px] px-[9px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${readmeOpen ? "bg-gray-900 border-amber-600 text-amber-200" : !readmeSeen ? "bg-emerald-600 border-emerald-500 text-gray-950 hover:bg-emerald-500" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${readmeOpen ? "bg-gray-900 border-amber-600 text-amber-200" : !readmeSeen ? "bg-emerald-600 border-emerald-500 text-gray-950 hover:bg-emerald-500" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
             title={readmeOpen ? "Close the read me" : "Instructions for this test round"}
           >
             <BookOpen className="w-4 h-4" />
-            <BarLabel show={readmeOpen || !readmeSeen}>Read me</BarLabel>
+            <BarLabel show={readmeOpen}>Read me</BarLabel>
+            {!readmeSeen && !readmeOpen && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-gray-100 ring-2 ring-gray-950" aria-label="Not read yet" />}
           </button>
         )}
         {hasFiles && (
@@ -6503,11 +6505,12 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
               else u(true);
             }}
             aria-pressed={i}
-            className={`group inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${i ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${i ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
             title={i ? "Close the sample files" : "Sample files for these tests"}
           >
             <Paperclip className="w-4 h-4" />
-            <BarLabel show={i || !s}>Sample files ({a.length})</BarLabel>
+            <BarLabel show={i}>Sample files ({a.length})</BarLabel>
+            {!s && !i && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-gray-100 ring-2 ring-gray-950" aria-label="Not looked at yet" />}
           </button>
         )}
         {testCases.length > 0 && (
@@ -11206,7 +11209,6 @@ function TesterTestDetail({
           >
             <Icon className={`w-4 h-4 ${on ? "" : ui.ic}`} />
             {label}
-            <KeyHint k={ui.key} />
           </button>
         );
       })}
@@ -11292,7 +11294,7 @@ function TesterTestDetail({
         )}
         <div className="flex-1 overflow-y-auto">
           {/* Extra bottom space so the floating Pings / Read me / Sample files buttons never cover the last section. */}
-          <div className="max-w-[1180px] px-4 sm:px-6 pt-6 pb-24">
+          <div className="max-w-[1180px] pl-4 sm:pl-6 pr-16 pt-6 pb-24">
             {sheetUpdateUnseen(c, p) && (
               <div className="mb-4">
                 <Callout tone="info" icon={AlertTriangle}>
@@ -14983,7 +14985,7 @@ function DevTestDetail({
           }
         />
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-[1180px] px-4 sm:px-6 pt-6 pb-24">
+          <div className="max-w-[1180px] pl-4 sm:pl-6 pr-16 pt-6 pb-24">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
               <TestDefinitionColumn c={d} p={c} ro={true} stepsCheckLeft={true} devNotes={dsn} myDevName={r} onDevNote={onDsn} />
               <div className="flex flex-col gap-5 min-w-0">
@@ -15070,7 +15072,6 @@ function DevTestDetail({
                         >
                           <Icon className="w-4 h-4" />
                           {m2.label}
-                          <KeyHint k={m2.k} />
                         </button>
                       );
                     })}
