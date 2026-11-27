@@ -6543,6 +6543,89 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
     </div>
   );
 }
+// ---- Live findings report (api/report.js on Vercel) ----
+// A read-only page with every test and result, as ready-made text, so a developer can hand the link
+// to Claude or any AI assistant. Each session has its own secret key; resetting it kills old links.
+var reportUrl = (sessionId, key) => `${window.location.origin}/api/report?session=${sessionId}&key=${key}`;
+var newReportKey = () => Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, "0")).join("");
+var REPORT_SETUP_SQL = "alter table sessions add column if not exists report_key text;";
+function CopyField({ value, label = "Copy" }) {
+  let [done, setDone] = useState(false);
+  return (
+    <div className="flex gap-1.5">
+      <input readOnly value={value} onFocus={(ev) => ev.target.select()} className="flex-1 min-w-0 h-8 px-2.5 bg-gray-950 border border-gray-800 rounded-sm text-base sm:text-xs font-mono text-gray-300 focus:outline-none focus:border-gray-600" />
+      <button
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(value);
+          } catch {
+            window.prompt("Copy this link:", value);
+          }
+          setDone(true);
+          setTimeout(() => setDone(false), 1600);
+        }}
+        className={`flex-shrink-0 h-8 px-3 inline-flex items-center gap-1.5 rounded-sm text-xs font-medium ${done ? "bg-green-500/15 text-green-300" : "bg-emerald-600 text-gray-950 hover:bg-emerald-500"}`}
+      >
+        {done ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : <Copy className="w-3.5 h-3.5" />}
+        {done ? "Copied" : label}
+      </button>
+    </div>
+  );
+}
+// Admin → Edit session: turn the report link on, copy it, reset it or turn it off. Saves straight away.
+function ReportLinkSection({ session }) {
+  let [key, setKey] = useState(session.report_key || "");
+  let [busy, setBusy] = useState(false);
+  let [err, setErr] = useState("");
+  let save = async (k) => {
+    setBusy(true);
+    setErr("");
+    let { error } = await supabase.from("sessions").update({ report_key: k }).eq("id", session.id);
+    setBusy(false);
+    if (error) {
+      setErr(/report_key/.test(error.message || "") ? `The report link needs a one-time Supabase setup. In the SQL Editor run: ${REPORT_SETUP_SQL}` : error.message || "Couldn’t save");
+      return;
+    }
+    session.report_key = k;
+    setKey(k || "");
+  };
+  return (
+    <div>
+      <div className="text-xs font-medium text-gray-400 mb-1.5">
+        Findings report link <span className="font-normal text-gray-500">(optional)</span>
+      </div>
+      {key ? (
+        <div className="space-y-2">
+          <CopyField value={reportUrl(session.id, key)} label="Copy link" />
+          <div className="flex items-center gap-3 text-xs">
+            <a href={reportUrl(session.id, key)} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-gray-100 underline underline-offset-2">
+              Open report
+            </a>
+            <button disabled={busy} onClick={() => save(newReportKey())} className="text-gray-400 hover:text-gray-100" title="Make a new link. The old link stops working straight away.">
+              Reset link
+            </button>
+            <button disabled={busy} onClick={() => save(null)} className="text-red-400 hover:text-red-300">
+              Turn off
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          disabled={busy}
+          onClick={() => save(newReportKey())}
+          className="h-8 px-3 inline-flex items-center gap-1.5 border border-gray-700 rounded-sm text-xs text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+        >
+          <Link className="w-3.5 h-3.5" /> Turn on report link
+        </button>
+      )}
+      {err && <div className="mt-1.5 text-xs text-red-300 break-words">{err}</div>}
+      <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+        A live, read-only page with every test and result, as plain text that people and AI assistants like Claude can read.
+        Anyone with the link can see it, so share it only with your team. Reset the link to stop old copies working.
+      </div>
+    </div>
+  );
+}
 function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   let [resyncOpen, setResyncOpen] = useState(false);
   let [removedTests, setRemovedTests] = useState([]);
@@ -6736,6 +6819,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               their overrides take precedence.
             </div>
           </div>
+          <ReportLinkSection session={e} />
           <div>
             <div className="text-xs font-medium text-gray-400 mb-1.5">Access codes</div>
             <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
@@ -11454,6 +11538,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
       <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
       <div className="flex-1 min-h-0 flex">
         <DevSidebar
+          reportLinkUrl={e.report_key ? reportUrl(e.id, e.report_key) : null}
           listGrouped={listGrouped}
           setListGrouped={setListGrouped}
           open={T}
@@ -11926,7 +12011,7 @@ var buildIssuesDocx = async (e, t, a) => {
   });
   return Packer.toBlob(i);
 };
-function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleCases: r, doneMarks: marks = {}, myName: me = "", onClose: o }) {
+function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleCases: r, doneMarks: marks = {}, myName: me = "", onClose: o, reportLink = null }) {
   let [s, l] = useState(["Fail", "Blocked", "Needs Review"]);
   let [exportAll, setExportAll] = useState(false);
   // Which tests to export: the current sidebar list (default), this developer's own Fixing/Fixed tests, or the whole session.
@@ -12005,6 +12090,20 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
           </button>
         </div>
         <div className="px-5 py-4 space-y-4">
+          <div>
+            <div className="text-xs font-medium text-gray-400 mb-1.5">Live report link</div>
+            {reportLink ? (
+              <Fragment>
+                <CopyField value={reportLink} label="Copy link" />
+                <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+                  Always up to date, with every test and result. Paste it into Claude (or another AI assistant) so it can read the findings.
+                </div>
+              </Fragment>
+            ) : (
+              <div className="text-xs text-gray-500">Not turned on for this session. Ask your admin to turn on the report link in Edit session.</div>
+            )}
+          </div>
+          <div className="border-t border-gray-800" />
           <div>
             <div className="text-xs font-medium text-gray-400 mb-1.5">From</div>
             <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
@@ -12135,6 +12234,7 @@ function DevSidebar({
   resetBaseUrl: j,
   onSetFixStage: setFixStage = () => {},
   onMarkRetestReady: markRetestReady = async () => {},
+  reportLinkUrl = null,
   listGrouped = true,
   setListGrouped = () => {},
 }) {
@@ -12486,6 +12586,7 @@ function DevSidebar({
           doneMarks={u}
           myName={r}
           onClose={() => setExportOpen(false)}
+          reportLink={reportLinkUrl}
         />
       )}
       {se && (
