@@ -1997,7 +1997,7 @@ function LightApp() {
   .sb-row.done.active { opacity: 1; }
   .sb-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
   .dot-Pass { background: #22c55e; }
-  .dot-Fail, .dot-Fail-Blocked { background: #ef4444; }
+  .dot-Fail, .dot-Fail-Blocked { background: #F05D5D; }
   .dot-Blocked { background: #f97316; }
   .dot-Partial-Pass { background: #eab308; }
   .dot-In-Progress { background: #3b82f6; }
@@ -2030,12 +2030,12 @@ function LightApp() {
 
   .badge { display: inline-block; padding: 3px 10px; border-radius: 2px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
   .badge-Pass { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-  .badge-Fail, .badge-Fail-Blocked { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .badge-Fail, .badge-Fail-Blocked { background: rgba(240, 93, 93, 0.15); color: #FF8F8F; border: 1px solid rgba(240, 93, 93, 0.3); }
   .badge-Blocked { background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
   .badge-Partial-Pass { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
   .badge-In-Progress { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
   .badge-Not-Tested { background: rgba(75, 85, 99, 0.2); color: #9ca3af; border: 1px solid rgba(75, 85, 99, 0.4); }
-  .badge-P0 { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+  .badge-P0 { background: rgba(240, 93, 93, 0.2); color: #FF8F8F; border: 1px solid rgba(240, 93, 93, 0.4); }
   .badge-P1 { background: rgba(249, 115, 22, 0.2); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.4); }
   .badge-P2 { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
 
@@ -2058,14 +2058,14 @@ function LightApp() {
   .steps { display: flex; flex-direction: column; gap: 6px; }
   .step { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: #111827; border: 1px solid #1f2937; border-radius: 2px; }
   .step-done { background: rgba(34, 197, 94, 0.06); border-color: rgba(34, 197, 94, 0.25); }
-  .step-blocked { background: rgba(239, 68, 68, 0.06); border-color: rgba(239, 68, 68, 0.25); }
+  .step-blocked { background: rgba(240, 93, 93, 0.06); border-color: rgba(240, 93, 93, 0.25); }
   .step-mark { width: 18px; height: 18px; border-radius: 2px; border: 1.5px solid #374151; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; font-weight: bold; color: transparent; }
   .step-done .step-mark { background: #16a34a; border-color: #16a34a; color: white; }
-  .step-blocked .step-mark { background: #dc2626; border-color: #dc2626; color: white; }
+  .step-blocked .step-mark { background: #D93B3B; border-color: #D93B3B; color: white; }
   .step-num { color: #818cf8; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; min-width: 22px; font-size: 13px; flex-shrink: 0; padding-top: 1px; }
   .step-body { flex: 1; min-width: 0; }
   .step-text { color: #e5e7eb; line-height: 1.55; }
-  .step-blocked-tag { color: #fca5a5; font-size: 11px; font-weight: 600; margin-left: 4px; }
+  .step-blocked-tag { color: #FF8F8F; font-size: 11px; font-weight: 600; margin-left: 4px; }
   .step-note { margin-top: 6px; background: rgba(251, 191, 36, 0.08); border-left: 3px solid #f59e0b; padding: 6px 10px; font-size: 12px; color: #fde68a; border-radius: 2px; white-space: pre-wrap; }
 
   .findings { margin-top: 28px; padding: 18px; background: #111827; border: 1px solid #1f2937; border-radius: 2px; }
@@ -2084,7 +2084,7 @@ function LightApp() {
   .rec-host-link .rec-meta, .rec:not(:has(.rec-embed)) .rec-meta { border-top: none; }
   .rec-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 8px; background: #111827; color: #a5b4fc; border: 1px solid #374151; border-radius: 2px; flex-shrink: 0; }
   .rec-host-loom .rec-badge { color: #c4b5fd; border-color: rgba(196,181,253,0.3); }
-  .rec-host-youtube .rec-badge { color: #fca5a5; border-color: rgba(252,165,165,0.3); }
+  .rec-host-youtube .rec-badge { color: #FF8F8F; border-color: rgba(252,165,165,0.3); }
   .rec-host-vimeo .rec-badge { color: #67e8f9; border-color: rgba(103,232,249,0.3); }
   .rec-host-drive .rec-badge { color: #fde047; border-color: rgba(253,224,71,0.3); }
   .rec-link { color: #9ca3af; text-decoration: none; word-break: break-all; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -4141,7 +4141,7 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
     }
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={t}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 modal-overlay" onClick={t}>
       <div
         className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl max-h-[calc(100vh-32px)] flex flex-col shadow-2xl"
         onClick={(D) => D.stopPropagation()}
@@ -5296,7 +5296,7 @@ function AdminPortal() {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <header className="px-8 py-5 border-b border-gray-800 bg-gray-950/60 backdrop-blur">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-emerald-600 rounded-sm flex items-center justify-center">
                 <FileText className="w-5 h-5 text-gray-950" />
@@ -5318,11 +5318,7 @@ function AdminPortal() {
             </div>
           </div>
         </header>
-        <main className="flex-1 max-w-5xl w-full mx-auto px-8 py-10">
-          <h2 className="text-xl font-bold text-gray-100 mb-1">Sessions</h2>
-          <p className="text-sm text-gray-400 mb-6">
-            Each session is one UAT campaign with its own test cases, testers, and developers.
-          </p>
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8">
           {l ? (
             <div className="py-12 text-center text-gray-500 text-sm">Loading…</div>
           ) : u ? (
@@ -5344,37 +5340,66 @@ function AdminPortal() {
               </button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {a.map((I) => (
-                <SessionCard
-                  session={I}
-                  progress={o[I.id]}
-                  onShowUrls={() => {
-                    p(I);
-                    t("created");
-                  }}
-                  onEdit={() => b(I)}
-                  key={I.id}
-                />
-              ))}
-            </div>
+            (() => {
+              // Two columns: the session list on the left, the selected session's settings on the right.
+              let sel = a.find((I) => I.id === h) || a[0];
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)] gap-6 items-start">
+                  <div className="lg:sticky lg:top-6">
+                    <h2 className="text-lg font-semibold text-gray-100">Sessions</h2>
+                    <p className="text-xs text-gray-500 mt-0.5 mb-3">Each session is one UAT campaign with its own test cases, testers and developers.</p>
+                    <div className="flex flex-col gap-1.5">
+                      {a.map((I) => (
+                        <SessionListItem session={I} progress={o[I.id]} selected={I.id === sel.id} onSelect={() => b(I.id)} key={I.id} />
+                      ))}
+                    </div>
+                  </div>
+                  <SessionEditor session={sel} onSaved={() => S((I) => I + 1)} key={sel.id} />
+                </div>
+              );
+            })()
           )}
         </main>
-        {h && (
-          <EditSessionModal
-            session={h}
-            onClose={() => b(null)}
-            onSaved={() => {
-              b(null);
-              S((I) => I + 1);
-            }}
-          />
-        )}
       </div>
     );
   }
 }
+// Left-hand list item: name, age, people, progress. Click to show its settings on the right.
+function SessionListItem({ session: e, progress: t, selected, onSelect }) {
+  let u = t || { total: 0, tested: 0, failed: 0, loaded: false };
+  let l = (e.testers || []).length;
+  let i = (e.developers || []).length;
+  return (
+    <button
+      onClick={onSelect}
+      aria-current={selected ? "true" : undefined}
+      className={`w-full text-left px-3.5 py-3 border rounded-sm transition-colors ${selected ? "bg-gray-800 border-gray-600" : "bg-gray-900/60 border-gray-800 hover:border-gray-700"}`}
+    >
+      <div className={`text-sm truncate ${selected ? "font-semibold text-gray-100" : "font-medium text-gray-200"}`}>{e.name}</div>
+      <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-center gap-x-1.5">
+        <span title={e.created_at ? new Date(e.created_at).toLocaleString() : ""}>{e.created_at ? timeAgo(e.created_at) : ""}</span>
+        <span className="text-gray-700">·</span>
+        <span>
+          {l} tester{l === 1 ? "" : "s"}, {i} dev{i === 1 ? "" : "s"}
+        </span>
+      </div>
+      {u.loaded && u.total > 0 && (
+        <div className="mt-2">
+          <div className="h-1 rounded-full bg-gray-800 overflow-hidden">
+            <div className="h-full bg-gray-400" style={{ width: `${Math.round((u.tested / u.total) * 100)}%` }} />
+          </div>
+          <div className="mt-1 text-[11px] text-gray-500">
+            <span className="text-gray-300">{u.tested}</span>/{u.total} tested
+            {u.failed > 0 && <span className="text-red-400"> · {u.failed} failed</span>}
+          </div>
+        </div>
+      )}
+    </button>
+  );
+}
+// Session row in the admin list. "Share link" opens the sharing details right inside the card.
 function SessionCard({ session: e, progress: t, onShowUrls: a, onEdit: r }) {
+  let [shareOpen, setShareOpen] = useState(false);
   let o = e.created_at ? new Date(e.created_at).toLocaleString() : "";
   let s = e.created_at ? timeAgo(e.created_at) : "";
   let l = (e.testers || []).length;
@@ -5386,7 +5411,8 @@ function SessionCard({ session: e, progress: t, onShowUrls: a, onEdit: r }) {
     loaded: false,
   };
   return (
-    <div className="flex items-center gap-4 p-4 bg-gray-900/60 border border-gray-800 rounded-sm hover:border-gray-700">
+    <div className={`bg-gray-900/60 border rounded-sm transition-colors ${shareOpen ? "border-gray-700" : "border-gray-800 hover:border-gray-700"}`}>
+    <div className="flex items-center gap-4 p-4">
       <div className="flex-1 min-w-0">
         <div className="font-medium text-gray-100 truncate">{e.name}</div>
         <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -5423,11 +5449,35 @@ function SessionCard({ session: e, progress: t, onShowUrls: a, onEdit: r }) {
         <Pencil className="w-3.5 h-3.5" /> Edit
       </button>
       <button
-        onClick={a}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-950/40 hover:bg-emerald-900/40 border border-emerald-900 rounded-sm"
+        onClick={() => setShareOpen(!shareOpen)}
+        aria-expanded={shareOpen}
+        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-sm transition-colors ${shareOpen ? "bg-gray-800 border-gray-600 text-gray-100" : "text-gray-300 hover:text-gray-100 bg-gray-800/60 hover:bg-gray-950 border-gray-800"}`}
+        title={shareOpen ? "Hide sharing details" : "Show the session link and access codes"}
       >
         <ExternalLink className="w-3.5 h-3.5" /> Share link
+        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${shareOpen ? "rotate-90" : ""}`} />
       </button>
+    </div>
+    {shareOpen && (
+      <div className="border-t border-gray-800 px-4 py-4">
+        <ShareLinksPanel
+          url={sessionUrl(e.id)}
+          testerCode={e.tester_code}
+          devCode={e.developer_code}
+          testerCodeOff={!testerCodeOn(e)}
+          devCodeOff={!devCodeOn(e)}
+          testers={e.testers || []}
+          developers={e.developers || []}
+        />
+        <div className="mt-4">
+          <div className="text-xs text-gray-400 mb-2">Direct role links (skip the role picker)</div>
+          <div className="space-y-2">
+            <CopyUrlRow label="Tester link" url={portalUrl("tester", e.id)} />
+            <CopyUrlRow label="Developer link" url={portalUrl("dev", e.id)} />
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 }
@@ -6740,7 +6790,7 @@ function ResyncTestsModal({ session: e, onClose: t, onDone: a }) {
   };
   let G = A ? A.added.length + A.updated.length + A.moved.length + A.restored.length + A.removed.length : 0;
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => !x && t()}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 modal-overlay" onClick={() => !x && t()}>
       <div
         className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl max-h-[calc(100vh-32px)] flex flex-col shadow-2xl"
         onClick={(y) => y.stopPropagation()}
@@ -7180,7 +7230,10 @@ function ReportLinkSection({ session }) {
     </div>
   );
 }
-function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
+// Admin → right-hand panel for the selected session, grouped into cards.
+// Details and People need the Save bar; the other cards save as you change them.
+function SessionEditor({ session: e, onSaved: a }) {
+  let t = () => {};
   let [resyncOpen, setResyncOpen] = useState(false);
   let [removedTests, setRemovedTests] = useState([]);
   let [restoringId, setRestoringId] = useState(null);
@@ -7220,18 +7273,6 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
   let codesChanged = testerReq !== testerCodeOn(e) || devReq !== devCodeOn(e);
   let v = e.testers || [];
   let k = e.developers || [];
-  useEffect(() => {
-    if (resyncOpen) {
-      return;
-    }
-    let E = (D) => {
-      if (D.key === "Escape") {
-        t();
-      }
-    };
-    window.addEventListener("keydown", E);
-    return () => window.removeEventListener("keydown", E);
-  }, [t, resyncOpen]);
   let C = () => {
     let E = p.trim();
     if (!E) {
@@ -7290,6 +7331,10 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
         if (E) {
           throw E;
         }
+        // Stay on this session: clear the "added" lists and saving state; the list reloads with the saved values.
+        u([]);
+        c([]);
+        I(false);
         a();
       } catch (E) {
         g(E.message || "Save failed");
@@ -7297,281 +7342,319 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
       }
     }
   };
+  let discard = () => {
+    o(e.name || "");
+    setShortName(e.short_name || "");
+    setSheetUrl(e.sheet_url || "");
+    l(e.base_url || "");
+    u([]);
+    c([]);
+    h("");
+    _("");
+    g("");
+    setTesterReq(testerCodeOn(e));
+    setDevReq(devCodeOn(e));
+  };
+  let dirty = M || W || V || codesChanged || shortChanged || sheetUrlChanged;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={t}>
-      <div
-        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-xl max-h-[calc(100vh-32px)] flex flex-col shadow-2xl"
-        onClick={(E) => E.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 flex-shrink-0">
-          <h2 className="text-base font-bold text-gray-100">Edit session</h2>
-          <button onClick={t} className="text-gray-400 hover:text-gray-100 p-1" title="Close">
-            <X className="w-5 h-5" />
-          </button>
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-100 break-words">{e.name}</h2>
+        <div className="text-xs text-gray-500 mt-0.5">
+          Created {e.created_at ? new Date(e.created_at).toLocaleDateString() : ""} · {(e.testers || []).length} testers · {(e.developers || []).length} developers
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              Session name
-            </label>
-            <input
-              type="text"
-              value={r}
-              onChange={(E) => o(E.target.value)}
-              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
-            />
+      </div>
+      <AdminCard title="Share" desc="One link for everyone. People pick their role when they open it and enter the matching code.">
+        <ShareLinksPanel
+          url={sessionUrl(e.id)}
+          testerCode={e.tester_code}
+          devCode={e.developer_code}
+          testerCodeOff={!testerCodeOn(e)}
+          devCodeOff={!devCodeOn(e)}
+          testers={e.testers || []}
+          developers={e.developers || []}
+        />
+        <div>
+          <div className="text-xs text-gray-400 mb-2">Direct role links (skip the role picker)</div>
+          <div className="space-y-2">
+            <CopyUrlRow label="Tester link" url={portalUrl("tester", e.id)} />
+            <CopyUrlRow label="Developer link" url={portalUrl("dev", e.id)} />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              Short name <span className="normal-case font-normal text-gray-500">(optional, for the browser tab)</span>
-            </label>
-            <input
-              type="text"
-              value={shortName}
-              maxLength={24}
-              onChange={(E) => setShortName(E.target.value)}
-              placeholder={sessionShortName({ name: r })}
-              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
-            />
-            <div className="text-[11px] text-gray-500 mt-1">
-              Tabs will read “{shortName.trim() || sessionShortName({ name: r })} · Tester – {APP_NAME}”. Leave empty to use the first word of the session name.
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              Google Sheet link <span className="normal-case font-normal text-gray-500">(optional)</span>
-            </label>
-            <input
-              type="url"
-              value={sheetUrl}
-              onChange={(E) => setSheetUrl(E.target.value)}
-              placeholder="https://docs.google.com/spreadsheets/d/…"
-              className={`w-full px-3 py-2 bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500 ${sheetUrlBad ? "border-red-600" : "border-gray-800"}`}
-            />
-            <div className={`text-[11px] mt-1 ${sheetUrlBad ? "text-red-400" : "text-gray-500"}`}>
-              {sheetUrlBad
-                ? "Paste the full link, starting with https://"
-                : "Testers and developers get an “Open Google Sheet” link in the Focus tests window. Filled in automatically when you import from a link."}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              Path chip prefix <span className="normal-case font-normal text-gray-500">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={s}
-              onChange={(E) => l(E.target.value)}
-              placeholder="https://localhost:3000"
-              autoCapitalize="off"
-              autoComplete="off"
-              spellCheck="false"
-              className={`w-full px-3 py-2 text-sm font-mono bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:border-emerald-500 ${s.trim() ? "border-emerald-800" : "border-gray-800"}`}
-            />
-            <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-              Default for both portals. Testers and developers can still override this in their own Options —
-              their overrides take precedence.
-            </div>
-          </div>
-          <ReportLinkSection session={e} />
-          <div>
-            <div className="text-xs font-medium text-gray-400 mb-1.5">Access codes</div>
-            <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
-              {[
-                { label: "Testers", code: e.tester_code, on: testerReq, set: setTesterReq },
-                { label: "Developers", code: e.developer_code, on: devReq, set: setDevReq },
-              ].map((E) => (
-                <div key={E.label} className="flex items-center gap-3 px-3 py-2.5">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-gray-100">{E.label} need a code to sign in</div>
-                    <div className="text-[11px] text-gray-500">
-                      {E.on ? (
-                        <Fragment>
-                          Code <span className="font-mono text-gray-300 tracking-wider">{E.code}</span>
-                        </Fragment>
-                      ) : (
-                        "Off, they just pick their name"
-                      )}
-                    </div>
-                  </div>
-                  <CodeSwitch on={E.on} onChange={E.set} label={`${E.label} need a code`} />
+        </div>
+      </AdminCard>
+      <AdminCard title="Reports" desc="Live, read-only views of every result. Changes here save straight away.">
+        <ReportLinkSection session={e} />
+      </AdminCard>
+      <AdminCard title="Details">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Session name
+                </label>
+                <input
+                  type="text"
+                  value={r}
+                  onChange={(E) => o(E.target.value)}
+                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Short name <span className="normal-case font-normal text-gray-500">(optional, for the browser tab)</span>
+                </label>
+                <input
+                  type="text"
+                  value={shortName}
+                  maxLength={24}
+                  onChange={(E) => setShortName(E.target.value)}
+                  placeholder={sessionShortName({ name: r })}
+                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+                />
+                <div className="text-[11px] text-gray-500 mt-1">
+                  Tabs will read “{shortName.trim() || sessionShortName({ name: r })} · Tester – {APP_NAME}”. Leave empty to use the first word of the session name.
                 </div>
-              ))}
-            </div>
-            <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-              If you switch a code back on, anyone who signed in while it was off will be asked for it on their next visit.
-            </div>
-          </div>
-          <div>
-            <div className="text-xs font-medium text-gray-400 mb-1.5">
-              Testers <span className="normal-case font-normal text-gray-500">({v.length + i.length})</span>
-            </div>
-            {v.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {v.map((E) => (
-                  <span
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-xs"
-                    key={E}
-                  >
-                    {E}
-                  </span>
-                ))}
               </div>
-            )}
-            {i.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {i.map((E, D) => (
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-900/40 border border-emerald-700 text-emerald-200 rounded-sm text-xs"
-                    key={D}
-                  >
-                    {E}
-                    <button
-                      onClick={() => f(D)}
-                      className="text-emerald-300 hover:text-emerald-100"
-                      title="Remove from this edit"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Google Sheet link <span className="normal-case font-normal text-gray-500">(optional)</span>
+                </label>
+                <input
+                  type="url"
+                  value={sheetUrl}
+                  onChange={(E) => setSheetUrl(E.target.value)}
+                  placeholder="https://docs.google.com/spreadsheets/d/…"
+                  className={`w-full px-3 py-2 bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500 ${sheetUrlBad ? "border-red-600" : "border-gray-800"}`}
+                />
+                <div className={`text-[11px] mt-1 ${sheetUrlBad ? "text-red-400" : "text-gray-500"}`}>
+                  {sheetUrlBad
+                    ? "Paste the full link, starting with https://"
+                    : "Testers and developers get an “Open Google Sheet” link in the Focus tests window. Filled in automatically when you import from a link."}
+                </div>
               </div>
-            )}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={p}
-                onChange={(E) => h(E.target.value)}
-                onKeyDown={(E) => {
-                  if (E.key === "Enter") {
-                    E.preventDefault();
-                    C();
-                  }
-                }}
-                placeholder="Add a tester name"
-                className="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
-              />
-              <button
-                onClick={C}
-                disabled={!p.trim()}
-                className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-gray-950 rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="text-xs font-medium text-gray-400 mb-1.5">
-              Developers{" "}
-              <span className="normal-case font-normal text-gray-500">({k.length + d.length})</span>
-            </div>
-            {k.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {k.map((E) => (
-                  <span
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-xs"
-                    key={E}
-                  >
-                    {E}
-                  </span>
-                ))}
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Path chip prefix <span className="normal-case font-normal text-gray-500">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={s}
+                  onChange={(E) => l(E.target.value)}
+                  placeholder="https://localhost:3000"
+                  autoCapitalize="off"
+                  autoComplete="off"
+                  spellCheck="false"
+                  className={`w-full px-3 py-2 text-sm font-mono bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:border-emerald-500 ${s.trim() ? "border-emerald-800" : "border-gray-800"}`}
+                />
+                <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+                  Default for both portals. Testers and developers can still override this in their own Options —
+                  their overrides take precedence.
+                </div>
               </div>
-            )}
-            {d.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {d.map((E, D) => (
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-900/40 border border-emerald-700 text-emerald-200 rounded-sm text-xs"
-                    key={D}
-                  >
-                    {E}
-                    <button
-                      onClick={() => w(D)}
-                      className="text-emerald-300 hover:text-emerald-100"
-                      title="Remove from this edit"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={b}
-                onChange={(E) => _(E.target.value)}
-                onKeyDown={(E) => {
-                  if (E.key === "Enter") {
-                    E.preventDefault();
-                    m();
-                  }
-                }}
-                placeholder="Add a developer name"
-                className="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
-              />
-              <button
-                onClick={m}
-                disabled={!b.trim()}
-                className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-gray-950 rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-          <ReadmeEditor session={e} />
-          <SampleFilesManager session={e} />
-          <div>
-            <div className="text-xs font-medium text-gray-400 mb-1.5">Test cases</div>
-            <button
-              onClick={() => setResyncOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-sm transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Upload updated sheet
-            </button>
-            <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-              Updates wording, adds new tests and tabs, and hides tests removed from the sheet. Existing results are
-              kept. You'll see a summary before anything changes.
-            </div>
-            {removedTests.length > 0 && (
-              <details className="group mt-2 border border-gray-800 rounded-sm">
-                <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none text-xs text-gray-300 hover:bg-gray-800/40">
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-500 transition-transform group-open:rotate-90" />
-                  Removed from sheet ({removedTests.length}) · hidden from testers, results kept
-                </summary>
-                <div className="px-3 pb-2 pt-1 space-y-1 max-h-48 overflow-y-auto">
-                  {removedTests.map((E) => (
-                    <div className="flex items-center gap-2 text-xs" key={E.id}>
-                      <span className="font-mono text-emerald-400 flex-shrink-0">{E.test_id || "—"}</span>
-                      <span className="text-gray-400 truncate flex-1">
-                        {E.title} · {E.module}
-                      </span>
-                      <button
-                        onClick={() => restoreTest(E.id)}
-                        disabled={restoringId === E.id}
-                        className="flex-shrink-0 px-2 py-0.5 text-[11px] text-gray-300 border border-gray-700 rounded-sm hover:bg-gray-800 disabled:text-gray-600"
-                      >
-                        {restoringId === E.id ? "Restoring…" : "Restore"}
-                      </button>
+      </AdminCard>
+      <AdminCard title="People and access">
+              <div>
+                <div className="text-xs font-medium text-gray-400 mb-1.5">Access codes</div>
+                <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
+                  {[
+                    { label: "Testers", code: e.tester_code, on: testerReq, set: setTesterReq },
+                    { label: "Developers", code: e.developer_code, on: devReq, set: setDevReq },
+                  ].map((E) => (
+                    <div key={E.label} className="flex items-center gap-3 px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-gray-100">{E.label} need a code to sign in</div>
+                        <div className="text-[11px] text-gray-500">
+                          {E.on ? (
+                            <Fragment>
+                              Code <span className="font-mono text-gray-300 tracking-wider">{E.code}</span>
+                            </Fragment>
+                          ) : (
+                            "Off, they just pick their name"
+                          )}
+                        </div>
+                      </div>
+                      <CodeSwitch on={E.on} onChange={E.set} label={`${E.label} need a code`} />
                     </div>
                   ))}
                 </div>
-              </details>
-            )}
-          </div>
-          <div className="text-[10px] text-gray-500 pt-2 border-t border-gray-800">
-            Existing testers and developers can't be removed here — only added. Their findings stay
-            regardless.
-          </div>
+                <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+                  If you switch a code back on, anyone who signed in while it was off will be asked for it on their next visit.
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-400 mb-1.5">
+                  Testers <span className="normal-case font-normal text-gray-500">({v.length + i.length})</span>
+                </div>
+                {v.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {v.map((E) => (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-xs"
+                        key={E}
+                      >
+                        {E}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {i.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {i.map((E, D) => (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-900/40 border border-emerald-700 text-emerald-200 rounded-sm text-xs"
+                        key={D}
+                      >
+                        {E}
+                        <button
+                          onClick={() => f(D)}
+                          className="text-emerald-300 hover:text-emerald-100"
+                          title="Remove from this edit"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={p}
+                    onChange={(E) => h(E.target.value)}
+                    onKeyDown={(E) => {
+                      if (E.key === "Enter") {
+                        E.preventDefault();
+                        C();
+                      }
+                    }}
+                    placeholder="Add a tester name"
+                    className="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                  <button
+                    onClick={C}
+                    disabled={!p.trim()}
+                    className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-gray-950 rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-400 mb-1.5">
+                  Developers{" "}
+                  <span className="normal-case font-normal text-gray-500">({k.length + d.length})</span>
+                </div>
+                {k.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {k.map((E) => (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-xs"
+                        key={E}
+                      >
+                        {E}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {d.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {d.map((E, D) => (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-900/40 border border-emerald-700 text-emerald-200 rounded-sm text-xs"
+                        key={D}
+                      >
+                        {E}
+                        <button
+                          onClick={() => w(D)}
+                          className="text-emerald-300 hover:text-emerald-100"
+                          title="Remove from this edit"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={b}
+                    onChange={(E) => _(E.target.value)}
+                    onKeyDown={(E) => {
+                      if (E.key === "Enter") {
+                        E.preventDefault();
+                        m();
+                      }
+                    }}
+                    placeholder="Add a developer name"
+                    className="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                  <button
+                    onClick={m}
+                    disabled={!b.trim()}
+                    className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-gray-950 rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+              <div className="text-[10px] text-gray-500 pt-2 border-t border-gray-800">
+                Existing testers and developers can't be removed here — only added. Their findings stay
+                regardless.
+              </div>
+      </AdminCard>
+      <AdminCard title="For testers" desc="What testers see when they open the session. Changes here save straight away.">
+        <ReadmeEditor session={e} />
+        <SampleFilesManager session={e} />
+      </AdminCard>
+      <AdminCard title="Test cases">
+              <div>
+                <div className="text-xs font-medium text-gray-400 mb-1.5">Test cases</div>
+                <button
+                  onClick={() => setResyncOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-sm transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Upload updated sheet
+                </button>
+                <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+                  Updates wording, adds new tests and tabs, and hides tests removed from the sheet. Existing results are
+                  kept. You'll see a summary before anything changes.
+                </div>
+                {removedTests.length > 0 && (
+                  <details className="group mt-2 border border-gray-800 rounded-sm">
+                    <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none text-xs text-gray-300 hover:bg-gray-800/40">
+                      <ChevronRight className="w-3.5 h-3.5 text-gray-500 transition-transform group-open:rotate-90" />
+                      Removed from sheet ({removedTests.length}) · hidden from testers, results kept
+                    </summary>
+                    <div className="px-3 pb-2 pt-1 space-y-1 max-h-48 overflow-y-auto">
+                      {removedTests.map((E) => (
+                        <div className="flex items-center gap-2 text-xs" key={E.id}>
+                          <span className="font-mono text-emerald-400 flex-shrink-0">{E.test_id || "—"}</span>
+                          <span className="text-gray-400 truncate flex-1">
+                            {E.title} · {E.module}
+                          </span>
+                          <button
+                            onClick={() => restoreTest(E.id)}
+                            disabled={restoringId === E.id}
+                            className="flex-shrink-0 px-2 py-0.5 text-[11px] text-gray-300 border border-gray-700 rounded-sm hover:bg-gray-800 disabled:text-gray-600"
+                          >
+                            {restoringId === E.id ? "Restoring…" : "Restore"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+      </AdminCard>
           {x && (
             <div className="px-3 py-2 bg-red-950/40 border border-red-800 rounded-sm text-xs text-red-200">
               {x}
             </div>
           )}
-        </div>
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-800 flex-shrink-0">
-          <button onClick={t} className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-200">
-            Cancel
+      {(dirty || S || x) && (
+        <div className="sticky bottom-0 z-10 -mx-1 px-4 py-3 flex items-center gap-3 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl">
+          <span className="flex-1 text-sm text-gray-300">{sheetUrlBad ? "Fix the Google Sheet link to save." : "You have unsaved changes in Details or People and access."}</span>
+          <button onClick={discard} disabled={S} className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-200">
+            Discard
           </button>
           <button
             onClick={se}
@@ -7581,9 +7664,9 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
             {S ? "Saving…" : "Save"}
           </button>
         </div>
-      </div>
+      )}
       {resyncOpen && (
-        <div onClick={(E) => E.stopPropagation()}>
+        <div>
           <ResyncTestsModal
             session={e}
             onClose={() => setResyncOpen(false)}
@@ -7595,6 +7678,17 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
         </div>
       )}
     </div>
+  );
+}
+function AdminCard({ title, desc, children }) {
+  return (
+    <section className="bg-gray-900 border border-gray-800 rounded-sm">
+      <div className="px-5 pt-4 pb-3 border-b border-gray-800">
+        <h3 className="text-sm font-semibold text-gray-100">{title}</h3>
+        {desc && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{desc}</p>}
+      </div>
+      <div className="px-5 py-4 space-y-5">{children}</div>
+    </section>
   );
 }
 function CreateSessionWizard({ onCancel: e, onCreated: t }) {
@@ -8369,16 +8463,13 @@ function SessionCreatedScreen({ session: e, onDone: t }) {
           testers={e.testers || []}
           developers={e.developers || []}
         />
-        <details className="mt-3 group">
-          <summary className="text-xs text-gray-500 hover:text-gray-300 cursor-pointer select-none flex items-center gap-1">
-            <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
-            Direct role links (skip the role picker)
-          </summary>
-          <div className="mt-3 space-y-2">
+        <div className="mt-4">
+          <div className="text-xs text-gray-400 mb-2">Direct role links (skip the role picker)</div>
+          <div className="space-y-2">
             <CopyUrlRow label="Tester link" url={portalUrl("tester", e.id)} />
             <CopyUrlRow label="Developer link" url={portalUrl("dev", e.id)} />
           </div>
-        </details>
+        </div>
         <div className="mt-8">
           <button
             onClick={t}
@@ -11201,7 +11292,7 @@ function TesterTestDetail({
         )}
         <div className="flex-1 overflow-y-auto">
           {/* Extra bottom space so the floating Pings / Read me / Sample files buttons never cover the last section. */}
-          <div className="max-w-[1180px] px-4 sm:px-6 pt-3 pb-24">
+          <div className="max-w-[1180px] px-4 sm:px-6 pt-6 pb-24">
             {sheetUpdateUnseen(c, p) && (
               <div className="mb-4">
                 <Callout tone="info" icon={AlertTriangle}>
@@ -12302,22 +12393,22 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
 // Screenshots are exported with their arrows, circles and text labels drawn in.
 // ---------------------------------------------------------------------------
 var EXPORT_ISSUE_STATUSES = [
-  { value: "Fail", color: "#dc2626" },
-  { value: "Blocked", color: "#dc2626" },
-  { value: "Needs Review", color: "#d97706" },
+  { value: "Fail", color: "#D93B3B" },
+  { value: "Blocked", color: "#D98A10" },
+  { value: "Needs Review", color: "#7C5CE0" },
   // Only used when "Export all" is ticked (colours for the report, not rows in the Include list).
-  { value: "Pass", color: "#16a34a", extra: true },
+  { value: "Pass", color: "#219D5F", extra: true },
   { value: "Not Tested", color: "#6b7280", extra: true },
 ];
 var STEP_MARK = {
   done: { sym: "✓", label: "Done", color: "#16a34a" },
   review: { sym: "✓", label: "Works but needs review", color: "#ea580c" },
-  blocked: { sym: "✗", label: "Unable to proceed", color: "#dc2626" },
+  blocked: { sym: "✗", label: "Unable to proceed", color: "#D93B3B" },
   unsure: { sym: "?", label: "Unsure", color: "#ea580c" },
 };
 var EXP_MARK = {
   done: { sym: "✓", label: "Met", color: "#16a34a" },
-  blocked: { sym: "✗", label: "Not as expected", color: "#dc2626" },
+  blocked: { sym: "✗", label: "Not as expected", color: "#D93B3B" },
   unsure: { sym: "?", label: "Unsure", color: "#ea580c" },
 };
 var exportEsc = (e) =>
@@ -12340,7 +12431,7 @@ var renderAnnotatedShot = async (e) => {
     i.fillRect(0, 0, o, s);
     i.drawImage(a, 0, 0, o, s);
     let u = Math.max(1, o / 900);
-    i.strokeStyle = "#ef4444";
+    i.strokeStyle = "#F05D5D";
     i.lineWidth = 3 * u;
     i.lineCap = "round";
     i.lineJoin = "round";
@@ -12392,7 +12483,7 @@ var renderAnnotatedShot = async (e) => {
           });
         let v = _ * 1.3;
         let k = Math.min(x, Math.max(...g.map((C) => i.measureText(C).width)));
-        i.fillStyle = "#dc2626";
+        i.fillStyle = "#D93B3B";
         i.fillRect(c, p, k + I * 2, g.length * v + S * 2);
         i.fillStyle = "#fff";
         i.textBaseline = "top";
@@ -12720,7 +12811,7 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
   };
   let k = (C) => l(s.includes(C) ? s.filter((m) => m !== C) : [...s, C]);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !p && o()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 modal-overlay" onClick={() => !p && o()}>
       <div className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-md shadow-2xl max-h-[calc(100vh-32px)] flex flex-col" onClick={(C) => C.stopPropagation()}>
         <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-800">
           <h2 className="text-base font-bold text-gray-100">Export tests</h2>
@@ -13266,7 +13357,7 @@ function MarkRetestReadyModal({ tests: e, onClose: t, onConfirm: a }) {
       return n;
     });
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => !busy && t()}>
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 modal-overlay" onClick={() => !busy && t()}>
       <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-sm shadow-xl flex flex-col max-h-[calc(100vh-32px)]" onClick={(r) => r.stopPropagation()}>
         <div className="px-5 py-4 border-b border-gray-800 flex items-start gap-3">
           <div className="flex-1">
@@ -13473,7 +13564,7 @@ function ConfirmDialog({
     return () => window.removeEventListener("keydown", i);
   }, [l]);
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={l}>
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 modal-overlay" onClick={l}>
       <div
         className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-sm shadow-2xl max-h-[calc(100vh-32px)] overflow-y-auto"
         onClick={(i) => i.stopPropagation()}
@@ -13692,7 +13783,7 @@ function SettingsModal({
     return () => window.removeEventListener("keydown", c);
   }, [d]);
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={d}>
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 modal-overlay" onClick={d}>
       <div
         className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl shadow-2xl max-h-[calc(100vh-32px)] flex flex-col"
         onClick={(c) => c.stopPropagation()}
@@ -14183,7 +14274,7 @@ function ScreenshotLightbox({
   };
   if (u) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={a}>
+      <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 modal-overlay" onClick={a}>
         <div className="w-full max-w-5xl flex flex-col" onClick={(M) => M.stopPropagation()}>
           <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-950 border border-gray-800 border-b-0 rounded-t-sm flex-shrink-0">
             <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-emerald-600 text-gray-950 border border-emerald-700 rounded-sm flex-shrink-0">
@@ -14293,7 +14384,7 @@ function ScreenshotLightbox({
                     let F = M.x2 * k.w;
                     let se = M.y2 * k.h;
                     let E = _ === M.id;
-                    let D = E ? "#fb7185" : "#ef4444";
+                    let D = E ? "#FF8F8F" : "#F05D5D";
                     return (
                       <g key={M.id}>
                         {isCircle ? (
@@ -14305,7 +14396,7 @@ function ScreenshotLightbox({
                                 width={Math.abs(F - W)}
                                 height={Math.abs(se - V)}
                                 fill="none"
-                                stroke="#fb7185"
+                                stroke="#FF8F8F"
                                 strokeWidth={1}
                                 strokeDasharray="4 4"
                                 pointerEvents="none"
@@ -14376,7 +14467,7 @@ function ScreenshotLightbox({
                               cy={V}
                               r={8}
                               fill="#fff"
-                              stroke="#ef4444"
+                              stroke="#F05D5D"
                               strokeWidth={2}
                               style={{
                                 cursor: "crosshair",
@@ -14400,7 +14491,7 @@ function ScreenshotLightbox({
                               cy={se}
                               r={8}
                               fill="#fff"
-                              stroke="#ef4444"
+                              stroke="#F05D5D"
                               strokeWidth={2}
                               style={{
                                 cursor: "crosshair",
@@ -14441,12 +14532,12 @@ function ScreenshotLightbox({
                       lineHeight: 1.3,
                       fontWeight: 600,
                       color: "#fff",
-                      background: "#dc2626",
+                      background: "#D93B3B",
                       padding: "4px 8px",
                       borderRadius: "3px",
                       whiteSpace: "pre-wrap",
                       wordBreak: "break-word",
-                      boxShadow: W && r ? "0 0 0 2px #0b0f17, 0 0 0 4px #fb7185" : "0 1px 3px rgba(0,0,0,0.4)",
+                      boxShadow: W && r ? "0 0 0 2px #0b0f17, 0 0 0 4px #FF8F8F" : "0 1px 3px rgba(0,0,0,0.4)",
                       pointerEvents: !r || h === "arrow" || h === "circle" ? "none" : "auto",
                       touchAction: "none",
                       cursor: h === "select" ? "move" : "text",
@@ -14654,7 +14745,7 @@ function RecordingPlayer({ recordings: e, startIdx: t = 0, onClose: a }) {
   }, [u, d, a]);
   if (l) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={a}>
+      <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 modal-overlay" onClick={a}>
         <div
           className="w-full max-w-4xl bg-gray-950 border border-gray-800 rounded-sm flex flex-col shadow-2xl"
           onClick={(c) => c.stopPropagation()}
@@ -14892,7 +14983,7 @@ function DevTestDetail({
           }
         />
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-[1180px] px-4 sm:px-6 pt-3 pb-24">
+          <div className="max-w-[1180px] px-4 sm:px-6 pt-6 pb-24">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
               <TestDefinitionColumn c={d} p={c} ro={true} stepsCheckLeft={true} devNotes={dsn} myDevName={r} onDevNote={onDsn} />
               <div className="flex flex-col gap-5 min-w-0">

@@ -52,7 +52,9 @@
     })();
   </script>
   <style id="app-base-css">
-    /* Theme colours (dark default, light via Settings → Appearance). Every Tailwind colour reads these. */
+    /* Theme colours (dark default, light via Options → Appearance). Every Tailwind colour reads these.
+       Every colour family is kept to three shades per theme: text, solid (dots, buttons) and deep/pale (borders, tints);
+       fainter backgrounds are these at lower opacity. */
     :root {
       --gray-50: 245 246 247;
       --gray-100: 232 234 237;
@@ -76,83 +78,83 @@
       --ink-800: 38 43 51;
       --ink-900: 31 35 42;
       --ink-950: 23 26 32;
-      --pass-50: 234 249 241;
-      --pass-100: 207 242 223;
-      --pass-200: 163 230 194;
+      --pass-50: 111 219 162;
+      --pass-100: 111 219 162;
+      --pass-200: 111 219 162;
       --pass-300: 111 219 162;
-      --pass-400: 76 207 140;
-      --pass-500: 52 194 122;
-      --pass-600: 38 160 100;
-      --pass-700: 31 127 81;
-      --pass-800: 27 100 66;
-      --pass-900: 22 79 54;
-      --pass-950: 11 45 30;
-      --fail-50: 254 241 241;
-      --fail-100: 253 220 220;
-      --fail-200: 251 189 189;
-      --fail-300: 255 146 146;
-      --fail-400: 246 117 117;
+      --pass-400: 111 219 162;
+      --pass-500: 45 174 110;
+      --pass-600: 45 174 110;
+      --pass-700: 29 90 60;
+      --pass-800: 29 90 60;
+      --pass-900: 29 90 60;
+      --pass-950: 29 90 60;
+      --fail-50: 255 143 143;
+      --fail-100: 255 143 143;
+      --fail-200: 255 143 143;
+      --fail-300: 255 143 143;
+      --fail-400: 255 143 143;
       --fail-500: 240 93 93;
-      --fail-600: 217 59 59;
-      --fail-700: 180 44 44;
-      --fail-800: 146 40 40;
-      --fail-900: 120 38 38;
-      --fail-950: 65 16 16;
-      --blocked-50: 254 247 236;
-      --blocked-100: 253 234 203;
-      --blocked-200: 250 213 150;
+      --fail-600: 240 93 93;
+      --fail-700: 110 36 36;
+      --fail-800: 110 36 36;
+      --fail-900: 110 36 36;
+      --fail-950: 110 36 36;
+      --blocked-50: 248 196 111;
+      --blocked-100: 248 196 111;
+      --blocked-200: 248 196 111;
       --blocked-300: 248 196 111;
-      --blocked-400: 245 181 80;
+      --blocked-400: 248 196 111;
       --blocked-500: 242 169 59;
-      --blocked-600: 217 138 16;
-      --blocked-700: 180 108 12;
-      --blocked-800: 146 85 15;
-      --blocked-900: 120 70 17;
-      --blocked-950: 69 36 5;
-      --review-50: 245 242 254;
-      --review-100: 236 230 254;
-      --review-200: 220 208 253;
+      --blocked-600: 242 169 59;
+      --blocked-700: 107 68 16;
+      --blocked-800: 107 68 16;
+      --blocked-900: 107 68 16;
+      --blocked-950: 107 68 16;
+      --review-50: 198 179 255;
+      --review-100: 198 179 255;
+      --review-200: 198 179 255;
       --review-300: 198 179 255;
-      --review-400: 178 154 248;
-      --review-500: 162 133 245;
-      --review-600: 133 101 234;
-      --review-700: 110 79 208;
-      --review-800: 90 65 168;
-      --review-900: 74 56 135;
-      --review-950: 45 32 84;
-      --retest-50: 239 246 254;
-      --retest-100: 220 235 253;
-      --retest-200: 190 218 251;
+      --review-400: 198 179 255;
+      --review-500: 155 126 240;
+      --review-600: 155 126 240;
+      --review-700: 69 54 127;
+      --review-800: 69 54 127;
+      --review-900: 69 54 127;
+      --review-950: 69 54 127;
+      --retest-50: 147 198 255;
+      --retest-100: 147 198 255;
+      --retest-200: 147 198 255;
       --retest-300: 147 198 255;
-      --retest-400: 107 176 248;
-      --retest-500: 76 157 245;
-      --retest-600: 47 127 224;
-      --retest-700: 36 102 187;
-      --retest-800: 34 84 151;
-      --retest-900: 33 71 122;
-      --retest-950: 23 44 75;
-      --wip-50: 255 247 237;
-      --wip-100: 255 237 213;
-      --wip-200: 254 215 170;
+      --retest-400: 147 198 255;
+      --retest-500: 59 143 234;
+      --retest-600: 59 143 234;
+      --retest-700: 31 68 114;
+      --retest-800: 31 68 114;
+      --retest-900: 31 68 114;
+      --retest-950: 31 68 114;
+      --wip-50: 253 186 116;
+      --wip-100: 253 186 116;
+      --wip-200: 253 186 116;
       --wip-300: 253 186 116;
-      --wip-400: 251 146 60;
-      --wip-500: 249 115 22;
+      --wip-400: 253 186 116;
+      --wip-500: 234 88 12;
       --wip-600: 234 88 12;
-      --wip-700: 194 65 12;
-      --wip-800: 154 52 18;
-      --wip-900: 124 45 18;
-      --wip-950: 67 20 7;
-      --chip-50: 250 245 255;
-      --chip-100: 243 232 255;
-      --chip-200: 233 213 255;
+      --wip-700: 107 42 12;
+      --wip-800: 107 42 12;
+      --wip-900: 107 42 12;
+      --wip-950: 107 42 12;
+      --chip-50: 216 180 254;
+      --chip-100: 216 180 254;
+      --chip-200: 216 180 254;
       --chip-300: 216 180 254;
-      --chip-400: 192 132 252;
-      --chip-500: 168 85 247;
-      --chip-600: 147 51 234;
-      --chip-700: 126 34 206;
-      --chip-800: 107 33 168;
-      --chip-900: 88 28 135;
-      --chip-950: 59 7 100;
+      --chip-400: 216 180 254;
+      --chip-500: 192 132 252;
+      --chip-600: 192 132 252;
+      --chip-700: 75 31 122;
+      --chip-800: 75 31 122;
+      --chip-900: 75 31 122;
+      --chip-950: 75 31 122;
       --pri-50: 250 250 251;
       --pri-100: 245 246 247;
       --pri-200: 238 240 242;
@@ -200,83 +202,83 @@
       --pri-800: 226 229 234;
       --pri-900: 255 255 255;
       --pri-950: 244 245 247;
-      --pass-50: 11 45 30;
-      --pass-100: 22 79 54;
-      --pass-200: 27 100 66;
-      --pass-300: 31 127 81;
-      --pass-400: 38 160 100;
-      --pass-500: 52 194 122;
-      --pass-600: 38 160 100;
-      --pass-700: 111 219 162;
-      --pass-800: 163 230 194;
-      --pass-900: 207 242 223;
-      --pass-950: 234 249 241;
-      --fail-50: 65 16 16;
-      --fail-100: 120 38 38;
-      --fail-200: 146 40 40;
+      --pass-50: 26 122 74;
+      --pass-100: 26 122 74;
+      --pass-200: 26 122 74;
+      --pass-300: 26 122 74;
+      --pass-400: 26 122 74;
+      --pass-500: 33 157 95;
+      --pass-600: 33 157 95;
+      --pass-700: 212 242 225;
+      --pass-800: 212 242 225;
+      --pass-900: 212 242 225;
+      --pass-950: 212 242 225;
+      --fail-50: 180 44 44;
+      --fail-100: 180 44 44;
+      --fail-200: 180 44 44;
       --fail-300: 180 44 44;
-      --fail-400: 217 59 59;
-      --fail-500: 240 93 93;
+      --fail-400: 180 44 44;
+      --fail-500: 217 59 59;
       --fail-600: 217 59 59;
-      --fail-700: 255 146 146;
-      --fail-800: 251 189 189;
-      --fail-900: 253 220 220;
-      --fail-950: 254 241 241;
-      --blocked-50: 69 36 5;
-      --blocked-100: 120 70 17;
-      --blocked-200: 146 85 15;
-      --blocked-300: 180 108 12;
-      --blocked-400: 217 138 16;
-      --blocked-500: 242 169 59;
+      --fail-700: 246 208 208;
+      --fail-800: 246 208 208;
+      --fail-900: 246 208 208;
+      --fail-950: 246 208 208;
+      --blocked-50: 154 95 5;
+      --blocked-100: 154 95 5;
+      --blocked-200: 154 95 5;
+      --blocked-300: 154 95 5;
+      --blocked-400: 154 95 5;
+      --blocked-500: 217 138 16;
       --blocked-600: 217 138 16;
-      --blocked-700: 248 196 111;
-      --blocked-800: 250 213 150;
-      --blocked-900: 253 234 203;
-      --blocked-950: 254 247 236;
-      --review-50: 45 32 84;
-      --review-100: 74 56 135;
-      --review-200: 90 65 168;
-      --review-300: 110 79 208;
-      --review-400: 133 101 234;
-      --review-500: 162 133 245;
-      --review-600: 133 101 234;
-      --review-700: 198 179 255;
-      --review-800: 220 208 253;
-      --review-900: 236 230 254;
-      --review-950: 245 242 254;
-      --retest-50: 23 44 75;
-      --retest-100: 33 71 122;
-      --retest-200: 34 84 151;
-      --retest-300: 36 102 187;
-      --retest-400: 47 127 224;
-      --retest-500: 76 157 245;
+      --blocked-700: 251 230 194;
+      --blocked-800: 251 230 194;
+      --blocked-900: 251 230 194;
+      --blocked-950: 251 230 194;
+      --review-50: 86 54 191;
+      --review-100: 86 54 191;
+      --review-200: 86 54 191;
+      --review-300: 86 54 191;
+      --review-400: 86 54 191;
+      --review-500: 124 92 224;
+      --review-600: 124 92 224;
+      --review-700: 230 222 253;
+      --review-800: 230 222 253;
+      --review-900: 230 222 253;
+      --review-950: 230 222 253;
+      --retest-50: 26 95 180;
+      --retest-100: 26 95 180;
+      --retest-200: 26 95 180;
+      --retest-300: 26 95 180;
+      --retest-400: 26 95 180;
+      --retest-500: 47 127 224;
       --retest-600: 47 127 224;
-      --retest-700: 147 198 255;
-      --retest-800: 190 218 251;
-      --retest-900: 220 235 253;
-      --retest-950: 239 246 254;
-      --wip-50: 67 20 7;
-      --wip-100: 124 45 18;
-      --wip-200: 154 52 18;
-      --wip-300: 194 65 12;
-      --wip-400: 234 88 12;
-      --wip-500: 249 115 22;
+      --retest-700: 214 231 252;
+      --retest-800: 214 231 252;
+      --retest-900: 214 231 252;
+      --retest-950: 214 231 252;
+      --wip-50: 178 58 8;
+      --wip-100: 178 58 8;
+      --wip-200: 178 58 8;
+      --wip-300: 178 58 8;
+      --wip-400: 178 58 8;
+      --wip-500: 234 88 12;
       --wip-600: 234 88 12;
-      --wip-700: 253 186 116;
-      --wip-800: 254 215 170;
-      --wip-900: 255 237 213;
-      --wip-950: 255 247 237;
-      --chip-50: 59 7 100;
-      --chip-100: 88 28 135;
-      --chip-200: 107 33 168;
+      --wip-700: 253 224 204;
+      --wip-800: 253 224 204;
+      --wip-900: 253 224 204;
+      --wip-950: 253 224 204;
+      --chip-50: 126 34 206;
+      --chip-100: 126 34 206;
+      --chip-200: 126 34 206;
       --chip-300: 126 34 206;
-      --chip-400: 147 51 234;
-      --chip-500: 168 85 247;
+      --chip-400: 126 34 206;
+      --chip-500: 147 51 234;
       --chip-600: 147 51 234;
-      --chip-700: 216 180 254;
-      --chip-800: 233 213 255;
-      --chip-900: 243 232 255;
-      --chip-950: 250 245 255;
+      --chip-700: 238 221 253;
+      --chip-800: 238 221 253;
+      --chip-900: 238 221 253;
+      --chip-950: 238 221 253;
       color-scheme: light;
     }
     html { color-scheme: dark; }
@@ -310,10 +312,44 @@
     @keyframes rec-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
     .rec-dot { animation: rec-blink 1.6s ease-in-out infinite; flex-shrink: 0; display: inline-block; }
     @media (prefers-reduced-motion: reduce) { .rec-dot { animation: none; } }
+    /* Dialogs: fade the backdrop and pop the panel in; a copy animates out when a dialog closes (see script below). */
+    @keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes modal-fade-out { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes modal-pop-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes modal-pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(6px) scale(.97); } }
+    .modal-overlay { animation: modal-fade-in .18s ease-out; }
+    .modal-overlay > :first-child { animation: modal-pop-in .22s cubic-bezier(.2, .8, .2, 1); }
+    .modal-overlay.modal-leaving { animation: modal-fade-out .16s ease-in forwards; pointer-events: none; }
+    .modal-overlay.modal-leaving > :first-child { animation: modal-pop-out .16s ease-in forwards; }
+    @media (prefers-reduced-motion: reduce) {
+      .modal-overlay, .modal-overlay > :first-child, .modal-overlay.modal-leaving, .modal-overlay.modal-leaving > :first-child { animation: none; }
+    }
   </style>
 </head>
 <body>
   <div id="root"><div class="boot-splash"><div class="boot-spinner"></div></div></div>
+  <script>
+    // Closing animation for every dialog: when one leaves the page, a copy fades out in its place.
+    (function () {
+      if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var ghost = function (el) {
+        var c = el.cloneNode(true);
+        c.classList.add('modal-leaving');
+        c.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(c);
+        setTimeout(function () { c.remove(); }, 200);
+      };
+      new MutationObserver(function (list) {
+        list.forEach(function (m) {
+          m.removedNodes.forEach(function (n) {
+            if (n.nodeType !== 1 || (n.classList && n.classList.contains('modal-leaving'))) return;
+            if (n.classList && n.classList.contains('modal-overlay')) ghost(n);
+            else if (n.querySelectorAll) n.querySelectorAll('.modal-overlay').forEach(ghost);
+          });
+        });
+      }).observe(document.body, { childList: true, subtree: true });
+    })();
+  </script>
   <script type="module">
 /*__APP_BUNDLE__*/
   </script>
