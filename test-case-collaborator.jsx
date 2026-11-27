@@ -5930,7 +5930,7 @@ var downloadBlob = (e, t) => {
   r.remove();
   setTimeout(() => URL.revokeObjectURL(a), 4000);
 };
-// Floating buttons are stacked icon-only squares (hover shows a tooltip); the label shows while its panel is open.
+// Right rail (desktop) / floating stack (phones): icon-only buttons; hovering shows a pop-out label.
 // Something waiting (unread pings, an unread Read me, sample files not yet looked at) shows as a badge or dot instead,
 // so the stack stays one button wide and never covers the page.
 function BarLabel({ show, children }) {
@@ -5938,6 +5938,14 @@ function BarLabel({ show, children }) {
     <span
       className={`overflow-hidden whitespace-nowrap transition-all duration-200 ease-out ${show ? "max-w-[180px] opacity-100 ml-1.5" : "max-w-0 opacity-0 ml-0"}`}
     >
+      {children}
+    </span>
+  );
+}
+// Right rail button label: pops out to the left on hover (desktop), in place of a browser-style tooltip.
+function RailLabel({ children }) {
+  return (
+    <span className="pointer-events-none absolute right-full mr-2.5 top-1/2 -translate-y-1/2 whitespace-nowrap px-2 py-1 rounded-sm bg-gray-950 border border-gray-700 text-xs font-medium text-gray-100 shadow-lg opacity-0 translate-x-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 max-sm:hidden">
       {children}
     </span>
   );
@@ -6180,14 +6188,17 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           />
           <aside
             ref={aboutPanelRef}
-            className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${aboutOpen ? "translate-x-0" : "translate-x-[calc(100%+48px)] pointer-events-none"}`}
+            className={`fixed z-40 top-0 bottom-0 right-0 sm:right-14 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${aboutOpen ? "translate-x-0" : "translate-x-[calc(100%+120px)] pointer-events-none"}`}
             role="dialog"
             aria-label="About this session"
             aria-hidden={!aboutOpen}
           >
             <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-800">
               <CircleHelp className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <div className="flex-1 text-base font-semibold text-gray-100">About this session</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-base font-semibold text-gray-100">About this session</div>
+                <div className="text-xs text-gray-500">What this session shows, and anything the sheet didn’t include.</div>
+              </div>
               <button onClick={() => setAboutOpen(false)} className="text-gray-500 hover:text-gray-200 p-0.5" title="Close (Esc)">
                 <X className="w-4 h-4" />
               </button>
@@ -6217,14 +6228,17 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           />
           <aside
             ref={readmePanelRef}
-            className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${readmeOpen ? "translate-x-0" : "translate-x-[calc(100%+48px)] pointer-events-none"}`}
+            className={`fixed z-40 top-0 bottom-0 right-0 sm:right-14 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${readmeOpen ? "translate-x-0" : "translate-x-[calc(100%+120px)] pointer-events-none"}`}
             role="dialog"
             aria-label="Read me"
             aria-hidden={!readmeOpen}
           >
             <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-800">
               <BookOpen className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <div className="flex-1 text-base font-semibold text-gray-100">Read me</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-base font-semibold text-gray-100">Read me</div>
+                <div className="text-xs text-gray-500">Instructions for this test round.</div>
+              </div>
               <button
                 onClick={() => setReadmeOpen(false)}
                 className="text-gray-500 hover:text-gray-200 p-0.5"
@@ -6248,7 +6262,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       />
       <aside
         ref={filesPanelRef}
-        className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${i ? "translate-x-0" : "translate-x-[calc(100%+48px)] pointer-events-none"}`}
+        className={`fixed z-40 top-0 bottom-0 right-0 sm:right-14 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${i ? "translate-x-0" : "translate-x-[calc(100%+120px)] pointer-events-none"}`}
         role="dialog"
         aria-label="Sample files"
         aria-hidden={!i}
@@ -6321,15 +6335,19 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       />
       <aside
         ref={pingsPanelRef}
-        className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${pingsOpen ? "translate-x-0" : "translate-x-[calc(100%+48px)] pointer-events-none"}`}
+        className={`fixed z-40 top-0 bottom-0 right-0 sm:right-14 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${pingsOpen ? "translate-x-0" : "translate-x-[calc(100%+120px)] pointer-events-none"}`}
         role="dialog"
         aria-label="Pings"
         aria-hidden={!pingsOpen}
       >
         <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-800">
           <Bell className="w-4 h-4 text-amber-400" />
-          <div className="text-base font-bold text-gray-100">Pings</div>
-          {unread > 0 && <span className="text-xs text-gray-500">{unread} unread</span>}
+          <div className="min-w-0">
+            <div className="text-base font-bold text-gray-100">
+              Pings {unread > 0 && <span className="text-xs font-normal text-gray-500">{unread} unread</span>}
+            </div>
+            <div className="text-xs text-gray-500">When someone @mentions you, it shows up here.</div>
+          </div>
           {unread > 0 && (
             <button
               onClick={() => markRead(pings.filter((r) => !r.read_at).map((r) => r.id))}
@@ -6439,7 +6457,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       )}
       <div
         ref={barRef}
-        className={`fixed z-30 bottom-14 flex flex-col items-end gap-2 transition-all duration-300 ease-out ${sidePanelOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[29rem]" : "right-4"} ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+        className={`fixed z-30 bottom-14 right-4 flex flex-col items-end gap-2 transition-all duration-300 ease-out sm:top-0 sm:bottom-0 sm:right-0 sm:w-14 sm:items-center sm:justify-end sm:pb-[5px] sm:border-l sm:border-gray-800 sm:bg-gray-900 ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
       >
         <button
           onClick={() => {
@@ -6451,7 +6469,6 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           aria-pressed={pingsOpen}
           aria-label={unread ? `Pings, ${unread} unread` : "Pings"}
           className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${!pingsOpen && unread > 0 ? "uat-ping-flash" : ""} ${pingsOpen ? "bg-gray-900 border-amber-600 text-amber-200" : unread > 0 ? "bg-amber-950/80 border-amber-500 text-amber-300 hover:bg-amber-900/80" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
-          title={pingsOpen ? "Close pings" : unread ? `${unread} unread ping${unread === 1 ? "" : "s"}` : "Pings: when someone @mentions you"}
         >
           <style>{`
             @keyframes uat-bell-ring { 0%,100% { transform: rotate(0) } 10% { transform: rotate(16deg) } 20% { transform: rotate(-14deg) } 30% { transform: rotate(11deg) } 40% { transform: rotate(-8deg) } 50% { transform: rotate(5deg) } 60% { transform: rotate(-2deg) } 70% { transform: rotate(0) } }
@@ -6467,7 +6484,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             className={`w-4 h-4 ${!pingsOpen && unread > 0 ? (ringBurst > 0 ? "uat-bell-ring" : "uat-bell-nudge") : ""}`}
             onAnimationEnd={(r) => r.animationName === "uat-bell-ring" && setRingBurst(0)}
           />
-          <BarLabel show={pingsOpen}>Pings</BarLabel>
+          <RailLabel>Pings{unread > 0 ? ` · ${unread} unread` : ""}</RailLabel>
           {unread > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px]">
               {!pingsOpen && <span className="absolute inset-0 bg-gray-100 rounded-sm animate-ping opacity-40" />}
@@ -6488,10 +6505,10 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             }}
             aria-pressed={readmeOpen}
             className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${readmeOpen ? "bg-gray-900 border-amber-600 text-amber-200" : !readmeSeen ? "bg-emerald-600 border-emerald-500 text-gray-950 hover:bg-emerald-500" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
-            title={readmeOpen ? "Close the read me" : "Instructions for this test round"}
+            aria-label="Read me"
           >
             <BookOpen className="w-4 h-4" />
-            <BarLabel show={readmeOpen}>Read me</BarLabel>
+            <RailLabel>Read me</RailLabel>
             {!readmeSeen && !readmeOpen && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-gray-100 ring-2 ring-gray-950" aria-label="Not read yet" />}
           </button>
         )}
@@ -6506,10 +6523,10 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             }}
             aria-pressed={i}
             className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${i ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
-            title={i ? "Close the sample files" : "Sample files for these tests"}
+            aria-label="Sample files"
           >
             <Paperclip className="w-4 h-4" />
-            <BarLabel show={i}>Sample files ({a.length})</BarLabel>
+            <RailLabel>Sample files ({a.length})</RailLabel>
             {!s && !i && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-gray-100 ring-2 ring-gray-950" aria-label="Not looked at yet" />}
           </button>
         )}
@@ -6522,11 +6539,11 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
               setAboutOpen(!aboutOpen);
             }}
             aria-pressed={aboutOpen}
-            className={`group inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${aboutOpen ? "border-gray-500 text-gray-100" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
-            title={aboutOpen ? "Close About" : "About this session: what it shows and what’s missing"}
+            className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${aboutOpen ? "border-gray-500 text-gray-100" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            aria-label="About this session"
           >
             <CircleHelp className="w-4 h-4" />
-            <BarLabel show={aboutOpen}>About</BarLabel>
+            <RailLabel>About</RailLabel>
           </button>
         )}
       </div>
@@ -9913,7 +9930,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     <BaseUrlContext.Provider value={b}>
     <PeopleContext.Provider value={{ names: sessionPeople(e), me: t }}>
     <TestLinkContext.Provider value={(tc) => testLinkUrl(e.id, tc.test_id, viewTab)}>
-      <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
+      <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100 sm:pr-14">
       <div className="flex-1 min-h-0 flex">
         <TesterSidebar
           listGrouped={listGrouped}
@@ -11294,7 +11311,7 @@ function TesterTestDetail({
         )}
         <div className="flex-1 overflow-y-auto">
           {/* Extra bottom space so the floating Pings / Read me / Sample files buttons never cover the last section. */}
-          <div className="max-w-[1180px] pl-4 sm:pl-6 pr-16 pt-6 pb-24">
+          <div className="max-w-[1180px] pl-4 sm:pl-6 pr-16 sm:pr-6 pt-6 pb-24">
             {sheetUpdateUnseen(c, p) && (
               <div className="mb-4">
                 <Callout tone="info" icon={AlertTriangle}>
@@ -12270,7 +12287,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
     <BaseUrlContext.Provider value={b}>
     <PeopleContext.Provider value={{ names: sessionPeople(e), me: t }}>
     <TestLinkContext.Provider value={(tc) => testLinkUrl(e.id, tc.test_id, devTab)}>
-      <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
+      <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100 sm:pr-14">
       <div className="flex-1 min-h-0 flex">
         <DevSidebar
           reportLinkUrl={e.report_key ? reportUrl(e.id, e.report_key) : null}
@@ -14985,7 +15002,7 @@ function DevTestDetail({
           }
         />
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-[1180px] pl-4 sm:pl-6 pr-16 pt-6 pb-24">
+          <div className="max-w-[1180px] pl-4 sm:pl-6 pr-16 sm:pr-6 pt-6 pb-24">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
               <TestDefinitionColumn c={d} p={c} ro={true} stepsCheckLeft={true} devNotes={dsn} myDevName={r} onDevNote={onDsn} />
               <div className="flex flex-col gap-5 min-w-0">
