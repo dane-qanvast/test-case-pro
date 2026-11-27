@@ -10789,7 +10789,8 @@ function HeaderRight({ children, menu }) {
     </div>
   );
 }
-function DetailHeader({ tc, right }) {
+// meta = "Last edit … · Saved", shown under the title.
+function DetailHeader({ tc, right, meta = null }) {
   return (
     <div className="rd-detail-head flex-shrink-0 flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 py-3 border-b border-gray-800 bg-gray-900">
       <div className="flex-1 min-w-0 basis-[260px]">
@@ -10797,6 +10798,7 @@ function DetailHeader({ tc, right }) {
         <h1 className="group mt-0.5 text-lg font-semibold leading-snug text-gray-100">
           {tc.title || "Untitled"}
         </h1>
+        {meta && <div className="mt-1 flex items-center gap-x-3 gap-y-1 flex-wrap text-xs text-gray-500">{meta}</div>}
       </div>
       {right}
     </div>
@@ -11139,6 +11141,18 @@ function TesterTestDetail({
       <div className="flex-1 min-h-0 flex flex-col">
         <DetailHeader
           tc={c}
+          meta={
+            <Fragment>
+              {p.updated_at && cur !== "Not Tested" ? (
+                <span title={new Date(p.updated_at).toLocaleString()}>
+                  Last edit{p.updated_by ? ` by ${p.updated_by}` : ""} · {timeAgo(p.updated_at)}
+                </span>
+              ) : (
+                <span>Not edited yet</span>
+              )}
+              {!ro && <SaveIndicator saving={!!r} />}
+            </Fragment>
+          }
           right={
             <HeaderRight
               menu={
@@ -11188,21 +11202,6 @@ function TesterTestDetail({
         <div className="flex-1 overflow-y-auto">
           {/* Extra bottom space so the floating Pings / Read me / Sample files buttons never cover the last section. */}
           <div className="max-w-[1180px] px-4 sm:px-6 pt-3 pb-24">
-            {/* Last edit / Saved scrolls with the page, so nothing gets clipped under a fixed strip. */}
-            <div className="flex items-center gap-1.5 mb-3 text-xs text-gray-500">
-              {p.updated_at && cur !== "Not Tested" ? (
-                <span title={new Date(p.updated_at).toLocaleString()}>
-                  Last edit{p.updated_by ? ` by ${p.updated_by}` : ""} · {timeAgo(p.updated_at)}
-                </span>
-              ) : (
-                <span>Not edited yet</span>
-              )}
-              {!ro && (
-                <span className="ml-auto">
-                  <SaveIndicator saving={!!r} />
-                </span>
-              )}
-            </div>
             {sheetUpdateUnseen(c, p) && (
               <div className="mb-4">
                 <Callout tone="info" icon={AlertTriangle}>
@@ -14855,6 +14854,19 @@ function DevTestDetail({
       <div className="flex-1 min-h-0 flex flex-col">
         <DetailHeader
           tc={d}
+          meta={
+            <Fragment>
+              {c.updated_at && p !== "Not Tested" ? (
+                <span title={new Date(c.updated_at).toLocaleString()}>
+                  Last edit{c.updated_by ? ` by ${c.updated_by}` : ""} · {timeAgo(c.updated_at)}
+                </span>
+              ) : (
+                <span>{tn ? `${tn} hasn’t tested this yet` : "Not tested yet"}</span>
+              )}
+              {/* Saving your Dev status and note. */}
+              <SaveIndicator saving={!!l} />
+            </Fragment>
+          }
           right={
             <HeaderRight
               menu={
@@ -14881,16 +14893,6 @@ function DevTestDetail({
         />
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-[1180px] px-4 sm:px-6 pt-3 pb-24">
-            {/* Last edit / Saved scrolls with the page, so nothing gets clipped under a fixed strip. */}
-            <div className="flex items-center gap-1.5 mb-3 text-xs text-gray-500">
-              {c.updated_at && p !== "Not Tested" ? (
-                <span title={new Date(c.updated_at).toLocaleString()}>
-                  Last edit{c.updated_by ? ` by ${c.updated_by}` : ""} · {timeAgo(c.updated_at)}
-                </span>
-              ) : (
-                <span>{tn ? `${tn} hasn’t tested this yet` : "Not tested yet"}</span>
-              )}
-            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
               <TestDefinitionColumn c={d} p={c} ro={true} stepsCheckLeft={true} devNotes={dsn} myDevName={r} onDevNote={onDsn} />
               <div className="flex flex-col gap-5 min-w-0">
@@ -14993,10 +14995,7 @@ function DevTestDetail({
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <SectionLabel hint="visible to testers and other devs · @ to ping someone">Note</SectionLabel>
-                    <SaveIndicator saving={!!l} />
-                  </div>
+                  <SectionLabel hint="visible to testers and other devs · @ to ping someone">Note</SectionLabel>
                   <MentionTextarea
                     value={_}
                     onChange={(C) => {
