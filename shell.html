@@ -306,6 +306,10 @@
     input[type="checkbox"]:focus-visible { outline: 2px solid rgb(var(--gray-400)); outline-offset: 2px; }
     input[type="checkbox"]:disabled { opacity: .4; cursor: not-allowed; }
     @media (hover: hover) { input[type="checkbox"]:not(:checked):not(:disabled):hover { border-color: rgb(var(--gray-400)); } }
+    /* "Live" dot for the findings report: a slow blink, like a recording light */
+    @keyframes rec-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+    .rec-dot { animation: rec-blink 1.6s ease-in-out infinite; flex-shrink: 0; display: inline-block; }
+    @media (prefers-reduced-motion: reduce) { .rec-dot { animation: none; } }
   </style>
 </head>
 <body>

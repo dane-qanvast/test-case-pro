@@ -6572,6 +6572,150 @@ function CopyField({ value, label = "Copy" }) {
     </div>
   );
 }
+// Developer side panel header: a slowly blinking red "live" dot next to Export when the session has a
+// findings report link. Clicking it shows the link to copy or open.
+function LiveReportButton({ url }) {
+  let [open, setOpen] = useState(false);
+  let [pos, setPos] = useState({ top: 0, left: 8, width: 300 });
+  let ref = useRef(null);
+  let btnRef = useRef(null);
+  // Lines up with the side panel: same width, inset 8px on each side.
+  let toggle = () => {
+    if (!open && btnRef.current) {
+      let r = btnRef.current.getBoundingClientRect();
+      let side = (btnRef.current.closest("aside") || document.body).getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: side.left + 8, width: Math.max(220, side.width - 16) });
+    }
+    setOpen(!open);
+  };
+  useEffect(() => {
+    if (!open) return;
+    let down = (ev) => ref.current && !ref.current.contains(ev.target) && setOpen(false);
+    let key = (ev) => ev.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", down);
+    window.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("mousedown", down);
+      window.removeEventListener("keydown", key);
+    };
+  }, [open]);
+  if (!url) return null;
+  return (
+    <div className="relative flex-shrink-0" ref={ref}>
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label="Live findings report"
+        title={open ? undefined : "Live findings report"}
+        className={`w-7 h-7 flex items-center justify-center rounded-sm transition-colors ${open ? "bg-gray-800" : "hover:bg-gray-800"}`}
+      >
+        <span className="rec-dot w-2.5 h-2.5 rounded-full bg-red-500" />
+      </button>
+      {open && (
+        <div className="fixed z-50 p-3.5 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl" style={{ top: pos.top, left: pos.left, width: pos.width }}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="rec-dot w-2 h-2 rounded-full bg-red-500" />
+            <span className="text-sm font-semibold text-gray-100">Live findings report</span>
+          </div>
+          <div className="text-xs text-gray-400 leading-relaxed mb-2.5">
+            Always up to date, with every test and result. Paste the link into Claude (or another AI assistant) so it can read the findings.
+          </div>
+          <CopyField value={url} label="Copy link" />
+          <div className="flex items-center gap-3 mt-2 text-xs">
+            <a href={url} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-gray-100 underline underline-offset-2">
+              Open report
+            </a>
+            <a href={`${url}&format=md`} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-100">
+              Plain text
+            </a>
+            <a href={`${url}&only=issues`} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-100">
+              Issues only
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// Admin → Edit session: make annotated copies for every annotated screenshot in the session at once,
+// instead of waiting for each tester to reopen their tests. Originals are never changed.
+function AnnotatedCopiesButton({ sessionId }) {
+  let [state, setState] = useState({ busy: false, done: 0, total: 0, failed: 0, msg: "" });
+  let run = async () => {
+    setState({ busy: true, done: 0, total: 0, failed: 0, msg: "" });
+    let { data: rows, error } = await supabase.from("findings").select("test_case_id, tester_name, screenshots").eq("session_id", sessionId);
+    if (error) return setState({ busy: false, done: 0, total: 0, failed: 0, msg: error.message || "Couldn’t load the results" });
+    let stale = (sh) => sh?.path && ((sh.annotations || []).length ? !annotatedCopyFresh(sh) : !!sh.annotated_url);
+    let jobs = [];
+    (rows || []).forEach((r) => (r.screenshots || []).forEach((sh) => stale(sh) && jobs.push({ r, sh })));
+    if (!jobs.length) return setState({ busy: false, done: 0, total: 0, failed: 0, msg: "All annotated screenshots already have an up-to-date copy." });
+    let done = 0;
+    let failed = 0;
+    setState({ busy: true, done, total: jobs.length, failed, msg: "" });
+    for (let { r, sh } of jobs) {
+      try {
+        let patch = (sh.annotations || []).length ? await bakeAnnotatedShot(sh) : { annotated_url: null, annotated_path: null, annotated_for: null };
+        // Re-read the tester's latest result so nothing they changed meanwhile is overwritten.
+        let { data: cur, error: e2 } = await supabase
+          .from("findings")
+          .select("screenshots")
+          .eq("session_id", sessionId)
+          .eq("test_case_id", r.test_case_id)
+          .eq("tester_name", r.tester_name)
+          .single();
+        if (e2) throw e2;
+        let list = cur?.screenshots || [];
+        let j = list.findIndex((z) => z.path === sh.path);
+        if (j < 0 || annotationsKey(list[j].annotations) !== annotationsKey(sh.annotations)) {
+          if (patch.annotated_path) supabase.storage.from("screenshots").remove([patch.annotated_path]).catch(() => {});
+        } else {
+          let next = list.map((z, k) => (k === j ? { ...z, ...patch } : z));
+          let { error: e3 } = await supabase
+            .from("findings")
+            .update({ screenshots: next })
+            .eq("session_id", sessionId)
+            .eq("test_case_id", r.test_case_id)
+            .eq("tester_name", r.tester_name);
+          if (e3) throw e3;
+          if (sh.annotated_path) supabase.storage.from("screenshots").remove([sh.annotated_path]).catch(() => {});
+        }
+      } catch (err) {
+        console.warn("Annotated copy failed:", err);
+        failed++;
+      }
+      done++;
+      setState({ busy: true, done, total: jobs.length, failed, msg: "" });
+    }
+    setState({
+      busy: false,
+      done,
+      total: jobs.length,
+      failed,
+      msg: failed
+        ? `Updated ${done - failed} of ${jobs.length}. ${failed} couldn’t be made; try again later.`
+        : `Updated ${jobs.length} screenshot${jobs.length === 1 ? "" : "s"}.`,
+    });
+  };
+  return (
+    <div className="mt-3">
+      <button
+        disabled={state.busy}
+        onClick={run}
+        className="h-8 px-3 inline-flex items-center gap-1.5 border border-gray-700 rounded-sm text-xs text-gray-200 hover:bg-gray-800 disabled:opacity-60"
+        title="Save a copy with the drawings baked in for every annotated screenshot, so the report shows them"
+      >
+        <ImageIcon className="w-3.5 h-3.5" />
+        {state.busy ? (state.total ? `Updating ${state.done} of ${state.total}…` : "Checking…") : "Update annotated screenshots"}
+      </button>
+      {state.msg && <div className={`mt-1.5 text-xs ${state.failed ? "text-red-300" : "text-gray-400"}`}>{state.msg}</div>}
+      <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+        Makes sure the report shows the arrows, circles and labels testers drew. New annotations are saved automatically; this catches up older ones.
+      </div>
+    </div>
+  );
+}
 // Admin → Edit session: turn the report link on, copy it, reset it or turn it off. Saves straight away.
 function ReportLinkSection({ session }) {
   let [key, setKey] = useState(session.report_key || "");
@@ -6623,6 +6767,7 @@ function ReportLinkSection({ session }) {
         A live, read-only page with every test and result, as plain text that people and AI assistants like Claude can read.
         Anyone with the link can see it, so share it only with your team. Reset the link to stop old copies working.
       </div>
+      {key && <AnnotatedCopiesButton sessionId={session.id} />}
     </div>
   );
 }
@@ -12146,28 +12291,14 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
   let k = (C) => l(s.includes(C) ? s.filter((m) => m !== C) : [...s, C]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !p && o()}>
-      <div className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-md shadow-2xl max-h-[calc(100vh-32px)] overflow-y-auto" onClick={(C) => C.stopPropagation()}>
-        <div className="sticky top-0 z-10 bg-gray-900 flex items-center justify-between px-5 py-3 border-b border-gray-800">
+      <div className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-md shadow-2xl max-h-[calc(100vh-32px)] flex flex-col" onClick={(C) => C.stopPropagation()}>
+        <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-800">
           <h2 className="text-base font-bold text-gray-100">Export tests</h2>
           <button onClick={o} disabled={!!p} className="text-gray-400 hover:text-gray-100 p-1" title="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-5 py-4 space-y-4">
-          <div>
-            <div className="text-xs font-medium text-gray-400 mb-1.5">Live report link</div>
-            {reportLink ? (
-              <Fragment>
-                <CopyField value={reportLink} label="Copy link" />
-                <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-                  Always up to date, with every test and result. Paste it into Claude (or another AI assistant) so it can read the findings.
-                </div>
-              </Fragment>
-            ) : (
-              <div className="text-xs text-gray-500">Not turned on for this session. Ask your admin to turn on the report link in Edit session.</div>
-            )}
-          </div>
-          <div className="border-t border-gray-800" />
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
           <div>
             <div className="text-xs font-medium text-gray-400 mb-1.5">From</div>
             <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
@@ -12244,7 +12375,7 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
           </div>
           {b && <div className="text-xs text-amber-300">{b}</div>}
         </div>
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-800">
+        <div className="flex-shrink-0 flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-800">
           {p && <span className="mr-auto text-xs text-gray-400">{p}</span>}
           <button onClick={o} disabled={!!p} className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-200">
             Cancel
@@ -12446,6 +12577,7 @@ function DevSidebar({
             <PanelLeftClose className="w-4 h-4" />
           </button>
           <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-gray-100">{a}</h2>
+          <LiveReportButton url={reportLinkUrl} />
           <button
             onClick={() => setExportOpen(true)}
             className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100 flex-shrink-0"
@@ -12650,7 +12782,6 @@ function DevSidebar({
           doneMarks={u}
           myName={r}
           onClose={() => setExportOpen(false)}
-          reportLink={reportLinkUrl}
         />
       )}
       {se && (
