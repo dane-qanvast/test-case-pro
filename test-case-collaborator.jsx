@@ -5950,7 +5950,7 @@ function RailLabel({ children }) {
     </span>
   );
 }
-function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = "tester", testCases = [], onOpenPing = () => {} }) {
+function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = "tester", testCases = [], onOpenPing = () => {}, overviewUrl = undefined }) {
   let isDevBar = role === "developer";
   // ---- Pings for me (bell) ----
   let [pings, setPings] = useState([]);
@@ -6457,7 +6457,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       )}
       <div
         ref={barRef}
-        className={`fixed z-30 bottom-14 right-4 flex flex-col items-end gap-2 transition-all duration-300 ease-out sm:top-0 sm:bottom-0 sm:right-0 sm:w-14 sm:items-center sm:justify-end sm:pb-[5px] sm:border-l sm:border-gray-800 sm:bg-gray-900 ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+        className={`fixed z-30 sm:z-[45] bottom-14 right-4 flex flex-col items-end gap-2 transition-all duration-300 ease-out sm:top-0 sm:bottom-0 sm:right-0 sm:w-14 sm:items-center sm:justify-end sm:pb-2.5 sm:border-l sm:border-gray-800 sm:bg-gray-900 ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
       >
         <button
           onClick={() => {
@@ -6546,6 +6546,28 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             <RailLabel>About</RailLabel>
           </button>
         )}
+        {overviewUrl !== undefined &&
+          (overviewUrl ? (
+            <a
+              href={overviewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open Test Overview (new tab)"
+              className="group relative inline-flex items-center h-[34px] px-[9px] bg-gray-900 border border-gray-700 rounded-sm shadow-lg text-gray-300 hover:text-gray-100 hover:border-gray-600 transition-colors"
+            >
+              <Globe className="w-4 h-4" />
+              <RailLabel>Test Overview</RailLabel>
+            </a>
+          ) : (
+            <span
+              aria-label="Test Overview is turned off"
+              tabIndex={0}
+              className="group relative inline-flex items-center h-[34px] px-[9px] bg-gray-900 border border-gray-800 rounded-sm text-gray-600 cursor-default"
+            >
+              <Globe className="w-4 h-4" />
+              <RailLabel>Test Overview is off · ask your admin</RailLabel>
+            </span>
+          ))}
       </div>
     </>
   );
@@ -9336,31 +9358,6 @@ function TesterTabBar({ names, active, onSelect, me, stats, lockOthers = false, 
           );
         })}
       </div>
-      {/* Test Overview: the read-only sheet view of every test and result (when the admin has turned the links on). */}
-      {overviewUrl !== undefined && (
-        <div className="flex items-center pr-2 pl-1 flex-shrink-0">
-          {overviewUrl ? (
-            <a
-              href={overviewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Test Overview: every test and result in one sheet (opens in a new tab)"
-              aria-label="Open Test Overview"
-              className="w-8 h-8 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100"
-            >
-              <Globe className="w-[18px] h-[18px]" />
-            </a>
-          ) : (
-            <span
-              title="Test Overview is turned off for this session. Ask your admin to turn it on."
-              aria-label="Test Overview is turned off"
-              className="w-8 h-8 flex items-center justify-center rounded-sm text-gray-600 cursor-default"
-            >
-              <Globe className="w-[18px] h-[18px]" />
-            </span>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -10011,7 +10008,6 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
             me={t}
             stats={tabStats}
             lockOthers={true}
-            overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
           />
         </div>
         <FocusModeModal
@@ -10031,6 +10027,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
         />
         <TesterSampleFilesBar
           sessionId={e.id}
+          overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
           sessionName={e.name}
           myName={t}
           role="tester"
@@ -12370,7 +12367,6 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
             active={devTab}
             onSelect={setDevTab}
             stats={tabStats}
-            overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
           />
         </div>
         <FocusModeModal
@@ -12390,6 +12386,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
         />
         <TesterSampleFilesBar
           sessionId={e.id}
+          overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
           sessionName={e.name}
           myName={t}
           role="developer"
