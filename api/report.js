@@ -149,7 +149,8 @@ export default async function handler(req, res) {
           const parts = [];
           if (STEP_STATE[checks[i]]) parts.push(STEP_STATE[checks[i]]);
           if (has(sn[i])) parts.push(`note: ${sn[i]}`);
-          const replies = (D[t.id] || []).filter((r) => r.step_key === String(i) && has(r.note));
+          // Replies written for this tester, plus older replies meant for everyone (no tester_name).
+          const replies = (D[t.id] || []).filter((r) => r.step_key === String(i) && has(r.note) && (!r.tester_name || r.tester_name === f.tester_name));
           replies.forEach((r) => parts.push(`reply from ${r.developer_name} (developer): ${r.note}`));
           return parts.length ? `Step ${i + 1}: ${parts.join(" · ")}` : null;
         })

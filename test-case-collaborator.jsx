@@ -4426,12 +4426,17 @@ function ManagerSteps({ steps }) {
   );
 }
 // Under a tester's notes: the steps they flagged (needs review / unable to proceed) or left a note on.
-function ManagerStepFlags({ f, steps }) {
+function ManagerStepFlags({ f, steps, replies = [] }) {
   let checks = f?.step_checks || {};
   let notes = f?.step_notes || {};
   let rows = (Array.isArray(steps) ? steps : [])
-    .map((x, i) => ({ i, mark: checks[i], note: (notes[i] || "").trim() }))
-    .filter((r) => r.mark === "review" || r.mark === "blocked" || r.note);
+    .map((x, i) => ({
+      i,
+      mark: checks[i],
+      note: (notes[i] || "").trim(),
+      replies: replies.filter((r) => r.step_key === String(i) && (r.note || "").trim()),
+    }))
+    .filter((r) => r.mark === "review" || r.mark === "blocked" || r.note || r.replies.length);
   if (!rows.length) return null;
   return (
     <div className="mt-1.5 space-y-1">
@@ -4441,6 +4446,12 @@ function ManagerStepFlags({ f, steps }) {
           {r.mark === "blocked" && <span className="ml-1.5 font-semibold text-red-300">Unable to proceed</span>}
           {r.mark === "review" && <span className="ml-1.5 font-semibold text-yellow-300">Needs review</span>}
           {r.note && <div className="text-gray-300 whitespace-pre-wrap">{normalizePath(r.note)}</div>}
+          {r.replies.map((rp) => (
+            <div key={rp.developer_name} className="mt-0.5 pl-2 border-l-2 border-gray-600 rounded-none">
+              <span className="text-gray-400">Reply from {rp.developer_name}:</span>{" "}
+              <span className="text-gray-300 whitespace-pre-wrap">{normalizePath(rp.note)}</span>
+            </div>
+          ))}
         </div>
       ))}
     </div>
@@ -4463,7 +4474,7 @@ function ManagerView({ sessionId, accessKey }) {
   let [q, setQ] = useState("");
   let [show, setShow] = useState("all");
   let [viewer, setViewer] = useState(null); // { kind: "shots" | "recs", list, idx }
-  let [expanded, setExpanded] = useState({}); // testers with no results start collapsed; click to open
+  let [tab, setTab] = useState(""); // which tester's results the table shows (tabs at the bottom, as in the app)
   let load = async () => {
     try {
       let { data: s, error: e1 } = await supabase.from("sessions").select("*").eq("id", sessionId).single();
@@ -4471,13 +4482,14 @@ function ManagerView({ sessionId, accessKey }) {
         setState((p) => ({ ...p, loading: false, error: "invalid" }));
         return;
       }
-      let [t, f, m] = await Promise.all([
+      let [t, f, m, d] = await Promise.all([
         supabase.from("test_cases").select("*").eq("session_id", sessionId).order("position", { ascending: true }),
         supabase.from("findings").select("*").eq("session_id", sessionId),
         supabase.from("done_marks").select("*").eq("session_id", sessionId),
+        supabase.from("dev_step_notes").select("*").eq("session_id", sessionId),
       ]);
       if (t.error || f.error || m.error) throw t.error || f.error || m.error;
-      setState({ loading: false, error: "", session: s, tests: t.data || [], findings: f.data || [], marks: m.data || [], at: new Date() });
+      setState({ loading: false, error: "", session: s, tests: t.data || [], findings: f.data || [], marks: m.data || [], replies: d.error ? [] : d.data || [], at: new Date() });
     } catch (err) {
       setState((p) => ({ ...p, loading: false, error: err.message || "Couldn’t load the results" }));
     }
@@ -4504,6 +4516,7 @@ function ManagerView({ sessionId, accessKey }) {
     return <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6 text-sm text-red-300">{state.error}</div>;
 
   let { session, tests, findings, marks } = state;
+  let replies = state.replies || [];
   let testers = Array.isArray(session.testers) && session.testers.length ? session.testers : Array.from(new Set(findings.map((f) => f.tester_name)));
   let F = {};
   findings.forEach((f) => ((F[f.test_case_id] ||= {})[f.tester_name] = f));
@@ -4528,14 +4541,23 @@ function ManagerView({ sessionId, accessKey }) {
     if (show === "notrun" && o !== "Not Tested") return false;
     if (show === "pass" && o !== "Pass") return false;
     if (!needle) return true;
-    let hay = [t.test_id, t.title, t.module, t.feature, ...testers.map((n) => F[t.id]?.[n]?.notes || "")].join(" ").toLowerCase();
+    let hay = [t.test_id, t.title, t.module, t.feature, ...testers.map((n) => F[t.id]?.[n]?.notes || ""), ...(t.steps || [])].join(" ").toLowerCase();
     return hay.includes(needle);
   });
   let groups = groupByModule(visible);
-  // A tester with nothing logged yet takes one narrow column instead of three.
   let hasResults = (n) => findings.some((f) => f.tester_name === n && ((f.status && f.status !== "Not Tested") || (f.notes || "").trim()));
-  let isOpen = (n) => hasResults(n) || expanded[n];
-  let colCount = 4 + testers.reduce((a, n) => a + (isOpen(n) ? 3 : 1), 0) + 1;
+  // Default tab: the first tester who has logged something.
+  let cur = testers.includes(tab) ? tab : testers.find(hasResults) || testers[0] || "";
+  let tabStats = {};
+  testers.forEach((n) => {
+    let mine = findings.filter((f) => f.tester_name === n);
+    tabStats[n] = {
+      done: mine.filter((f) => f.status && f.status !== "Not Tested").length,
+      total: tests.length,
+      issues: mine.filter((f) => isIssueStatus(f.status)).length,
+    };
+  });
+  let colCount = 8;
   let th = "px-3 py-2 text-left text-xs font-medium text-gray-400 whitespace-nowrap border-b border-r border-gray-800 bg-gray-900";
   let td = "px-3 py-2 align-top border-b border-r border-gray-800 text-[13px]";
   return (
@@ -4602,43 +4624,14 @@ function ManagerView({ sessionId, accessKey }) {
         <table className="border-separate border-spacing-0 min-w-full">
           <thead className="sticky top-0 z-20">
             <tr>
-              <th className={`${th} sticky left-0 z-10 min-w-[300px]`} rowSpan={2}>Test</th>
-              <th className={`${th} min-w-[280px]`} rowSpan={2}>Steps</th>
-              <th className={th} rowSpan={2}>Priority</th>
-              <th className={th} rowSpan={2}>Overall</th>
-              {testers.map((n) =>
-                isOpen(n) ? (
-                  <th key={n} className={`${th} text-center text-gray-200`} colSpan={3}>
-                    {n}
-                    {!hasResults(n) && (
-                      <button onClick={() => setExpanded((x) => ({ ...x, [n]: false }))} className="ml-2 text-[11px] font-normal text-gray-500 hover:text-gray-200" title="Collapse">
-                        Collapse
-                      </button>
-                    )}
-                  </th>
-                ) : (
-                  <th key={n} className={`${th} align-top`} rowSpan={2}>
-                    <button
-                      onClick={() => setExpanded((x) => ({ ...x, [n]: true }))}
-                      className="text-left text-gray-300 hover:text-gray-100"
-                      title={`${n} hasn’t logged any results yet. Click to show their columns.`}
-                    >
-                      <span className="block font-medium">{n}</span>
-                      <span className="block text-[11px] font-normal text-gray-500">No results yet</span>
-                    </button>
-                  </th>
-                ),
-              )}
-              <th className={th} rowSpan={2}>Developers</th>
-            </tr>
-            <tr>
-              {testers.filter(isOpen).map((n) => (
-                <Fragment key={n}>
-                  <th className={th}>Result</th>
-                  <th className={`${th} min-w-[260px]`}>Notes</th>
-                  <th className={th}>Evidence</th>
-                </Fragment>
-              ))}
+              <th className={`${th} sticky left-0 z-10 min-w-[300px]`}>Test</th>
+              <th className={`${th} min-w-[280px]`}>Steps</th>
+              <th className={th}>Priority</th>
+              <th className={th} title="The worst result across all testers">Overall</th>
+              <th className={th}>{cur ? `${cur}’s result` : "Result"}</th>
+              <th className={`${th} min-w-[280px]`}>Notes</th>
+              <th className={th}>Evidence</th>
+              <th className={th}>Developers</th>
             </tr>
           </thead>
           <tbody>
@@ -4690,8 +4683,7 @@ function ManagerView({ sessionId, accessKey }) {
                       <td className={td}>
                         <StatusPill status={o} />
                       </td>
-                      {testers.map((n) => {
-                        if (!isOpen(n)) return <td key={n} className={`${td} bg-gray-900/40`} />;
+                      {[cur].filter(Boolean).map((n) => {
                         let f = F[t.id]?.[n];
                         let st = f?.status || "Not Tested";
                         let shots = (f?.screenshots || []).filter((z) => z && z.url);
@@ -4705,10 +4697,14 @@ function ManagerView({ sessionId, accessKey }) {
                                 {sev && isFailureStatus(st) && <span className="text-[11px] text-gray-400">{sev.value}</span>}
                               </div>
                             </td>
-                            <td className={`${td} min-w-[260px] max-w-[420px]`}>
+                            <td className={`${td} min-w-[280px] max-w-[460px]`}>
                               <FigureContext.Provider value={{ shots, open: (i) => setViewer({ kind: "shots", list: shots, idx: i }) }}>
                                 <ManagerNotes text={f?.notes} />
-                                <ManagerStepFlags f={f} steps={t.steps} />
+                                <ManagerStepFlags
+                                  f={f}
+                                  steps={t.steps}
+                                  replies={replies.filter((r) => r.test_case_id === t.id && (!r.tester_name || r.tester_name === n))}
+                                />
                               </FigureContext.Provider>
                             </td>
                             <td className={td}>
@@ -4766,6 +4762,7 @@ function ManagerView({ sessionId, accessKey }) {
           </tbody>
         </table>
       </div>
+      {testers.length > 0 && <TesterTabBar names={testers} active={cur} onSelect={setTab} stats={tabStats} />}
       {viewer && viewer.kind === "shots" && <ScreenshotLightbox screenshots={viewer.list} startIdx={viewer.idx} onClose={() => setViewer(null)} />}
       {viewer && viewer.kind === "recs" && <RecordingPlayer recordings={viewer.list} startIdx={viewer.idx} onClose={() => setViewer(null)} />}
     </div>
@@ -9882,7 +9879,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
               viewName={viewTab}
               onBackToMine={() => setViewTab(t)}
               devMarks={i[P.id] || []}
-              devStepNotes={devStepNotes.forTest(P.id)}
+              devStepNotes={devStepNotes.forTester(P.id, viewTab)}
               isSaving={!readOnly && ne.has(P.id)}
               isUploading={ie.has(P.id)}
               screenshotErrors={pe[P.id] || null}
@@ -9946,27 +9943,31 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
 // Developer notes on individual steps (table: dev_step_notes, see create-dev-step-notes.sql).
 // Loaded per session and kept live; if the table doesn't exist yet the feature simply stays hidden.
 function useDevStepNotes(sessionId) {
+  // Replies are tied to the tester whose step note they answer (tester_name). Older replies have no
+  // tester ("") and show for everyone. If the tester_name column hasn't been added yet
+  // (dev-step-replies-per-tester.sql), replies keep working the old way.
   let [rows, setRows] = useState([]);
   let [ok, setOk] = useState(false);
+  let [perTester, setPerTester] = useState(false);
   let timers = useRef({});
-  let keyOf = (r) => `${r.test_case_id}|${r.developer_name}|${r.step_key}`;
+  let keyOf = (r) => `${r.test_case_id}|${r.developer_name}|${r.step_key}|${r.tester_name || ""}`;
   useEffect(() => {
     if (!supabase || !sessionId) return;
     let live = true;
-    supabase
-      .from("dev_step_notes")
-      .select("*")
-      .eq("session_id", sessionId)
-      .then(({ data, error }) => {
-        if (!live) return;
-        if (error) {
-          console.warn("Developer step notes unavailable (run create-dev-step-notes.sql):", error.message);
-          setOk(false);
-          return;
-        }
-        setOk(true);
-        setRows(data || []);
-      });
+    (async () => {
+      let { data, error } = await supabase.from("dev_step_notes").select("*").eq("session_id", sessionId);
+      if (!live) return;
+      if (error) {
+        console.warn("Developer step notes unavailable (run create-dev-step-notes.sql):", error.message);
+        setOk(false);
+        return;
+      }
+      let probe = await supabase.from("dev_step_notes").select("tester_name").limit(1);
+      if (!live) return;
+      setPerTester(!probe.error);
+      setOk(true);
+      setRows(data || []);
+    })();
     let ch = supabase
       .channel(`dev-step-notes-${sessionId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "dev_step_notes", filter: `session_id=eq.${sessionId}` }, (pl) => {
@@ -9981,8 +9982,9 @@ function useDevStepNotes(sessionId) {
       supabase.removeChannel(ch);
     };
   }, [sessionId]);
-  let save = (testId, dev, key, note) => {
+  let save = (testId, dev, key, note, tester = "") => {
     let row = { session_id: sessionId, test_case_id: testId, developer_name: dev, step_key: String(key), note, updated_at: new Date().toISOString() };
+    if (perTester) row.tester_name = tester || "";
     let k = keyOf(row);
     setRows((rs) => {
       let rest = rs.filter((r) => keyOf(r) !== k);
@@ -9990,14 +9992,20 @@ function useDevStepNotes(sessionId) {
     });
     clearTimeout(timers.current[k]);
     timers.current[k] = setTimeout(async () => {
+      let del = supabase.from("dev_step_notes").delete().eq("test_case_id", testId).eq("developer_name", dev).eq("step_key", String(key));
+      if (perTester) del = del.eq("tester_name", row.tester_name);
       let { error } = note.trim()
-        ? await supabase.from("dev_step_notes").upsert(row, { onConflict: "test_case_id,developer_name,step_key" })
-        : await supabase.from("dev_step_notes").delete().eq("test_case_id", testId).eq("developer_name", dev).eq("step_key", String(key));
+        ? await supabase
+            .from("dev_step_notes")
+            .upsert(row, { onConflict: perTester ? "test_case_id,developer_name,step_key,tester_name" : "test_case_id,developer_name,step_key" })
+        : await del;
       if (error) console.error("Saving developer step note failed:", error);
     }, 600);
   };
   let forTest = (testId) => rows.filter((r) => r.test_case_id === testId);
-  return { ok, forTest, save };
+  // Replies a given tester should see: the ones written for them, plus older replies meant for everyone.
+  let forTester = (testId, tester) => forTest(testId).filter((r) => !r.tester_name || r.tester_name === tester);
+  return { ok, forTest, forTester, save };
 }
 // Side panel width: drag its right edge between 340px and 540px. Shared by both portals, saved on this device.
 var SIDEBAR_MIN = 340;
@@ -12240,8 +12248,8 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
               onSetStatus={($) => B(ue.id, $)}
               onSetFixStage={($) => B(ue.id, "fixed", $)}
               onSetNote={($) => ne(ue.id, $)}
-              devStepNotes={devStepNotes.forTest(ue.id)}
-              onDevStepNote={devStepNotes.ok ? ($, H) => devStepNotes.save(ue.id, t, $, H) : null}
+              devStepNotes={devStepNotes.forTester(ue.id, devTab)}
+              onDevStepNote={devStepNotes.ok ? ($, H) => devStepNotes.save(ue.id, t, $, H, devTab) : null}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
