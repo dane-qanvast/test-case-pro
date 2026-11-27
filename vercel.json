@@ -1,4 +1,5 @@
 {
   "installCommand": "echo \"Nothing to install: index.html is already built\"",
-  "buildCommand": "echo \"Nothing to build: index.html is already built\""
+  "buildCommand": "mkdir -p public && cp index.html public/index.html",
+  "outputDirectory": "public"
 }
