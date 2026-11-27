@@ -63,6 +63,14 @@ import {
   GitBranch,
   Bell,
   AtSign,
+  List,
+  LayoutList,
+  Sun,
+  Moon,
+  SlidersHorizontal,
+  Link,
+  Ellipsis,
+  FileUp,
 } from "lucide-react";
 var EDITION = "Pro";
 var SUPABASE_URL = "https://badylykbhmujmeaysixg.supabase.co";
@@ -288,9 +296,9 @@ function PathChipText({ text: e }) {
         rel="noopener noreferrer"
         onClick={(u) => u.stopPropagation()}
         title={`Open in new tab: ${r}`}
-        className="inline-flex items-center gap-1 font-mono text-[12px] border rounded-sm px-1 py-[1px] cursor-pointer transition-colors align-baseline break-all no-underline bg-gray-800 text-indigo-300 border-gray-700/70 hover:bg-gray-700 hover:border-indigo-600 hover:text-indigo-200"
+        className="inline-flex items-center gap-1 font-mono text-[12px] border rounded-sm px-1 py-[1px] cursor-pointer transition-colors align-baseline break-all no-underline bg-chip-400/10 text-chip-300 border-chip-400/40 hover:bg-chip-400/20 hover:border-chip-400 hover:text-chip-200"
       >
-        <span className="hover:underline underline-offset-2 decoration-indigo-400/50">{e}</span>
+        <span className="hover:underline underline-offset-2 decoration-chip-400/60">{e}</span>
         <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 opacity-60" />
       </a>
     );
@@ -307,7 +315,7 @@ function PathChipText({ text: e }) {
           }
         }}
         title={s ? "Copied" : `Click to copy: ${e}`}
-        className={`inline-flex items-center gap-1 font-mono text-[12px] border rounded-sm px-1 py-[1px] cursor-pointer transition-colors align-baseline break-all select-none ${s ? "bg-emerald-900/50 text-emerald-200 border-emerald-700" : "bg-gray-800 text-indigo-300 border-gray-700/70 hover:bg-gray-700 hover:border-indigo-600 hover:text-indigo-200"}`}
+        className={`inline-flex items-center gap-1 font-mono text-[12px] border rounded-sm px-1 py-[1px] cursor-pointer transition-colors align-baseline break-all select-none ${s ? "bg-green-500/15 text-green-300 border-green-500/50" : "bg-chip-400/10 text-chip-300 border-chip-400/40 hover:bg-chip-400/20 hover:border-chip-400 hover:text-chip-200"}`}
       >
         <span>{e}</span>
         {s ? (
@@ -2700,7 +2708,7 @@ function LightApp() {
               </button>
               <h2 className="font-bold text-gray-100">Test Cases</h2>
               <span
-                className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm border ${EDITION === "Pro" ? "bg-emerald-900/40 text-emerald-300 border-emerald-700" : "bg-gray-800 text-gray-500 border-gray-700"}`}
+                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm border ${EDITION === "Pro" ? "bg-emerald-900/40 text-emerald-300 border-emerald-700" : "bg-gray-800 text-gray-500 border-gray-700"}`}
               >
                 {EDITION}
               </span>
@@ -2732,7 +2740,7 @@ function LightApp() {
                     ne(false);
                   }
                 }}
-                className="w-full pl-9 pr-8 py-2 text-sm bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-9 pr-8 py-2 text-sm bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
               <button
                 onClick={() => {
@@ -2752,7 +2760,7 @@ function LightApp() {
                   ne(true);
                   setTimeout(() => fe.current?.focus(), 0);
                 }}
-                className="flex-shrink-0 flex items-center justify-center bg-gray-800 border border-gray-700 text-gray-400 hover:text-indigo-300 hover:border-indigo-600 hover:bg-gray-700 rounded-md transition-colors"
+                className="flex-shrink-0 flex items-center justify-center bg-gray-950 border border-gray-800 text-gray-400 hover:text-indigo-300 hover:border-indigo-600 hover:bg-gray-700 rounded-md transition-colors"
                 style={{
                   height: "38px",
                   width: "38px",
@@ -2763,7 +2771,7 @@ function LightApp() {
               </button>
               <button
                 onClick={() => S(true)}
-                className={`flex-shrink-0 flex items-center justify-center border rounded-md transition-colors ${h ? "bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-indigo-300 hover:border-indigo-600 hover:bg-gray-700"}`}
+                className={`flex-shrink-0 flex items-center justify-center border rounded-md transition-colors ${h ? "bg-indigo-600 border-indigo-600 text-gray-950 hover:bg-indigo-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-indigo-300 hover:border-indigo-600 hover:bg-gray-700"}`}
                 style={{
                   height: "38px",
                   width: "38px",
@@ -2775,7 +2783,7 @@ function LightApp() {
               <select
                 value={c}
                 onChange={(L) => p(L.target.value)}
-                className="dark-select flex-1 min-w-0 px-3 text-sm bg-gray-800 border border-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="dark-select flex-1 min-w-0 px-3 text-sm bg-gray-950 border border-gray-800 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 style={{
                   height: "38px",
                 }}
@@ -2838,7 +2846,7 @@ function LightApp() {
                     </div>
                     {!isEmptyValue(L.Feature) && (
                       <div className="mt-1">
-                        <span className="inline-block text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 bg-gray-800 text-gray-400 border border-gray-700 rounded-sm">
+                        <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 bg-gray-800 text-gray-400 border border-gray-700 rounded-sm">
                           {L.Feature}
                         </span>
                       </div>
@@ -2953,30 +2961,30 @@ function LightApp() {
               <div className="relative">
                 <button
                   onClick={() => C(!k)}
-                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 bg-indigo-600 text-gray-950 text-sm font-medium rounded-md hover:bg-indigo-500"
                 >
-                  <Download className="w-4 h-4" />
+                  <Upload className="w-4 h-4" />
                   <span className="hidden sm:inline">Export</span>
                 </button>
                 {k && (
                   <Fragment>
                     <div className="fixed inset-0 z-10" onClick={() => C(false)} />
-                    <div className="absolute right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-xl z-20 w-64">
+                    <div className="absolute right-0 top-full mt-1 bg-gray-950 border border-gray-800 rounded-md shadow-xl z-20 w-64">
                       {h && (
                         <div className="px-3 py-2 border-b border-gray-700">
-                          <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                          <div className="text-[10px] font-semibold text-gray-400 mb-1.5">
                             Scope
                           </div>
                           <div className="inline-flex w-full border border-gray-700 rounded-sm overflow-hidden">
                             <button
                               onClick={() => x("focused")}
-                              className={`flex-1 px-2 py-1 text-xs transition-colors ${I === "focused" ? "bg-indigo-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-700"}`}
+                              className={`flex-1 px-2 py-1 text-xs transition-colors ${I === "focused" ? "bg-indigo-600 text-gray-950" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-700"}`}
                             >
                               Focused ({h.size})
                             </button>
                             <button
                               onClick={() => x("all")}
-                              className={`flex-1 px-2 py-1 text-xs transition-colors border-l border-gray-700 ${I === "all" ? "bg-indigo-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-700"}`}
+                              className={`flex-1 px-2 py-1 text-xs transition-colors border-l border-gray-700 ${I === "all" ? "bg-indigo-600 text-gray-950" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-700"}`}
                             >
                               All ({e.length})
                             </button>
@@ -2997,7 +3005,7 @@ function LightApp() {
                         onClick={We}
                         className="w-full text-left px-4 py-2.5 text-sm text-gray-100 hover:bg-gray-700 flex items-center gap-2 border-t border-gray-700"
                       >
-                        <FileDown className="w-4 h-4 text-indigo-400" />
+                        <FileUp className="w-4 h-4 text-indigo-400" />
                         <div>
                           <div className="font-medium">CSV + Screenshots</div>
                           <div className="text-xs text-gray-400">Findings CSV + image files</div>
@@ -3073,7 +3081,7 @@ function LightApp() {
                   {Ht.length > 0 && (
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        <div className="text-xs font-medium text-gray-400">
                           Steps Checklist
                         </div>
                         <div className="flex items-center gap-2">
@@ -3083,7 +3091,7 @@ function LightApp() {
                           </div>
                           <button
                             onClick={() => F(!V)}
-                            className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border transition-colors ${V ? "bg-indigo-600 border-indigo-600 text-white" : "border-gray-700 text-gray-400 hover:text-indigo-300 hover:border-indigo-700"}`}
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border transition-colors ${V ? "bg-indigo-600 border-indigo-600 text-gray-950" : "border-gray-700 text-gray-400 hover:text-indigo-300 hover:border-indigo-700"}`}
                             title={V ? "Done editing" : "Edit steps"}
                           >
                             {V ? (
@@ -3184,7 +3192,7 @@ function LightApp() {
                                       onChange={(Ne) => de(R, Ne.target.value)}
                                       placeholder="Step description..."
                                       rows={1}
-                                      className="w-full px-2 py-1 text-sm bg-gray-900 border border-gray-700 text-gray-100 placeholder-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 resize-y"
+                                      className="w-full px-2 py-1 text-sm bg-gray-900 border border-gray-800 text-gray-100 placeholder-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 resize-y"
                                       onMouseDown={(Ne) => Ne.stopPropagation()}
                                     />
                                   ) : (
@@ -3218,7 +3226,7 @@ function LightApp() {
                                             placeholder="Notes for this step..."
                                             rows={1}
                                             autoFocus={Ge && !ke}
-                                            className="w-full px-2 py-1 pr-7 text-sm bg-gray-900 border border-gray-700 text-gray-100 placeholder-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 resize-y"
+                                            className="w-full px-2 py-1 pr-7 text-sm bg-gray-900 border border-gray-800 text-gray-100 placeholder-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 resize-y"
                                           />
                                           {!ke && (
                                             <button
@@ -3311,7 +3319,7 @@ function LightApp() {
                   )}
                   {!isEmptyValue(q["Expected Result"]) && (
                     <div>
-                      <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center gap-1.5">
+                      <div className="text-xs font-bold text-amber-400 mb-1.5 flex items-center gap-1.5">
                         <CircleCheck className="w-3.5 h-3.5" />
                         Expected Result
                       </div>
@@ -3340,14 +3348,14 @@ function LightApp() {
                 </div>
                 <div className="p-5 space-y-4 divide-y divide-gray-800/60">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <label className="block text-xs font-medium text-gray-400 mb-1.5">
                       Tester
                     </label>
                     {m.length > 0 ? (
                       <select
                         value={oe.testedBy}
                         onChange={(L) => P(q.__id, L.target.value)}
-                        className="dark-select w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="dark-select w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       >
                         <option value="">— Select tester —</option>
                         {m.map((L) => (
@@ -3362,12 +3370,12 @@ function LightApp() {
                         value={oe.testedBy}
                         onChange={(L) => P(q.__id, L.target.value)}
                         placeholder="Your name"
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     )}
                   </div>
                   <div className="pt-4">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <label className="block text-xs font-medium text-gray-400 mb-1.5">
                       Tester Notes
                     </label>
                     <textarea
@@ -3375,11 +3383,11 @@ function LightApp() {
                       onChange={(L) => H(q.__id, "notes", L.target.value)}
                       rows={4}
                       placeholder="Observations, summary of issues found, deviations from expected result..."
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
+                      className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
                     />
                   </div>
                   <div className="pt-4">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <label className="block text-xs font-medium text-gray-400 mb-1.5">
                       Other Observations
                     </label>
                     <textarea
@@ -3387,11 +3395,11 @@ function LightApp() {
                       onChange={(L) => H(q.__id, "otherObservations", L.target.value)}
                       rows={3}
                       placeholder="Anything else worth flagging — UX, performance, side effects..."
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
+                      className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
                     />
                   </div>
                   <div className="pt-4">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <label className="block text-xs font-medium text-gray-400 mb-1.5">
                       Recordings{" "}
                       {oe.recordings?.length > 0 && (
                         <span className="normal-case font-normal text-gray-500">
@@ -3422,7 +3430,7 @@ function LightApp() {
                           }
                         }}
                         placeholder="Paste Loom / Drive / YouTube / Vimeo / video URL"
-                        className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        className="flex-1 px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                       />
                       <button
                         type="button"
@@ -3441,7 +3449,7 @@ function LightApp() {
                           pe("");
                         }}
                         disabled={!ue.trim()}
-                        className="px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        className="px-3 py-2 bg-indigo-600 text-gray-950 text-sm font-medium rounded-md hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
                       >
                         Add
                       </button>
@@ -3455,7 +3463,7 @@ function LightApp() {
                               className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-800/60 border border-gray-700 rounded-sm group"
                               key={R}
                             >
-                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-gray-900 text-indigo-300 border border-gray-700 rounded-sm flex-shrink-0">
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-gray-900 text-indigo-300 border border-gray-700 rounded-sm flex-shrink-0">
                                 {Z}
                               </span>
                               <a
@@ -3485,7 +3493,7 @@ function LightApp() {
                     )}
                   </div>
                   <div className="pt-4">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <label className="block text-xs font-medium text-gray-400 mb-1.5">
                       Screenshots{" "}
                       {oe.screenshots.length > 0 && (
                         <span className="normal-case font-normal text-gray-500">
@@ -3535,7 +3543,7 @@ function LightApp() {
                             className="relative group border border-gray-700 rounded-md overflow-hidden bg-gray-800"
                             key={R}
                           >
-                            <div className="absolute top-2 left-2 z-10 bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-md">
+                            <div className="absolute top-2 left-2 z-10 bg-indigo-600 text-gray-950 text-xs font-bold px-2 py-0.5 rounded shadow-md">
                               Fig. {R + 1}
                             </div>
                             <img src={L.data} alt={L.name} className="w-full h-32 object-cover" />
@@ -3557,7 +3565,7 @@ function LightApp() {
                   </div>
                   <div className="pt-4">
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                      <label className="block text-xs font-medium text-gray-400">
                         Final Status
                       </label>
                       {oe.status && oe.status !== "Not Tested" && (
@@ -3591,7 +3599,7 @@ function LightApp() {
                   {isFailureStatus(oe.status) && (
                     <div className="pt-4">
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        <label className="block text-xs font-medium text-gray-400">
                           Bug Severity
                         </label>
                         {oe.bugSeverity && (
@@ -3641,14 +3649,14 @@ function LightApp() {
                     <button
                       onClick={() => s(Math.max(0, o - 1))}
                       disabled={o === 0}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 text-gray-200 rounded-md hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed font-medium text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-950 border border-gray-800 text-gray-200 rounded-md hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed font-medium text-sm"
                     >
                       <ChevronLeft className="w-4 h-4" /> Previous
                     </button>
                     <button
                       onClick={() => s(Math.min(e.length - 1, o + 1))}
                       disabled={o === e.length - 1}
-                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed font-medium text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-gray-950 rounded-md hover:bg-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed font-medium text-sm"
                     >
                       Next <ChevronRight className="w-4 h-4" />
                     </button>
@@ -3715,7 +3723,7 @@ function LightApp() {
                 </button>
                 <button
                   onClick={() => W(false)}
-                  className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-200 rounded-md hover:bg-gray-700 font-medium text-sm"
+                  className="px-4 py-2 bg-gray-950 border border-gray-800 text-gray-200 rounded-md hover:bg-gray-700 font-medium text-sm"
                 >
                   Cancel
                 </button>
@@ -3820,7 +3828,7 @@ ${CSV_GENERATION_PROMPT}`);
     }
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-indigo-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
       <style>{`
         ::-webkit-scrollbar { width: 10px; height: 10px; }
         ::-webkit-scrollbar-track { background: #0a0a0f; }
@@ -3832,12 +3840,12 @@ ${CSV_GENERATION_PROMPT}`);
       <div className="max-w-2xl w-full">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4 shadow-lg shadow-indigo-900/50">
-            <FileText className="w-8 h-8 text-white" />
+            <FileText className="w-8 h-8 text-gray-950" />
           </div>
           <h1 className="text-3xl font-bold text-gray-100 mb-2">
             Test Case Report Compiler
             <span
-              className={`ml-2 align-middle inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm border ${EDITION === "Pro" ? "bg-emerald-900/40 text-emerald-300 border-emerald-700" : "bg-gray-800 text-gray-400 border-gray-700"}`}
+              className={`ml-2 align-middle inline-block text-[10px] font-bold px-2 py-0.5 rounded-sm border ${EDITION === "Pro" ? "bg-emerald-900/40 text-emerald-300 border-emerald-700" : "bg-gray-800 text-gray-400 border-gray-700"}`}
             >
               {EDITION}
             </span>
@@ -3895,7 +3903,7 @@ ${CSV_GENERATION_PROMPT}`);
                     m.stopPropagation();
                     k(null);
                   }}
-                  className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-200 rounded-md hover:bg-gray-700 text-sm font-medium"
+                  className="px-4 py-2 bg-gray-950 border border-gray-800 text-gray-200 rounded-md hover:bg-gray-700 text-sm font-medium"
                   disabled={b}
                 >
                   Choose different file
@@ -3906,7 +3914,7 @@ ${CSV_GENERATION_PROMPT}`);
                       m.stopPropagation();
                       C();
                     }}
-                    className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-indigo-600 text-gray-950 rounded-md hover:bg-indigo-500 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                     disabled={b}
                   >
                     {b ? "Loading…" : "Start Testing →"}
@@ -3916,7 +3924,7 @@ ${CSV_GENERATION_PROMPT}`);
             </Fragment>
           ) : (
             <Fragment>
-              <Upload className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+              <Download className="w-12 h-12 text-gray-500 mx-auto mb-3" />
               <p className="text-lg font-medium text-gray-200 mb-1">Drop your CSV file here</p>
               <p className="text-sm text-gray-400">or click to browse</p>
               <input
@@ -3984,12 +3992,12 @@ ${CSV_GENERATION_PROMPT}`);
                 }
               }}
               placeholder="Enter name(s), comma-separated (e.g. Alice, Bob, Carol)"
-              className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
             <button
               onClick={g}
               disabled={!s.trim()}
-              className="flex items-center gap-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-sm"
+              className="flex items-center gap-1 px-4 py-2 bg-indigo-600 text-gray-950 rounded-md hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-sm"
             >
               <Plus className="w-4 h-4" /> Add
             </button>
@@ -4023,16 +4031,16 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
   let S =
     EDITION === "Pro"
       ? {
-          solid: "bg-emerald-600 text-white hover:bg-emerald-500",
-          tab: "bg-emerald-600 text-white",
+          solid: "bg-emerald-600 text-gray-950 hover:bg-emerald-500",
+          tab: "bg-emerald-600 text-gray-950",
           check: "bg-emerald-600 border-emerald-600",
           checkPartial: "bg-emerald-600/40 border-emerald-500",
           link: "text-emerald-300 hover:text-emerald-200",
           inputFocus: "focus:border-emerald-500",
         }
       : {
-          solid: "bg-indigo-600 text-white hover:bg-indigo-500",
-          tab: "bg-indigo-600 text-white",
+          solid: "bg-indigo-600 text-gray-950 hover:bg-indigo-500",
+          tab: "bg-indigo-600 text-gray-950",
           check: "bg-indigo-600 border-indigo-600",
           checkPartial: "bg-indigo-600/40 border-indigo-500",
           link: "text-indigo-300 hover:text-indigo-200",
@@ -4170,7 +4178,7 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
               placeholder="Search ID, title, module, feature..."
               value={i}
               onChange={(D) => u(D.target.value)}
-              className={`w-full pl-9 pr-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none ${S.inputFocus}`}
+              className={`w-full pl-9 pr-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none ${S.inputFocus}`}
             />
           </div>
           <div className="inline-flex border border-gray-700 rounded-sm overflow-hidden">
@@ -4205,7 +4213,7 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
             onChange={(D) => h(D.target.value.replace(/\D/g, ""))}
             onKeyDown={E}
             placeholder={String(j)}
-            className={`w-14 px-2 py-1 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-600 rounded-sm text-xs text-center focus:outline-none ${S.inputFocus}`}
+            className={`w-14 px-2 py-1 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-600 rounded-sm text-xs text-center focus:outline-none ${S.inputFocus}`}
           />
           <span className="text-xs text-gray-500">to</span>
           <input
@@ -4215,7 +4223,7 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
             onChange={(D) => _(D.target.value.replace(/\D/g, ""))}
             onKeyDown={E}
             placeholder={String(M)}
-            className={`w-14 px-2 py-1 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-600 rounded-sm text-xs text-center focus:outline-none ${S.inputFocus}`}
+            className={`w-14 px-2 py-1 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-600 rounded-sm text-xs text-center focus:outline-none ${S.inputFocus}`}
           />
           <button
             onClick={se}
@@ -4229,7 +4237,7 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
           </span>
         </div>
         {d === "flat" && (
-          <div className="px-3 py-1.5 border-b border-gray-800 flex items-stretch gap-2 text-[10px] uppercase tracking-wider text-gray-500 font-semibold flex-shrink-0 bg-gray-900">
+          <div className="px-3 py-1.5 border-b border-gray-800 flex items-stretch gap-2 text-[10px] text-gray-500 font-semibold flex-shrink-0 bg-gray-900">
             <div className="w-3.5 flex-shrink-0" aria-hidden="true" />
             <div className="w-14 flex-shrink-0 text-right whitespace-nowrap self-center">Cell Row</div>
             <div className="w-px bg-gray-700" aria-hidden="true" />
@@ -4250,9 +4258,9 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
                   key={D.__id}
                 >
                   <div
-                    className={`w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${O ? S.check : "border-gray-600"}`}
+                    className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${O ? S.check : "border-gray-600"}`}
                   >
-                    {O && <Check className="w-2.5 h-2.5 text-white" />}
+                    {O && <Check className="w-3 h-3 text-gray-950" strokeWidth={3} />}
                   </div>
                   <div
                     className="w-14 flex-shrink-0 text-right text-[11px] font-mono text-gray-500 pt-px tabular-nums select-none"
@@ -4284,9 +4292,9 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
                     className="w-full flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-sm transition-colors"
                   >
                     <div
-                      className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center flex-shrink-0 ${ne ? S.check : he ? S.checkPartial : "border-gray-500"}`}
+                      className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center flex-shrink-0 ${ne ? S.check : he ? S.checkPartial : "border-gray-600"}`}
                     >
-                      {ne && <Check className="w-3 h-3 text-white" />}
+                      {ne && <Check className="w-3 h-3 text-gray-950" strokeWidth={3} />}
                       {he && <div className="w-2 h-0.5 bg-white" />}
                     </div>
                     <span className="font-semibold text-sm text-gray-100">{D}</span>
@@ -4304,9 +4312,9 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
                           key={ie.__id}
                         >
                           <div
-                            className={`w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${ue ? S.check : "border-gray-600"}`}
+                            className={`w-4 h-4 rounded-[4px] border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${ue ? S.check : "border-gray-600"}`}
                           >
-                            {ue && <Check className="w-2.5 h-2.5 text-white" />}
+                            {ue && <Check className="w-3 h-3 text-gray-950" strokeWidth={3} />}
                           </div>
                           <div
                             className="w-14 flex-shrink-0 text-right text-[11px] font-mono text-gray-500 pt-px tabular-nums select-none"
@@ -4363,7 +4371,7 @@ function FocusModeModal({ open: e, onClose: t, testCases: a, currentFocusedIds: 
 function InfoField({ label: e, value: t, highlight: a }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">{e}</div>
+      <div className="text-xs font-medium text-gray-400 mb-1">{e}</div>
       <div
         className={`text-sm whitespace-pre-wrap ${a ? "bg-amber-950/30 border-l-4 border-amber-500 px-3 py-2 rounded text-amber-100" : "text-gray-200"}`}
       >
@@ -4431,11 +4439,9 @@ function GlobalTooltip() {
     };
     let s = (u) => {
       let d = u.target;
-      while (
-        d &&
-        d !== document.body &&
-        (!d.getAttribute || d.getAttribute("title") == null || d.getAttribute("title") === "")
-      ) {
+      // elements can also carry their tooltip in data-tip, which the browser never shows itself.
+      let tipText = (el) => (el && el.getAttribute ? el.getAttribute("title") || el.getAttribute("data-tip") || "" : "");
+      while (d && d !== document.body && !tipText(d)) {
         d = d.parentElement;
       }
       if (!d || d === document.body || d === r.current.el) {
@@ -4446,13 +4452,16 @@ function GlobalTooltip() {
         return;
       }
       o();
-      let p = d.getAttribute("title");
+      let hasTitle = !!d.getAttribute("title");
+      let p = tipText(d);
       r.current = {
         el: d,
-        saved: p,
+        saved: hasTitle ? p : null,
       };
-      d.setAttribute("data-tt-saved", p);
-      d.removeAttribute("title");
+      if (hasTitle) {
+        d.setAttribute("data-tt-saved", p);
+        d.removeAttribute("title");
+      }
       let h = d.getBoundingClientRect();
       t({
         text: p,
@@ -4711,10 +4720,10 @@ function AdminGate({ children: e }) {
     return <AdminLockContext.Provider value={{ lock: c }}>{e}</AdminLockContext.Provider>;
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-indigo-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
       <div className="w-full max-w-xs text-center">
         <div className="w-11 h-11 bg-emerald-600 rounded-sm flex items-center justify-center mx-auto mb-4">
-          <FileText className="w-6 h-6 text-white" />
+          <FileText className="w-6 h-6 text-gray-950" />
         </div>
         <div className="font-bold text-gray-100 text-lg">UAT Collaborator</div>
         <div className="text-xs text-gray-500 mb-6">Admin</div>
@@ -4892,12 +4901,12 @@ function AdminPortal() {
     return <SessionCreatedScreen session={c} onDone={() => t("list")} />;
   } else {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-indigo-950 flex flex-col">
+      <div className="min-h-screen bg-gray-950 flex flex-col">
         <header className="px-8 py-5 border-b border-gray-800 bg-gray-950/60 backdrop-blur">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-emerald-600 rounded-sm flex items-center justify-center">
-                <FileText className="w-5 h-5 text-white" />
+                <FileText className="w-5 h-5 text-gray-950" />
               </div>
               <div>
                 <div className="font-bold text-gray-100 leading-tight">UAT Collaborator</div>
@@ -4905,10 +4914,11 @@ function AdminPortal() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <AdminThemeButton />
               <AdminLockButton />
               <button
                 onClick={() => t("create")}
-                className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white text-sm font-medium rounded-sm hover:bg-emerald-500"
+                className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-gray-950 text-sm font-medium rounded-sm hover:bg-emerald-500"
               >
                 <Plus className="w-4 h-4" /> New session
               </button>
@@ -4935,7 +4945,7 @@ function AdminPortal() {
               <div className="text-gray-400 text-sm mb-4">No sessions yet.</div>
               <button
                 onClick={() => t("create")}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-sm hover:bg-emerald-500"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-gray-950 text-sm font-medium rounded-sm hover:bg-emerald-500"
               >
                 <Plus className="w-4 h-4" /> Create your first session
               </button>
@@ -5014,7 +5024,7 @@ function SessionCard({ session: e, progress: t, onShowUrls: a, onEdit: r }) {
       </div>
       <button
         onClick={r}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-gray-100 bg-gray-800/60 hover:bg-gray-800 border border-gray-700 rounded-sm"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-gray-100 bg-gray-800/60 hover:bg-gray-950 border border-gray-800 rounded-sm"
         title="Edit session name and add testers/developers"
       >
         <Pencil className="w-3.5 h-3.5" /> Edit
@@ -5117,12 +5127,12 @@ function SheetLinkImport({ onFile: e, disabled: t }) {
           autoCapitalize="off"
           autoComplete="off"
           spellCheck="false"
-          className="flex-1 min-w-0 px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+          className="flex-1 min-w-0 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
         />
         <button
           onClick={u}
           disabled={t || o || !a.trim()}
-          className="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
+          className="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-emerald-600 text-gray-950 rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
         >
           {o ? "Fetching…" : "Import"}
         </button>
@@ -5253,7 +5263,7 @@ function SampleFilesPicker({ files: e, setFiles: t }) {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1.5">
-        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <label className="block text-xs font-medium text-gray-400">
           Sample files for testers <span className="normal-case font-normal text-gray-500">(optional)</span>
         </label>
       </div>
@@ -5345,7 +5355,7 @@ function SampleFilesManager({ session: e }) {
   };
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+      <div className="text-xs font-medium text-gray-400 mb-1.5">
         Sample files for testers{" "}
         {t && t.length > 0 && <span className="normal-case font-normal text-gray-500">({t.length})</span>}
       </div>
@@ -5444,7 +5454,7 @@ function ReadmeContent({ text: e }) {
     if (!i) return;
     if (i.startsWith("## ")) {
       a.push(
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-300 pt-3" key={l}>
+        <h3 className="text-xs font-semibold text-amber-300 pt-3" key={l}>
           {i.slice(3)}
         </h3>,
       );
@@ -5477,6 +5487,17 @@ var downloadBlob = (e, t) => {
   r.remove();
   setTimeout(() => URL.revokeObjectURL(a), 4000);
 };
+// Floating bar buttons are icon-only (hover shows a tooltip); the label shows only
+// while the button needs attention (unread pings, an unread Read me, sample files not yet looked at) or its panel is open.
+function BarLabel({ show, children }) {
+  return (
+    <span
+      className={`overflow-hidden whitespace-nowrap transition-all duration-200 ease-out ${show ? "max-w-[180px] opacity-100 ml-1.5" : "max-w-0 opacity-0 ml-0"}`}
+    >
+      {children}
+    </span>
+  );
+}
 function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = "tester", testCases = [], onOpenPing = () => {} }) {
   let isDevBar = role === "developer";
   // ---- Pings for me (bell) ----
@@ -5569,6 +5590,15 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
   let [zErr, setZErr] = useState("");
   let [readme, setReadme] = useState("");
   let [readmeOpen, setReadmeOpen] = useState(false);
+  // About this session: what the app can show for these tests (and what the sheet didn't provide).
+  let [aboutOpen, setAboutOpen] = useState(false);
+  let aboutPanelRef = useRef(null);
+  useEffect(() => {
+    if (!aboutOpen) return;
+    let h = (ev) => ev.key === "Escape" && setAboutOpen(false);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [aboutOpen]);
   // The Read me button is green until this tester opens it once in this session.
   let readmeSeenKey = `uat-pro-readme-seen-${e}-${n}`;
   let [readmeSeen, setReadmeSeen] = useState(() => {
@@ -5631,11 +5661,12 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
   let filesPanelRef = useRef(null);
   let barRef = useRef(null);
   useEffect(() => {
-    if (!i && !readmeOpen && !pingsOpen) return;
+    if (!i && !readmeOpen && !pingsOpen && !aboutOpen) return;
     let h = (b) => {
       let tgt = b.target;
       if (barRef.current?.contains(tgt)) return;
       if (readmeOpen && !readmePanelRef.current?.contains(tgt)) setReadmeOpen(false);
+      if (aboutOpen && !aboutPanelRef.current?.contains(tgt)) setAboutOpen(false);
       if (pingsOpen && !pingsPanelRef.current?.contains(tgt)) setPingsOpen(false);
       if (i && !filesPanelRef.current?.contains(tgt)) {
         u(false);
@@ -5647,7 +5678,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
     };
     document.addEventListener("pointerdown", h);
     return () => document.removeEventListener("pointerdown", h);
-  }, [i, readmeOpen, pingsOpen, o]);
+  }, [i, readmeOpen, pingsOpen, aboutOpen, o]);
   useEffect(() => {
     if (!pingsOpen) return;
     let h = (b) => b.key === "Escape" && setPingsOpen(false);
@@ -5656,7 +5687,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
   }, [pingsOpen]);
   let hasFiles = !isDevBar && d && a.length > 0;
   let filesOpen = hasFiles && i;
-  let sidePanelOpen = readmeOpen || pingsOpen;
+  let sidePanelOpen = readmeOpen || pingsOpen || aboutOpen;
   let p = () => {
     l(true);
     try {
@@ -5696,6 +5727,43 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
   };
   return (
     <>
+      {testCases.length > 0 && (
+        <Fragment>
+          <div
+            className={`fixed inset-0 z-30 bg-black/40 sm:hidden transition-opacity duration-300 ${aboutOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            onClick={() => setAboutOpen(false)}
+            aria-hidden="true"
+          />
+          <aside
+            ref={aboutPanelRef}
+            className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${aboutOpen ? "translate-x-0" : "translate-x-[calc(100%+48px)] pointer-events-none"}`}
+            role="dialog"
+            aria-label="About this session"
+            aria-hidden={!aboutOpen}
+          >
+            <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-800">
+              <CircleHelp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div className="flex-1 text-base font-semibold text-gray-100">About this session</div>
+              <button onClick={() => setAboutOpen(false)} className="text-gray-500 hover:text-gray-200 p-0.5" title="Close (Esc)">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+              <div>
+                <div className="text-sm font-semibold text-gray-100">{t}</div>
+                <div className="text-xs text-gray-400 mt-0.5">
+                  {testCases.length} test{testCases.length === 1 ? "" : "s"}
+                  {(() => {
+                    let mods = new Set(testCases.map((x) => String(x.module || "").trim()).filter(Boolean)).size;
+                    return mods > 1 ? ` · ${mods} modules` : "";
+                  })()}
+                </div>
+              </div>
+              <ImportedDataSection testCases={testCases} defaultOpen />
+            </div>
+          </aside>
+        </Fragment>
+      )}
       {readme && (
         <Fragment>
           <div
@@ -5705,7 +5773,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           />
           <aside
             ref={readmePanelRef}
-            className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${readmeOpen ? "translate-x-0" : "translate-x-full pointer-events-none"}`}
+            className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${readmeOpen ? "translate-x-0" : "translate-x-[calc(100%+48px)] pointer-events-none"}`}
             role="dialog"
             aria-label="Read me"
             aria-hidden={!readmeOpen}
@@ -5736,7 +5804,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       />
       <aside
         ref={filesPanelRef}
-        className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-96 flex flex-col bg-gray-900 border-l border-amber-700/60 shadow-2xl transition-transform duration-300 ease-out ${i ? "translate-x-0" : "translate-x-full pointer-events-none"}`}
+        className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${i ? "translate-x-0" : "translate-x-[calc(100%+48px)] pointer-events-none"}`}
         role="dialog"
         aria-label="Sample files"
         aria-hidden={!i}
@@ -5758,7 +5826,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1.5">
-          <div className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">
+          <div className="text-[11px] text-gray-500 mb-2">
             {a.length} file{a.length === 1 ? "" : "s"} · {formatBytes(total)}
           </div>
           {a.map((h) => (
@@ -5809,7 +5877,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       />
       <aside
         ref={pingsPanelRef}
-        className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${pingsOpen ? "translate-x-0" : "translate-x-full pointer-events-none"}`}
+        className={`fixed z-40 top-0 bottom-0 right-0 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${pingsOpen ? "translate-x-0" : "translate-x-[calc(100%+48px)] pointer-events-none"}`}
         role="dialog"
         aria-label="Pings"
         aria-hidden={!pingsOpen}
@@ -5837,7 +5905,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
               <pre className="text-[11px] leading-relaxed bg-gray-950 border border-gray-800 rounded-sm p-3 overflow-x-auto text-gray-300 whitespace-pre">{PING_SETUP_SQL}</pre>
               <button
                 onClick={() => navigator.clipboard?.writeText(PING_SETUP_SQL)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-800 border border-gray-700 text-gray-200 rounded-sm hover:bg-gray-700"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-950 border border-gray-800 text-gray-200 rounded-sm hover:bg-gray-700"
               >
                 <Copy className="w-3 h-3" /> Copy SQL
               </button>
@@ -5927,35 +5995,39 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       )}
       <div
         ref={barRef}
-        className={`fixed z-30 bottom-14 flex items-center gap-2 transition-all duration-300 ease-out ${sidePanelOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[25rem]" : "right-4"} ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+        className={`fixed z-30 bottom-14 flex items-center gap-2 transition-all duration-300 ease-out ${sidePanelOpen ? "right-4 sm:right-[29rem]" : filesOpen ? "right-4 sm:right-[29rem]" : "right-4"} ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
       >
         <button
           onClick={() => {
             u(false);
             setReadmeOpen(false);
+            setAboutOpen(false);
             setPingsOpen(!pingsOpen);
           }}
           aria-pressed={pingsOpen}
           aria-label={unread ? `Pings, ${unread} unread` : "Pings"}
-          className={`relative inline-flex items-center justify-center w-9 h-[34px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${pingsOpen ? "bg-gray-900 border-amber-600 text-amber-200" : unread > 0 ? "bg-amber-950/80 border-amber-500 text-amber-300 hover:bg-amber-900/80" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+          className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${!pingsOpen && unread > 0 ? "uat-ping-flash" : ""} ${pingsOpen ? "bg-gray-900 border-amber-600 text-amber-200" : unread > 0 ? "bg-amber-950/80 border-amber-500 text-amber-300 hover:bg-amber-900/80" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
           title={pingsOpen ? "Close pings" : unread ? `${unread} unread ping${unread === 1 ? "" : "s"}` : "Pings: when someone @mentions you"}
         >
           <style>{`
             @keyframes uat-bell-ring { 0%,100% { transform: rotate(0) } 10% { transform: rotate(16deg) } 20% { transform: rotate(-14deg) } 30% { transform: rotate(11deg) } 40% { transform: rotate(-8deg) } 50% { transform: rotate(5deg) } 60% { transform: rotate(-2deg) } 70% { transform: rotate(0) } }
             @keyframes uat-bell-nudge { 0%,82%,100% { transform: rotate(0) } 85% { transform: rotate(14deg) } 88% { transform: rotate(-12deg) } 91% { transform: rotate(8deg) } 94% { transform: rotate(-5deg) } 97% { transform: rotate(2deg) } }
             .uat-bell-ring { animation: uat-bell-ring 0.9s ease-in-out 2; transform-origin: 50% 10%; }
+            @keyframes uat-ping-flash { 0%,100% { border-color: rgb(var(--gray-50)) } 50% { border-color: transparent } }
+            .uat-ping-flash { animation: uat-ping-flash 0.8s steps(1, end) infinite; }
             .uat-bell-nudge { animation: uat-bell-nudge 4s ease-in-out infinite; transform-origin: 50% 10%; }
-            @media (prefers-reduced-motion: reduce) { .uat-bell-ring, .uat-bell-nudge { animation: none; } }
+            @media (prefers-reduced-motion: reduce) { .uat-bell-ring, .uat-bell-nudge { animation: none; } .uat-ping-flash { animation: none; border-color: rgb(var(--gray-50)); } }
           `}</style>
           <Bell
             key={ringBurst}
             className={`w-4 h-4 ${!pingsOpen && unread > 0 ? (ringBurst > 0 ? "uat-bell-ring" : "uat-bell-nudge") : ""}`}
             onAnimationEnd={(r) => r.animationName === "uat-bell-ring" && setRingBurst(0)}
           />
+          <BarLabel show={pingsOpen || unread > 0}>Pings</BarLabel>
           {unread > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px]">
-              {!pingsOpen && <span className="absolute inset-0 bg-red-500 rounded-sm animate-ping opacity-60" />}
-              <span className="relative min-w-[18px] h-[18px] px-1 bg-red-600 text-white text-[10px] font-bold rounded-sm flex items-center justify-center">
+              {!pingsOpen && <span className="absolute inset-0 bg-gray-100 rounded-sm animate-ping opacity-40" />}
+              <span className="relative min-w-[18px] h-[18px] px-1 bg-gray-100 text-gray-950 text-[10px] font-bold rounded-sm flex items-center justify-center">
                 {unread > 99 ? "99+" : unread}
               </span>
             </span>
@@ -5966,14 +6038,16 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             onClick={() => {
               u(false);
               setPingsOpen(false);
+              setAboutOpen(false);
               setReadmeOpen(!readmeOpen);
               markReadmeSeen();
             }}
             aria-pressed={readmeOpen}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border rounded-sm shadow-lg transition-colors ${readmeOpen ? "bg-gray-900 border-amber-600 text-amber-200" : !readmeSeen ? "bg-emerald-600 border-emerald-500 text-white hover:bg-emerald-500" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            className={`group inline-flex items-center h-[34px] px-[9px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${readmeOpen ? "bg-gray-900 border-amber-600 text-amber-200" : !readmeSeen ? "bg-emerald-600 border-emerald-500 text-gray-950 hover:bg-emerald-500" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
             title={readmeOpen ? "Close the read me" : "Instructions for this test round"}
           >
-            <BookOpen className="w-3.5 h-3.5" /> Read me
+            <BookOpen className="w-4 h-4" />
+            <BarLabel show={readmeOpen || !readmeSeen}>Read me</BarLabel>
           </button>
         )}
         {hasFiles && (
@@ -5981,14 +6055,32 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             onClick={() => {
               setReadmeOpen(false);
               setPingsOpen(false);
+              setAboutOpen(false);
               if (i) close();
               else u(true);
             }}
             aria-pressed={i}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${i ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            className={`group inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${i ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
             title={i ? "Close the sample files" : "Sample files for these tests"}
           >
-            <Paperclip className="w-3.5 h-3.5" /> Sample files ({a.length})
+            <Paperclip className="w-4 h-4" />
+            <BarLabel show={i || !s}>Sample files ({a.length})</BarLabel>
+          </button>
+        )}
+        {testCases.length > 0 && (
+          <button
+            onClick={() => {
+              u(false);
+              setPingsOpen(false);
+              setReadmeOpen(false);
+              setAboutOpen(!aboutOpen);
+            }}
+            aria-pressed={aboutOpen}
+            className={`group inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${aboutOpen ? "border-gray-500 text-gray-100" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            title={aboutOpen ? "Close About" : "About this session: what it shows and what’s missing"}
+          >
+            <CircleHelp className="w-4 h-4" />
+            <BarLabel show={aboutOpen}>About</BarLabel>
           </button>
         )}
       </div>
@@ -6055,7 +6147,7 @@ function ReadmeEditor({ session: e }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">Read me for testers</div>
+        <div className="text-xs font-medium text-gray-400">Read me for testers</div>
         <div className="flex items-center gap-3 text-[11px]">
           <button type="button" onClick={() => b.current?.click()} className="text-gray-400 hover:text-gray-100">
             Load from sheet…
@@ -6109,7 +6201,7 @@ function ReadmeEditor({ session: e }) {
             type="button"
             onClick={_}
             disabled={i || t === null || r === t}
-            className="px-2.5 py-1 text-[11px] font-medium bg-gray-800 border border-gray-700 text-gray-200 rounded-sm hover:bg-gray-700 disabled:opacity-40"
+            className="px-2.5 py-1 text-[11px] font-medium bg-gray-950 border border-gray-800 text-gray-200 rounded-sm hover:bg-gray-700 disabled:opacity-40"
           >
             {i ? "Saving…" : "Save read me"}
           </button>
@@ -6322,7 +6414,7 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
                   }}
                   className={`border-2 border-dashed rounded-sm p-5 text-center cursor-pointer transition-colors ${C ? "border-emerald-500 bg-emerald-950/20" : "border-gray-700 hover:border-gray-600"}`}
                 >
-                  <Upload className="w-5 h-5 text-gray-500 mx-auto mb-1.5" />
+                  <Download className="w-5 h-5 text-gray-500 mx-auto mb-1.5" />
                   <div className="text-sm text-gray-300">
                     {S ? "Reading…" : b.length ? "Drop a different file to replace it" : "Drop the updated sheet here or click to choose"}
                   </div>
@@ -6380,7 +6472,7 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
                 )}
                 {A && (
                   <div className="space-y-2">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    <div className="text-xs font-medium text-gray-400">
                       What will change
                     </div>
                     {G === 0 && !A.hasChanges && (
@@ -6428,7 +6520,7 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
           {v ? (
             <button
               onClick={a}
-              className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500"
+              className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-gray-950 hover:bg-emerald-500"
             >
               Done
             </button>
@@ -6440,7 +6532,7 @@ alter table test_cases add column if not exists content_updated_at timestamptz;`
               <button
                 onClick={V}
                 disabled={(!(A && A.hasChanges) && !(resyncReadme && b.some((y) => y.readmeText))) || x || p}
-                className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
+                className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-gray-950 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
               >
                 {x ? "Updating…" : "Update session"}
               </button>
@@ -6582,18 +6674,18 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">
               Session name
             </label>
             <input
               type="text"
               value={r}
               onChange={(E) => o(E.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">
               Short name <span className="normal-case font-normal text-gray-500">(optional, for the browser tab)</span>
             </label>
             <input
@@ -6602,14 +6694,14 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               maxLength={24}
               onChange={(E) => setShortName(E.target.value)}
               placeholder={sessionShortName({ name: r })}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
             />
             <div className="text-[11px] text-gray-500 mt-1">
               Tabs will read “{shortName.trim() || sessionShortName({ name: r })} · Tester – {APP_NAME}”. Leave empty to use the first word of the session name.
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">
               Google Sheet link <span className="normal-case font-normal text-gray-500">(optional)</span>
             </label>
             <input
@@ -6617,7 +6709,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               value={sheetUrl}
               onChange={(E) => setSheetUrl(E.target.value)}
               placeholder="https://docs.google.com/spreadsheets/d/…"
-              className={`w-full px-3 py-2 bg-gray-800 border text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500 ${sheetUrlBad ? "border-red-600" : "border-gray-700"}`}
+              className={`w-full px-3 py-2 bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500 ${sheetUrlBad ? "border-red-600" : "border-gray-800"}`}
             />
             <div className={`text-[11px] mt-1 ${sheetUrlBad ? "text-red-400" : "text-gray-500"}`}>
               {sheetUrlBad
@@ -6626,7 +6718,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">
               Path chip prefix <span className="normal-case font-normal text-gray-500">(optional)</span>
             </label>
             <input
@@ -6637,15 +6729,15 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               autoCapitalize="off"
               autoComplete="off"
               spellCheck="false"
-              className={`w-full px-3 py-2 text-sm font-mono bg-gray-800 border text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:border-emerald-500 ${s.trim() ? "border-emerald-800" : "border-gray-700"}`}
+              className={`w-full px-3 py-2 text-sm font-mono bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:border-emerald-500 ${s.trim() ? "border-emerald-800" : "border-gray-800"}`}
             />
             <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-              Default for both portals. Testers and developers can still override this in their own Settings —
+              Default for both portals. Testers and developers can still override this in their own Options —
               their overrides take precedence.
             </div>
           </div>
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Access codes</div>
+            <div className="text-xs font-medium text-gray-400 mb-1.5">Access codes</div>
             <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
               {[
                 { label: "Testers", code: e.tester_code, on: testerReq, set: setTesterReq },
@@ -6673,14 +6765,14 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
             </div>
           </div>
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+            <div className="text-xs font-medium text-gray-400 mb-1.5">
               Testers <span className="normal-case font-normal text-gray-500">({v.length + i.length})</span>
             </div>
             {v.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {v.map((E) => (
                   <span
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-800 border border-gray-700 text-gray-300 rounded-sm text-xs"
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-xs"
                     key={E}
                   >
                     {E}
@@ -6719,19 +6811,19 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
                   }
                 }}
                 placeholder="Add a tester name"
-                className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
+                className="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
               />
               <button
                 onClick={C}
                 disabled={!p.trim()}
-                className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
+                className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-gray-950 rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
               >
                 Add
               </button>
             </div>
           </div>
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+            <div className="text-xs font-medium text-gray-400 mb-1.5">
               Developers{" "}
               <span className="normal-case font-normal text-gray-500">({k.length + d.length})</span>
             </div>
@@ -6739,7 +6831,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {k.map((E) => (
                   <span
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-800 border border-gray-700 text-gray-300 rounded-sm text-xs"
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-xs"
                     key={E}
                   >
                     {E}
@@ -6778,12 +6870,12 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
                   }
                 }}
                 placeholder="Add a developer name"
-                className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
+                className="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:border-emerald-500"
               />
               <button
                 onClick={m}
                 disabled={!b.trim()}
-                className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
+                className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-gray-950 rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
               >
                 Add
               </button>
@@ -6792,7 +6884,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
           <ReadmeEditor session={e} />
           <SampleFilesManager session={e} />
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Test cases</div>
+            <div className="text-xs font-medium text-gray-400 mb-1.5">Test cases</div>
             <button
               onClick={() => setResyncOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-sm transition-colors"
@@ -6846,7 +6938,7 @@ function EditSessionModal({ session: e, onClose: t, onSaved: a }) {
           <button
             onClick={se}
             disabled={!F}
-            className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-gray-950 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed"
           >
             {S ? "Saving…" : "Save"}
           </button>
@@ -7141,7 +7233,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
     }
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-indigo-950">
+    <div className="min-h-screen bg-gray-950">
       <header className="px-8 py-5 border-b border-gray-800 bg-gray-950/60 backdrop-blur sticky top-0 z-10">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <button
@@ -7155,7 +7247,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
       </header>
       <main className="max-w-3xl mx-auto px-8 py-10 space-y-7">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+          <label className="block text-xs font-medium text-gray-400 mb-1.5">
             Session name
           </label>
           <input
@@ -7163,12 +7255,12 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
             value={a}
             onChange={(P) => r(P.target.value)}
             placeholder="e.g. Q2 2026 UAT — Customisation Module"
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <label className="block text-xs font-medium text-gray-400">
               Test cases
             </label>
             <button
@@ -7204,7 +7296,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
             }}
             className="border-2 border-dashed border-gray-700 rounded-sm p-6 text-center cursor-pointer hover:border-gray-600 transition-colors"
           >
-            <Upload className="w-7 h-7 text-gray-500 mx-auto mb-2" />
+            <Download className="w-7 h-7 text-gray-500 mx-auto mb-2" />
             {l ? (
               <div className="text-sm">
                 <div className="text-emerald-300 font-medium">{o?.label || o?.name}</div>
@@ -7241,6 +7333,16 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
               xe([P]);
             }}
           />
+          {l && l.testCases.length > 0 && (
+            <div className="mt-3 p-3 border border-gray-800 rounded-sm bg-gray-900/60">
+              <ImportedDataSection
+                testCases={l.testCases}
+                parsed
+                heading="What this session will show"
+                fixHint="To add something that’s missing, add the column to the sheet and import it again before creating the session."
+              />
+            </div>
+          )}
           {(Q.length > 1 || Q.some((P) => P.skipped)) && (
             <div className="mt-2 border border-gray-800 rounded-sm divide-y divide-gray-800 overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2 bg-gray-900/60 text-[11px] text-gray-400">
@@ -7314,7 +7416,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
           )}
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+          <label className="block text-xs font-medium text-gray-400 mb-1.5">
             Testers{" "}
             {c.length > 0 && <span className="normal-case font-normal text-gray-500">({c.length})</span>}
           </label>
@@ -7334,7 +7436,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
                 }
               }}
               placeholder="Tester name"
-              className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
             <button
               onClick={$}
@@ -7357,7 +7459,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+          <label className="block text-xs font-medium text-gray-400 mb-1.5">
             Developers{" "}
             {h.length > 0 && <span className="normal-case font-normal text-gray-500">({h.length})</span>}
           </label>
@@ -7377,7 +7479,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
                 }
               }}
               placeholder="Developer name"
-              className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="flex-1 px-3 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
             <button
               onClick={H}
@@ -7405,7 +7507,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
         </div>
         <SampleFilesPicker files={sampleFiles} setFiles={setSampleFiles} />
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+          <label className="block text-xs font-medium text-gray-400 mb-1.5">
             Path chip prefix <span className="normal-case font-normal text-gray-500">(optional)</span>
           </label>
           <input
@@ -7416,7 +7518,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
             autoCapitalize="off"
             autoComplete="off"
             spellCheck="false"
-            className={`w-full px-3 py-1.5 text-sm font-mono bg-gray-800 border rounded-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${m ? "border-emerald-800" : "border-gray-700"}`}
+            className={`w-full px-3 py-1.5 text-sm font-mono bg-gray-950 border rounded-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${m ? "border-emerald-800" : "border-gray-800"}`}
           />
           <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
             {m ? (
@@ -7426,14 +7528,14 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
                 <span className="text-emerald-400 font-mono break-all">
                   {m.trim().replace(/\/+$/, "")}/escalations
                 </span>
-                . Testers and developers can override this in their own Settings.
+                . Testers and developers can override this in their own Options.
               </Fragment>
             ) : (
               <Fragment>
                 Leave blank to fall back to{" "}
                 <span className="font-mono text-gray-500">https://localhost:3000</span>. Path chips like{" "}
                 <span className="font-mono text-gray-400">/escalations</span> become clickable links to that
-                prefix. Testers and developers can override in their own Settings.
+                prefix. Testers and developers can override in their own Options.
               </Fragment>
             )}
           </div>
@@ -7447,7 +7549,7 @@ function CreateSessionWizard({ onCancel: e, onCreated: t }) {
           <button
             onClick={te}
             disabled={!K}
-            className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 bg-emerald-600 text-gray-950 text-sm font-bold rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
           >
             {w ? "Creating session…" : "Create session"}
           </button>
@@ -7467,7 +7569,7 @@ function NameChipList({ items: e, onRemove: t }) {
       <div className="flex flex-wrap gap-1.5">
         {e.map((a, r) => (
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-800 border border-gray-700 rounded-sm text-xs text-gray-200"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-950 border border-gray-800 rounded-sm text-xs text-gray-200"
             key={r}
           >
             {a}
@@ -7491,7 +7593,7 @@ function NameSuggestions({ suggestions: e, hiddenCount: t, onAdd: a, onHide: r, 
     return (
       <div className="mt-3">
         <div className="flex items-center justify-between mb-1.5">
-          <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
+          <div className="text-[10px] text-gray-500 font-semibold">
             From previous sessions
           </div>
           {t > 0 && (
@@ -7549,7 +7651,7 @@ function CodeSwitch({ on: e, onChange: t, label: a }) {
       onClick={() => t(!e)}
       className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-sm border transition-colors ${e ? "bg-emerald-600 border-emerald-500" : "bg-gray-800 border-gray-700"}`}
     >
-      <span className={`inline-block h-3.5 w-3.5 rounded-[1px] bg-white shadow transition-transform ${e ? "translate-x-[18px]" : "translate-x-[2px]"}`} />
+      <span className={`inline-block h-3.5 w-3.5 rounded-[1px] shadow transition-transform ${e ? "bg-gray-950 translate-x-[18px]" : "bg-white translate-x-[2px]"}`} />
     </button>
   );
 }
@@ -7557,7 +7659,7 @@ function CodeField({ label: e, value: t, onChange: a, onRegen: r, required: q = 
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">{e}</label>
+        <label className="block text-xs font-medium text-gray-400">{e}</label>
         {rq && (
           <span className="flex items-center gap-2 text-[11px] text-gray-500">
             {q ? "On" : "Off"}
@@ -7578,7 +7680,7 @@ function CodeField({ label: e, value: t, onChange: a, onRegen: r, required: q = 
           maxLength={4}
           value={t}
           onChange={(o) => a(o.target.value.replace(/\D/g, "").slice(0, 4))}
-          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 font-mono text-lg tracking-widest text-center rounded-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          className="flex-1 px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 font-mono text-lg tracking-widest text-center rounded-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
         <button
           onClick={r}
@@ -7595,7 +7697,7 @@ function CodeField({ label: e, value: t, onChange: a, onRegen: r, required: q = 
 function SessionCreatedScreen({ session: e, onDone: t }) {
   let a = sessionUrl(e.id);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-indigo-950">
+    <div className="min-h-screen bg-gray-950">
       <header className="px-8 py-5 border-b border-gray-800 bg-gray-950/60 backdrop-blur">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <button
@@ -7662,7 +7764,7 @@ function ShareLinksPanel({ url: e, testerCode: t, devCode: a, testerCodeOff: tOf
   };
   return (
     <div className="p-5 bg-gray-900/60 border border-gray-800 rounded-sm">
-      <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-3">
+      <div className="text-xs font-semibold text-emerald-400 mb-3">
         Shareable link
       </div>
       <div className="flex gap-2 mb-4">
@@ -7703,7 +7805,7 @@ function AccessCodeCard({ label: e, code: t, off: f, people: a, copied: r, onCop
   return (
     <div className="p-3 bg-gray-950 border border-gray-800 rounded-sm">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">{e}</div>
+        <div className="text-[10px] text-gray-400 font-semibold">{e}</div>
         <div className="text-[10px] text-gray-500">
           {a.length} {a.length === 1 ? "person" : "people"}
         </div>
@@ -7747,7 +7849,7 @@ function CopyUrlRow({ label: e, url: t }) {
   let [a, r] = useState(false);
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold w-24 flex-shrink-0">
+      <span className="text-[10px] text-gray-500 font-semibold w-24 flex-shrink-0">
         {e}
       </span>
       <input
@@ -7770,6 +7872,8 @@ function CopyUrlRow({ label: e, url: t }) {
     </div>
   );
 }
+// below this width the side panel becomes a slide-in drawer.
+var MOBILE_BREAKPOINT = 860;
 function useIsMobile(e = 768) {
   let [t, a] = useState(() => typeof window !== "undefined" && window.innerWidth < e);
   useEffect(() => {
@@ -7815,13 +7919,17 @@ function useBaseUrlState(e, t) {
 function useSidebarArrowNav(e, t, a) {
   useEffect(() => {
     let r = (o) => {
-      if (o.key !== "ArrowUp" && o.key !== "ArrowDown") {
+      // ↓ = next test, ↑ = previous.
+      let down = o.key === "ArrowDown";
+      let up = o.key === "ArrowUp";
+      if (!down && !up) {
         return;
       }
       let s = o.target?.tagName;
       if (
         s === "INPUT" ||
         s === "TEXTAREA" ||
+        s === "SELECT" ||
         o.target?.isContentEditable ||
         document.querySelector(".fixed.inset-0.z-50") ||
         e.length === 0
@@ -7832,8 +7940,8 @@ function useSidebarArrowNav(e, t, a) {
       let l = e.findIndex((u) => u.id === t);
       let i;
       if (l === -1) {
-        i = o.key === "ArrowDown" ? 0 : e.length - 1;
-      } else if (o.key === "ArrowDown") {
+        i = down ? 0 : e.length - 1;
+      } else if (down) {
         i = Math.min(l + 1, e.length - 1);
       } else {
         i = Math.max(l - 1, 0);
@@ -7859,12 +7967,12 @@ function useSidebarArrowNav(e, t, a) {
 }
 function DesktopOnlyNotice({ onContinueAnyway: e }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
       <div className="max-w-sm w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7 text-center">
         <div className="w-12 h-12 mx-auto mb-3 bg-emerald-900/40 border border-emerald-800 rounded-sm flex items-center justify-center">
           <Monitor className="w-6 h-6 text-emerald-300" />
         </div>
-        <div className="text-xs uppercase tracking-widest text-emerald-400 mb-2">UAT Collaborator</div>
+        <div className="text-xs text-emerald-400 mb-2">UAT Collaborator</div>
         <h2 className="text-lg font-bold text-gray-100 mb-2">Best on desktop</h2>
         <p className="text-sm text-gray-400 leading-relaxed">
           This portal is built for larger screens — running through steps, reviewing screenshots, and
@@ -7922,7 +8030,7 @@ function PortalPicker({ sessionId: e }) {
     return <TesterEntry sessionId={e} />;
   } else if (s === "dev") {
     return <DevEntry sessionId={e} />;
-  } else if (i && !u) {
+  } else if (false && i && !u) {
     return <DesktopOnlyNotice onContinueAnyway={() => d(true)} />;
   } else if (t === "loading") {
     return <Notice>Loading session…</Notice>;
@@ -7930,10 +8038,10 @@ function PortalPicker({ sessionId: e }) {
     return <Notice variant="error">Session not found. Check the link with the admin.</Notice>;
   } else {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
-            <div className="text-xs uppercase tracking-widest text-emerald-400 mb-1">UAT session</div>
+            <div className="text-xs text-emerald-400 mb-1">UAT session</div>
             <h1 className="text-2xl font-bold text-gray-100">{r.name}</h1>
           </div>
           <div className="bg-gray-900/70 border border-gray-800 rounded-sm p-5">
@@ -8045,7 +8153,8 @@ function TesterEntry({ sessionId: e }) {
     } catch {}
     navigateTo(sessionUrl(e));
   };
-  if (d && !c) {
+  // the portals work on phones, so no "Best on desktop" stop.
+  if (false && d && !c) {
     return <DesktopOnlyNotice onContinueAnyway={() => p(true)} />;
   }
   if (t === "loading") {
@@ -8078,7 +8187,7 @@ function TesterEntry({ sessionId: e }) {
 function Notice({ children: e, variant: t }) {
   let a = t === "error";
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
       <div
         className={`max-w-md text-center p-6 rounded-sm border flex flex-col items-center gap-3 ${a ? "border-red-800 bg-red-950/30 text-red-300" : "border-gray-800 bg-gray-900/60 text-gray-300"}`}
       >
@@ -8093,7 +8202,7 @@ function Notice({ children: e, variant: t }) {
 function AccessCodeGate({ label: e, sessionName: t, onSubmit: a, error: r, onBackToPicker: o }) {
   let [s, l] = useState("");
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
       <div className="max-w-sm w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7">
         {o && (
           <button
@@ -8103,7 +8212,7 @@ function AccessCodeGate({ label: e, sessionName: t, onSubmit: a, error: r, onBac
             <ArrowLeft className="w-3 h-3" /> Pick a different role
           </button>
         )}
-        <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-1">{e}</div>
+        <div className="text-xs text-emerald-400 font-semibold mb-1">{e}</div>
         <h2 className="text-lg font-bold text-gray-100 mb-1">{t}</h2>
         <p className="text-xs text-gray-500 mb-5">Enter the 4-digit code your admin shared.</p>
         <form
@@ -8121,13 +8230,13 @@ function AccessCodeGate({ label: e, sessionName: t, onSubmit: a, error: r, onBac
             value={s}
             onChange={(i) => l(i.target.value.replace(/\D/g, "").slice(0, 4))}
             placeholder="0000"
-            className="w-full px-3 py-3 bg-gray-800 border border-gray-700 text-gray-100 font-mono text-2xl tracking-widest text-center rounded-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-3 bg-gray-950 border border-gray-800 text-gray-100 font-mono text-2xl tracking-widest text-center rounded-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           {r && <div className="mt-2 text-xs text-red-400">{r}</div>}
           <button
             type="submit"
             disabled={s.length !== 4}
-            className="mt-4 w-full px-4 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
+            className="mt-4 w-full px-4 py-2.5 bg-emerald-600 text-gray-950 text-sm font-bold rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
           >
             Continue
           </button>
@@ -8151,7 +8260,7 @@ function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToP
     return () => window.removeEventListener("keydown", i);
   }, [s]);
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
       <div className="max-w-sm w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7">
         {!s && o && (
           <button
@@ -8161,7 +8270,7 @@ function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToP
             <ArrowLeft className="w-3 h-3" /> Pick a different role
           </button>
         )}
-        <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-1">{e}</div>
+        <div className="text-xs text-emerald-400 font-semibold mb-1">{e}</div>
         <h2 className="text-lg font-bold text-gray-100 mb-1">{t}</h2>
         {s ? (
           <Fragment>
@@ -8179,7 +8288,7 @@ function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToP
               <button
                 onClick={() => r(s)}
                 autoFocus={true}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-sm"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-gray-950 text-sm font-medium rounded-sm"
               >
                 Yes
               </button>
@@ -8238,9 +8347,9 @@ var TESTER_STATUSES = [
   },
   {
     value: "Needs Review",
-    label: "Needs Review",
-    dot: "bg-amber-500",
-    badge: "bg-amber-900/40 text-amber-300 border-amber-700",
+    label: "Needs review",
+    dot: "bg-yellow-500",
+    badge: "bg-yellow-900/40 text-yellow-300 border-yellow-700",
   },
 ];
 var PRIORITIES = ["P0", "P1", "P2"];
@@ -8413,7 +8522,7 @@ var findingsSchemaReady = async () => {
 var SCHEMA_UPDATE_MESSAGE =
   "This session needs a one-time database update before anyone can keep testing. Ask the admin to run the latest SQL update in Supabase, then reload this page.";
 // Spreadsheet-style tabs along the bottom of the tester and dev portals, one per tester.
-function TesterTabBar({ names, active, onSelect, me, stats }) {
+function TesterTabBar({ names, active, onSelect, me, stats, lockOthers = false, hints = null }) {
   let refs = useRef({});
   useEffect(() => {
     let el = refs.current[active];
@@ -8430,20 +8539,22 @@ function TesterTabBar({ names, active, onSelect, me, stats }) {
     }
   };
   if (names.length === 0) return null;
+  // Same height as the side panel’s bottom bar (45px incl. its top border) so the two line up.
   return (
-    <div className="flex-shrink-0 h-10 flex items-stretch bg-gray-900 border-t border-gray-800 select-none">
+    <div className="flex-shrink-0 h-[45px] flex items-stretch bg-gray-900 border-t border-gray-800 select-none text-[13px]">
       <div
-        className="flex items-center gap-1.5 pl-3 pr-3 text-[11px] text-gray-500 border-r border-gray-800 flex-shrink-0"
+        className="flex items-center gap-1.5 px-3 text-gray-500 border-r border-gray-800 flex-shrink-0"
         title="Each tester has their own results for every test"
       >
-        <Users className="w-3.5 h-3.5" />
+        <Users className="w-4 h-4" />
         <span className="hidden sm:inline">Testers</span>
       </div>
-      <div role="tablist" aria-label="Testers" onKeyDown={onKeyDown} className="flex-1 min-w-0 flex items-stretch overflow-x-auto px-1.5 gap-px">
+      <div role="tablist" aria-label="Testers" onKeyDown={onKeyDown} className="flex-1 min-w-0 flex items-stretch overflow-x-auto">
         {names.map((n) => {
           let on = n === active;
           let st = stats[n] || { done: 0, total: 0, issues: 0 };
           let isMe = me && n === me;
+          let ro = lockOthers && !isMe;
           return (
             <button
               key={n}
@@ -8452,34 +8563,42 @@ function TesterTabBar({ names, active, onSelect, me, stats }) {
               aria-selected={on}
               tabIndex={on ? 0 : -1}
               onClick={() => onSelect(n)}
-              title={`${n}${isMe ? " (you)" : ""}: ${st.done} of ${st.total} tested${st.issues ? `, ${st.issues} with issues` : ""}`}
-              className={`relative flex items-center gap-2 px-3 -mt-px whitespace-nowrap text-xs rounded-b-md border-x border-b transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500 ${
-                on
-                  ? "bg-gray-950 text-gray-100 border-gray-800 border-t-2 border-t-emerald-500"
-                  : "bg-transparent text-gray-400 border-transparent hover:text-gray-200 hover:bg-gray-800/60"
+              title={`${n}${isMe ? " (you)" : ""}: ${st.done} of ${st.total} tested${st.issues ? `, ${st.issues} with issues` : ""}${ro ? ". Read-only" : ""}`}
+              className={`relative flex items-center gap-1.5 px-3.5 -mt-px whitespace-nowrap border-r border-gray-800 border-t-2 transition-colors focus:outline-none focus-visible:bg-gray-800 ${
+                on ? "bg-gray-950 text-gray-100 border-t-gray-100 font-medium" : "border-t-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-800/60"
               }`}
             >
-              <span className={on ? "font-semibold" : ""}>{n}</span>
-              {isMe && (
-                <span className="text-[10px] px-1 rounded-sm bg-emerald-900/50 text-emerald-300 border border-emerald-800">
-                  You
-                </span>
-              )}
-              <span className="tabular-nums text-[11px] text-gray-500">
+              <span>{n}</span>
+              {isMe && <span className="text-gray-500 font-normal">(you)</span>}
+              <span className={`tabular-nums text-xs font-normal ${on ? "text-gray-300" : "text-gray-400"}`}>
                 {st.done}/{st.total}
               </span>
               {st.issues > 0 && (
                 <span
-                  className="min-w-[16px] h-4 px-1 rounded-sm bg-red-600 text-white text-[10px] font-bold tabular-nums flex items-center justify-center"
+                  className="min-w-[18px] h-[18px] px-1 rounded-sm bg-red-500 text-white text-[11px] font-bold tabular-nums flex items-center justify-center"
+                  title={`${st.issues} failed, blocked or needs review`}
                   aria-label={`${st.issues} with issues`}
                 >
                   {st.issues}
                 </span>
               )}
+              {ro && <Lock className="w-3.5 h-3.5 text-gray-500" />}
             </button>
           );
         })}
       </div>
+      {hints && (
+        <div className="hidden lg:flex items-center gap-3 px-3.5 text-xs text-gray-500 whitespace-nowrap">
+          {hints.map((hn, idx) => (
+            <span key={idx} className="flex items-center gap-1">
+              {hn.keys.map((k) => (
+                <KeyHint k={k} key={k} />
+              ))}
+              <span className="ml-0.5">{hn.label}</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -8505,7 +8624,10 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   let [f, w] = useState("All");
   // Everyone runs every test now, so the CSV's tester assignment is an optional "Suggested" filter.
   let [T, A] = useState("all");
-  let [j, M] = useState(true);
+  let [j, M] = useState((() => !(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT)));
+  let [listGrouped, setListGrouped] = useListGrouped();
+  let devStepNotes = useDevStepNotes(e.id);
+  let isNarrow = useIsMobile(MOBILE_BREAKPOINT);
   usePortalTabTitle(e, "Tester");
   useOpenLinkedTest(r, testerTabNames(e.testers, allF), g, setViewTab);
   useSearchShortcut(() => M(true), () => m(true), () => {
@@ -8940,7 +9062,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
       return false;
     }
     let Q = s[N.id]?.status || "Not Tested";
-    if (f !== "All" && Q !== f) {
+    if (f !== "All" && f !== "__retest" && Q !== f) {
       return false;
     }
     if (filterPriority !== "All" && (N.priority || "") !== filterPriority) {
@@ -8985,6 +9107,9 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     }
   });
   let P = r.find((N) => N.id === x);
+  // "Ready to retest" filter, and the list follows the side panel's module groups.
+  if (f === "__retest") H = H.filter((N) => K.has(N.id));
+  if (listGrouped && !sameModuleForAll(r)) H = sortByModuleGroups(H);
   useSidebarArrowNav(H, x, g);
   let X = P ? s[P.id] : null;
   let ve = r.filter((N) => {
@@ -9045,6 +9170,8 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
       <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
       <div className="flex-1 min-h-0 flex">
         <TesterSidebar
+          listGrouped={listGrouped}
+          setListGrouped={setListGrouped}
           open={j}
           onClose={() => M(false)}
           sessionName={e.name}
@@ -9081,13 +9208,15 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           hasBaseUrlOverride={S}
           resetBaseUrl={I}
         />
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col relative" data-side-closed={!j && !isNarrow ? "" : undefined}>
+          {/* On phones the "Show test list" button joins the floating Pings / Read me row, at its left end. */}
           {!j && (
             <button
               onClick={() => M(true)}
-              className="absolute top-3 left-3 z-20 p-2 bg-gray-900 border border-gray-800 rounded-sm hover:bg-gray-800"
+              className={`flex items-center justify-center bg-gray-900 border rounded-sm text-gray-400 hover:text-gray-100 ${isNarrow ? "fixed bottom-14 left-4 z-30 w-9 h-[34px] border-gray-700 shadow-lg" : "absolute top-3.5 left-3 z-20 w-8 h-8 border-gray-800 hover:border-gray-700"}`}
+              title="Show test list"
             >
-              <PanelLeftOpen className="w-4 h-4 text-gray-400" />
+              <PanelLeftOpen className="w-4 h-4" />
             </button>
           )}
           {P ? (
@@ -9098,6 +9227,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
               viewName={viewTab}
               onBackToMine={() => setViewTab(t)}
               devMarks={i[P.id] || []}
+              devStepNotes={devStepNotes.forTest(P.id)}
               isSaving={!readOnly && ne.has(P.id)}
               isUploading={ie.has(P.id)}
               screenshotErrors={pe[P.id] || null}
@@ -9111,6 +9241,18 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
               No test case selected.
             </div>
           )}
+          <TesterTabBar
+            names={tabNames}
+            active={viewTab}
+            onSelect={setViewTab}
+            me={t}
+            stats={tabStats}
+            lockOthers={true}
+            hints={[
+              { keys: ["P", "F", "B", "R"], label: "status" },
+              { keys: ["↑", "↓"], label: "previous / next" },
+            ]}
+          />
         </div>
         <FocusModeModal
           open={F}
@@ -9139,11 +9281,319 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           }}
         />
       </div>
-      <TesterTabBar names={tabNames} active={viewTab} onSelect={setViewTab} me={t} stats={tabStats} />
       </div>
     </TestLinkContext.Provider>
     </PeopleContext.Provider>
     </BaseUrlContext.Provider>
+  );
+}
+// ── shared side panel pieces ──────────────────────────────────────
+// Tests are grouped by module (in the order each module first appears). The
+// keyboard navigation uses the same order, so ↓/J always goes to the row below.
+// Grouped by module (default) or a plain list in sheet order. Remembered on this device.
+// Developer notes on individual steps (table: dev_step_notes, see create-dev-step-notes.sql).
+// Loaded per session and kept live; if the table doesn't exist yet the feature simply stays hidden.
+function useDevStepNotes(sessionId) {
+  let [rows, setRows] = useState([]);
+  let [ok, setOk] = useState(false);
+  let timers = useRef({});
+  let keyOf = (r) => `${r.test_case_id}|${r.developer_name}|${r.step_key}`;
+  useEffect(() => {
+    if (!supabase || !sessionId) return;
+    let live = true;
+    supabase
+      .from("dev_step_notes")
+      .select("*")
+      .eq("session_id", sessionId)
+      .then(({ data, error }) => {
+        if (!live) return;
+        if (error) {
+          console.warn("Developer step notes unavailable (run create-dev-step-notes.sql):", error.message);
+          setOk(false);
+          return;
+        }
+        setOk(true);
+        setRows(data || []);
+      });
+    let ch = supabase
+      .channel(`dev-step-notes-${sessionId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "dev_step_notes", filter: `session_id=eq.${sessionId}` }, (pl) => {
+        setRows((rs) => {
+          if (pl.eventType === "DELETE") return rs.filter((r) => keyOf(r) !== keyOf(pl.old || {}));
+          return [...rs.filter((r) => keyOf(r) !== keyOf(pl.new)), pl.new];
+        });
+      })
+      .subscribe();
+    return () => {
+      live = false;
+      supabase.removeChannel(ch);
+    };
+  }, [sessionId]);
+  let save = (testId, dev, key, note) => {
+    let row = { session_id: sessionId, test_case_id: testId, developer_name: dev, step_key: String(key), note, updated_at: new Date().toISOString() };
+    let k = keyOf(row);
+    setRows((rs) => {
+      let rest = rs.filter((r) => keyOf(r) !== k);
+      return note.trim() ? [...rest, row] : rest;
+    });
+    clearTimeout(timers.current[k]);
+    timers.current[k] = setTimeout(async () => {
+      let { error } = note.trim()
+        ? await supabase.from("dev_step_notes").upsert(row, { onConflict: "test_case_id,developer_name,step_key" })
+        : await supabase.from("dev_step_notes").delete().eq("test_case_id", testId).eq("developer_name", dev).eq("step_key", String(key));
+      if (error) console.error("Saving developer step note failed:", error);
+    }, 600);
+  };
+  let forTest = (testId) => rows.filter((r) => r.test_case_id === testId);
+  return { ok, forTest, save };
+}
+// Side panel width: drag its right edge between 340px and 540px. Shared by both portals, saved on this device.
+var SIDEBAR_MIN = 340;
+var SIDEBAR_MAX = 540;
+function useSidebarWidth() {
+  let [w, setW] = useState(() => {
+    try {
+      let v = parseInt(localStorage.getItem("uat-pro-sidebar-width"), 10);
+      return v >= SIDEBAR_MIN && v <= SIDEBAR_MAX ? v : SIDEBAR_MIN;
+    } catch {
+      return SIDEBAR_MIN;
+    }
+  });
+  let set = (v) => {
+    let c = Math.round(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, v)));
+    setW(c);
+    try {
+      localStorage.setItem("uat-pro-sidebar-width", String(c));
+    } catch {}
+  };
+  return [w, set];
+}
+function SidebarResizeHandle({ width, setWidth }) {
+  let [drag, setDrag] = useState(false);
+  let start = (ev) => {
+    ev.preventDefault();
+    let x0 = ev.clientX;
+    let w0 = width;
+    setDrag(true);
+    let move = (e2) => setWidth(w0 + (e2.clientX - x0));
+    let up = () => {
+      setDrag(false);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize test list"
+      aria-valuemin={SIDEBAR_MIN}
+      aria-valuemax={SIDEBAR_MAX}
+      aria-valuenow={width}
+      tabIndex={0}
+      onPointerDown={start}
+      onDoubleClick={() => setWidth(SIDEBAR_MIN)}
+      onKeyDown={(ev) => {
+        if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
+          ev.preventDefault();
+          ev.stopPropagation();
+          setWidth(width + (ev.key === "ArrowRight" ? 20 : -20));
+        }
+      }}
+      title="Drag to resize · double-click to reset"
+      className="group absolute top-0 bottom-0 -right-1 w-2 z-20 cursor-col-resize focus:outline-none"
+    >
+      <span
+        className={`absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 transition-colors ${drag ? "bg-gray-400" : "bg-transparent group-hover:bg-gray-600 group-focus-visible:bg-gray-400"}`}
+      />
+    </div>
+  );
+}
+// Plain list in sheet order (default) or grouped by module. Remembered on this device.
+function useListGrouped() {
+  let [g, setG] = useState(() => {
+    try {
+      return localStorage.getItem("uat-pro-list-grouped") === "1";
+    } catch {
+      return false;
+    }
+  });
+  let set = (v) => {
+    setG(v);
+    try {
+      localStorage.setItem("uat-pro-list-grouped", v ? "1" : "0");
+    } catch {}
+  };
+  return [g, set];
+}
+var groupByModule = (list) => {
+  let order = [];
+  let map = {};
+  (list || []).forEach((t) => {
+    let m = String(t.module || "").trim() || "Other";
+    if (!map[m]) {
+      map[m] = [];
+      order.push(m);
+    }
+    map[m].push(t);
+  });
+  return order.map((m) => ({ module: m, items: map[m] }));
+};
+var sortByModuleGroups = (list) => groupByModule(list).flatMap((g) => g.items);
+// Short label for a person in the mini badges: the first two letters of their name ("Sitong" → "Si").
+var nameInitials = (n) => {
+  let t = String(n || "").trim().replace(/\s+/g, "");
+  return t ? t.charAt(0).toUpperCase() + t.charAt(1).toLowerCase() : "";
+};
+// Show the full test title as a tooltip, but only when the row truncates it.
+var truncatedTitleTip = (ev) => {
+  let row = ev.currentTarget;
+  let el = row.querySelector("[data-ttl]");
+  if (!el) return;
+  // data-tip (not title) so only the app's tooltip appears, never the browser's.
+  if (el.scrollWidth > el.clientWidth + 1) row.setAttribute("data-tip", el.getAttribute("data-ttl"));
+  else row.removeAttribute("data-tip");
+};
+function StatusDot({ status }) {
+  let st = status || "Not Tested";
+  let cfg = getTesterStatus(st);
+  return (
+    <span
+      title={cfg.label}
+      className={`w-2 h-2 rounded-full flex-shrink-0 ${st === "Not Tested" ? "border-[1.5px] border-gray-500" : cfg.dot}`}
+    />
+  );
+}
+function StatusSplitBar({ counts }) {
+  let segs = [
+    ["Pass", "bg-green-500"],
+    ["Fail", "bg-red-500"],
+    ["Blocked", "bg-orange-500"],
+    ["Needs Review", "bg-yellow-500"],
+  ];
+  return (
+    <div className="flex h-1.5 gap-0.5 rounded-full overflow-hidden bg-gray-800">
+      {segs.map(([k, c]) => (counts[k] ? <div key={k} className={c} style={{ flex: counts[k] }} /> : null))}
+      {counts["Not Tested"] ? <div style={{ flex: counts["Not Tested"] }} /> : null}
+    </div>
+  );
+}
+function SidebarIconButton({ active, onClick, title, children }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      aria-pressed={!!active}
+      className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-sm border transition-colors ${active ? "bg-gray-800 border-gray-500 text-gray-100" : "bg-gray-950 border-gray-800 text-gray-400 hover:text-gray-100 hover:border-gray-700"}`}
+    >
+      {children}
+    </button>
+  );
+}
+function ModuleGroupedList({ items, allTests, statusOf, selectedId, renderRow, grouped = true }) {
+  let [collapsed, setCollapsed] = useState({});
+  if (!grouped || sameModuleForAll(allTests)) {
+    return <div className="p-1.5 flex flex-col gap-px">{items.map(renderRow)}</div>;
+  }
+  let sel = (allTests || []).find((t) => t.id === selectedId);
+  let selModule = sel ? String(sel.module || "").trim() || "Other" : null;
+  return (
+    <div className="p-1.5 flex flex-col gap-px">
+      {groupByModule(items).map((g) => {
+        // The group holding the selected test always stays open.
+        let closed = collapsed[g.module] && g.module !== selModule;
+        let all = (allTests || []).filter((t) => (String(t.module || "").trim() || "Other") === g.module);
+        let done = all.filter((t) => (statusOf(t) || "Not Tested") !== "Not Tested").length;
+        return (
+          <Fragment key={g.module}>
+            <button
+              onClick={() => setCollapsed((c) => ({ ...c, [g.module]: !closed }))}
+              aria-expanded={!closed}
+              className="w-full flex items-center gap-1 px-1.5 pt-2.5 pb-1 text-xs text-gray-400 hover:text-gray-200 rounded-sm text-left"
+            >
+              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${closed ? "" : "rotate-90"}`} />
+              <span className="truncate">{g.module}</span>
+              <span className="ml-auto tabular-nums text-gray-500">
+                {done}/{all.length}
+              </span>
+            </button>
+            {!closed && g.items.map(renderRow)}
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+// Shown under a filtered test list: how many are showing, and one click to clear every filter.
+function ShowAllFooter({ shown, total, onShowAll }) {
+  return (
+    <div className="mx-1.5 mt-1 mb-4 pt-3 border-t border-gray-800 flex items-center justify-between gap-2 px-1.5 text-xs">
+      <span className="text-gray-500">
+        Showing {shown} of {total}
+      </span>
+      <button
+        onClick={onShowAll}
+        className="h-7 px-2.5 rounded-sm border border-gray-700 text-gray-200 hover:bg-gray-800 hover:border-gray-600"
+        title="Clear the filters, search and focus"
+      >
+        Show all
+      </button>
+    </div>
+  );
+}
+function SidebarFooter({ name, role, onSettings, grouped, onToggleGrouped }) {
+  return (
+    <div className="border-t border-gray-800 pl-3 pr-2 py-2 flex items-center gap-2 text-sm">
+      <span className="text-gray-300 truncate">{name}</span>
+      <span
+        className="flex-shrink-0 text-[10.5px] font-semibold px-1.5 py-px rounded-sm border border-gray-700 text-gray-100"
+        title={
+          role === "Tester"
+            ? "You’re in the tester portal: record results for your tests"
+            : "You’re in the developer portal: review results and mark fixes"
+        }
+      >
+        {role}
+      </span>
+      <span className="flex-1" />
+      {onToggleGrouped && (
+        <button
+          onClick={() => onToggleGrouped(!grouped)}
+          className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100"
+          title={grouped ? "Grouped by module · Switch to a plain list in sheet order" : "Plain list in sheet order · Switch to grouping by module"}
+          aria-label={grouped ? "Show as a plain list" : "Group by module"}
+        >
+          {grouped ? <LayoutList className="w-4 h-4" /> : <List className="w-4 h-4" />}
+        </button>
+      )}
+      <button
+        onClick={onSettings}
+        className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100"
+        title="Options"
+        aria-label="Options"
+      >
+        <SlidersHorizontal className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+function FocusChip({ count, total, onClear }) {
+  return (
+    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-800/60 border border-gray-700 rounded-sm text-xs">
+      <Filter className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+      <span className="text-gray-200">
+        Focused: {count} of {total}
+      </span>
+      <button onClick={onClear} className="ml-auto text-gray-400 hover:text-gray-100 transition-colors" title="Clear focus filter">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
   );
 }
 function TesterSidebar({
@@ -9182,317 +9632,627 @@ function TesterSidebar({
   setBaseUrl: A,
   hasBaseUrlOverride: j,
   resetBaseUrl: M,
+  listGrouped = true,
+  setListGrouped = () => {},
 }) {
   let [W, V] = useState(false);
   let [F, se] = useState(false);
   let [E, D] = useState(false);
+  let mobile = useIsMobile(MOBILE_BREAKPOINT);
+  let [sideW, setSideW] = useSidebarWidth();
   let priorityOptions = sortPriorities(Array.from(new Set(l.map((O) => O.priority).filter(Boolean))));
   let focusOptions = Array.from(new Set(l.map((O) => O.focus).filter(Boolean))).sort((O, B) => O.localeCompare(B));
   let hasNoPriority = priorityOptions.length > 0 && l.some((O) => !O.priority);
   let hasNoFocus = focusOptions.length > 0 && l.some((O) => !O.focus);
-  if (e) {
+  if (!e && !mobile) {
+    return null;
+  }
+  let counts = {};
+  l.forEach((O) => {
+    let st = i[O.id]?.status || "Not Tested";
+    counts[st] = (counts[st] || 0) + 1;
+  });
+  let failed = counts.Fail || 0;
+  let suggestedCount = l.filter((O) => !O.initial_tester || O.initial_tester === vn).length;
+  let retestCount = vn === r && c ? c.size : 0;
+  let renderRow = (O) => {
+    let B = i[O.id];
+    let ne = B?.status || "Not Tested";
+    let ie = O.id === h;
+    let ue = c && c.has(O.id);
+    let pe = (p && p[O.id]) || [];
+    let pend = !ue && fixPendingIds.has(O.id);
+    let upd = sheetUpdateUnseen(O, B);
     return (
-      <aside className="w-[360px] flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-800">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <button onClick={t} className="p-1 hover:bg-gray-800 rounded-sm flex-shrink-0" title="Collapse">
-                <PanelLeftClose className="w-4 h-4 text-gray-400" />
-              </button>
-              <h2 className="font-bold text-gray-100 truncate">{a}</h2>
-            </div>
-            <button
-              onClick={() => D(true)}
-              className="p-1 hover:bg-gray-800 rounded-sm flex-shrink-0"
-              title="Settings"
-            >
-              <Settings2 className="w-4 h-4 text-gray-400" />
-            </button>
+      <button
+        data-tc-id={O.id}
+        key={O.id}
+        onClick={() => { b(O.id); if (mobile) t(); }}
+        onMouseOver={truncatedTitleTip}
+        className={`w-full flex items-center gap-2 px-2 py-1.5 min-h-[32px] rounded-sm text-left transition-colors ${ie ? "bg-gray-800" : "hover:bg-gray-800/50"}`}
+      >
+        <StatusDot status={ne} />
+        <span className="font-mono text-[11px] text-gray-500 flex-shrink-0">{O.test_id || "—"}</span>
+        <span
+          data-ttl={O.title || "Untitled"}
+          className={`flex-1 min-w-0 truncate text-[13px] ${ie ? "text-gray-100 font-medium" : "text-gray-400"}`}
+        >
+          {O.title || "Untitled"}
+        </span>
+        {O.priority && (
+          <span className="font-mono text-[10px] text-gray-500 flex-shrink-0" title={`Priority: ${O.priority}`}>
+            {O.priority}
+          </span>
+        )}
+        {upd && (
+          <span
+            className="flex-shrink-0 text-gray-400"
+            title="Steps or expected results changed in the sheet since you last worked on this test"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </span>
+        )}
+        {ue && (
+          <span className="flex-shrink-0 text-sky-400" title="A dev marked this fixed after your last edit — re-test when you can.">
+            <RefreshCw className="w-4 h-4" />
+          </span>
+        )}
+        {pend && (
+          <span
+            className="flex-shrink-0 text-gray-500"
+            title="A developer has fixed this, but it isn’t on the test site yet. No need to re-test for now."
+          >
+            <Clock className="w-3.5 h-3.5" />
+          </span>
+        )}
+        {pe.length > 0 && (
+          <span
+            className="flex-shrink-0 text-[10px] font-medium px-1 py-0.5 rounded-sm bg-wip-600/20 text-wip-300"
+            title={pe.length > 1 ? `In progress: ${pe.join(", ")}` : `${pe[0]} is working on a fix`}
+          >
+            {pe.map(nameInitials).join(" ")}
+          </span>
+        )}
+      </button>
+    );
+  };
+  return (
+    <Fragment>
+    {mobile && (
+      <div
+        className={`fixed inset-0 z-30 bg-black/50 transition-opacity duration-300 ${e ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={t}
+        aria-hidden="true"
+      />
+    )}
+    <aside
+      className={`bg-gray-900 border-r border-gray-800 flex flex-col ${mobile ? `overflow-hidden fixed inset-y-0 left-0 z-40 w-[min(320px,88vw)] shadow-2xl transition-transform duration-300 ease-out ${e ? "translate-x-0" : "-translate-x-[calc(100%+48px)]"}` : "relative flex-shrink-0"}`}
+      style={mobile ? undefined : { width: sideW }}
+      aria-hidden={mobile && !e ? true : undefined}
+    >
+      {!mobile && <SidebarResizeHandle width={sideW} setWidth={setSideW} />}
+      <div className="px-3 pt-3 pb-3 border-b border-gray-800 flex flex-col gap-2.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <button
+            onClick={t}
+            className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100 flex-shrink-0"
+            title="Collapse"
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </button>
+          <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-gray-100">{a}</h2>
+        </div>
+        <div
+          title={`${counts.Pass || 0} pass · ${failed} fail · ${counts.Blocked || 0} blocked · ${counts["Needs Review"] || 0} needs review · ${counts["Not Tested"] || 0} not tested`}
+        >
+          <StatusSplitBar counts={counts} />
+          <div className="flex items-center justify-between text-xs text-gray-400 mt-1.5">
+            <span>
+              {vn !== r && <span className="text-gray-200">{vn}: </span>}
+              {u} of {l.length} tested
+            </span>
+            {failed > 0 && <span className="text-red-400">{failed} failed</span>}
           </div>
-          <div className="text-xs text-gray-400 mb-2">
-            Signed in as <span className="text-gray-100 font-medium">{r}</span> <span className="text-gray-500">(Tester)</span>
-          </div>
-          <div className="text-xs text-gray-500 mb-1">
-            {vn !== r && <span className="text-gray-300">{vn}: </span>}
-            {u} / {l.length} done
-          </div>
-          <div className="w-full bg-gray-800 rounded-full h-1 mb-3">
-            <div
-              className="bg-emerald-500 h-1 rounded-full transition-all"
-              style={{
-                width: `${l.length ? (u / l.length) * 100 : 0}%`,
-              }}
-            />
-          </div>
-          {/* Only show the All tests / Suggested switch when the sheet's Tester column actually narrows the list. */}
-          {l.filter((O) => !O.initial_tester || O.initial_tester === vn).length < l.length && (
-          <div className="inline-flex w-full border border-gray-700 rounded-sm overflow-hidden mb-2">
-            <button
-              onClick={() => C("all")}
-              className={`flex-1 px-2 py-1 text-xs transition-colors ${k === "all" ? "bg-emerald-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-800"}`}
-            >
-              All tests <span className="tabular-nums opacity-60">({l.length})</span>
-            </button>
+        </div>
+        {/* Only show the Suggested / All switch when the sheet's Tester column actually narrows the list. */}
+        {suggestedCount < l.length && (
+          <div className="flex bg-gray-800 p-0.5 rounded-sm text-xs" role="group" aria-label="Scope">
             <button
               onClick={() => C("mine")}
-              title={`Tests the sheet's Tester column suggests for ${vn === r ? "you" : vn}`}
-              className={`flex-1 px-2 py-1 text-xs transition-colors border-l border-gray-700 ${k === "mine" ? "bg-emerald-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-800"}`}
+              aria-pressed={k === "mine"}
+              title={`Tests the sheet’s Tester column suggests for ${vn === r ? "you" : vn}`}
+              className={`flex-1 py-1 rounded-sm transition-colors ${k === "mine" ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-400 hover:text-gray-200"}`}
             >
-              Suggested{" "}
-              <span className="tabular-nums opacity-60">
-                ({l.filter((O) => !O.initial_tester || O.initial_tester === vn).length})
-              </span>
+              Suggested <span className="tabular-nums opacity-60">{suggestedCount}</span>
+            </button>
+            <button
+              onClick={() => C("all")}
+              aria-pressed={k === "all"}
+              title="Every test in this session"
+              className={`flex-1 py-1 rounded-sm transition-colors ${k === "all" ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-400 hover:text-gray-200"}`}
+            >
+              All <span className="tabular-nums opacity-60">{l.length}</span>
             </button>
           </div>
-          )}
-          {I ? (
-            <SidebarSearch value={_} onChange={S} onClose={() => x(false)} className="mb-2" />
-          ) : (
-          <div className="flex gap-1.5 mb-2">
-            <button
-              onClick={() => {
-                let O = !I;
-                x(O);
-                if (!O) {
-                  S("");
-                }
-              }}
-              className={`flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${I || _ ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
+        )}
+        {I ? (
+          <SidebarSearch value={_} onChange={S} onClose={() => x(false)} />
+        ) : (
+          <div className="flex gap-1.5">
+            <SidebarIconButton
+              active={!!_}
+              onClick={() => x(true)}
               title={`Search test cases (${SEARCH_SHORTCUT_LABEL})`}
             >
-              <Search className="w-3.5 h-3.5" />
-            </button>
-            <button
+              <Search className="w-4 h-4" />
+            </SidebarIconButton>
+            <SidebarIconButton
+              active={!!m}
               onClick={w}
-              className={`flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${m ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
               title={m ? `Focus filter active (${m.size} tests)` : "Focus on a subset of tests"}
             >
-              <Filter className="w-3.5 h-3.5" />
-            </button>
-            <select
-              value={g}
-              onChange={(O) => v(O.target.value)}
-              className="flex-1 min-w-0 px-2 py-1.5 text-xs bg-gray-800 border border-gray-700 text-gray-100 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 appearance-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%239ca3af' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 8px center",
-                paddingRight: "28px",
-              }}
-            >
+              <Filter className="w-4 h-4" />
+            </SidebarIconButton>
+            <FilterSelect value={g} onChange={v} active={g !== "All"}>
               <option value="All">All statuses</option>
               {TESTER_STATUSES.map((O) => (
                 <option value={O.value} key={O.value}>
                   {O.label}
                 </option>
               ))}
-            </select>
+              {vn === r && <option value="__retest">Ready to retest</option>}
+            </FilterSelect>
           </div>
+        )}
+        {(priorityOptions.length > 0 || focusOptions.length > 0) && (
+          <div className="flex gap-1.5">
+            {priorityOptions.length > 0 && (
+              <FilterSelect value={fp} onChange={setFp} active={fp !== "All"}>
+                <option value="All">All priorities</option>
+                {priorityOptions.map((O) => (
+                  <option value={O} key={O}>
+                    {O} ({l.filter((B) => B.priority === O).length})
+                  </option>
+                ))}
+                {hasNoPriority && <option value="">No priority</option>}
+              </FilterSelect>
+            )}
+            {focusOptions.length > 0 && (
+              <FilterSelect value={ff} onChange={setFf} active={ff !== "All"}>
+                <option value="All">All focus areas</option>
+                {focusOptions.map((O) => (
+                  <option value={O} key={O}>
+                    {O} ({l.filter((B) => B.focus === O).length})
+                  </option>
+                ))}
+                {hasNoFocus && <option value="">No focus area</option>}
+              </FilterSelect>
+            )}
+          </div>
+        )}
+        {m && <FocusChip count={m.size} total={l.length} onClear={f} />}
+        {retestCount > 0 && (
+          <button
+            onClick={() => v(g === "__retest" ? "All" : "__retest")}
+            className="self-start flex items-center gap-1.5 text-xs text-sky-300 hover:underline"
+            title={g === "__retest" ? "Click again to show all tests" : "Show only tests a dev fixed after your last edit"}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            {retestCount} ready to retest
+            {g === "__retest" ? " · showing" : ""}
+          </button>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {d.length === 0 ? (
+          <EmptyState
+            hasAnyTests={l.length > 0}
+            suggestions={[
+              k === "mine" &&
+                l.length > 0 && {
+                  label: "Show all tests instead",
+                  onClick: () => C("all"),
+                },
+              m && {
+                label: "Clear focus",
+                onClick: f,
+              },
+              g !== "All" && {
+                label: "Clear status filter",
+                onClick: () => v("All"),
+              },
+              fp !== "All" && {
+                label: "Clear priority filter",
+                onClick: () => setFp("All"),
+              },
+              ff !== "All" && {
+                label: "Clear focus area filter",
+                onClick: () => setFf("All"),
+              },
+              _ && {
+                label: "Clear search",
+                onClick: () => S(""),
+              },
+            ]}
+          />
+        ) : (
+          <ModuleGroupedList
+            items={d}
+            allTests={l}
+            statusOf={(O) => i[O.id]?.status}
+            selectedId={h}
+            renderRow={renderRow}
+            grouped={listGrouped}
+          />
+        )}
+        {d.length > 0 && (g !== "All" || fp !== "All" || ff !== "All" || _ || m) && (
+          <ShowAllFooter
+            shown={d.length}
+            total={k === "mine" ? l.filter((O) => !O.initial_tester || O.initial_tester === vn).length : l.length}
+            onShowAll={() => {
+              v("All");
+              setFp("All");
+              setFf("All");
+              S("");
+              x(false);
+              if (m) f();
+            }}
+          />
+        )}
+      </div>
+      <SidebarFooter name={r} role="Tester" onSettings={() => D(true)} grouped={listGrouped} onToggleGrouped={sameModuleForAll(l) ? null : setListGrouped} />
+      {E && (
+        <SettingsModal
+          baseUrl={T}
+          setBaseUrl={A}
+          hasBaseUrlOverride={j}
+          resetBaseUrl={M}
+          myName={r}
+          roleLabel="Signed in"
+          onSwitchRequested={() => V(true)}
+          onResetRequested={s ? () => se(true) : undefined}
+          resetDescription="Delete every status, severity, note, observation, step check, recording, and screenshot in your own tab. Other testers' tabs are not affected."
+          onClose={() => D(false)}
+          testCases={l}
+        />
+      )}
+      {W && (
+        <ConfirmDialog
+          title="Switch user?"
+          message="You'll be returned to the role picker and signed out. Your saved progress for this session isn't affected."
+          confirmLabel="Switch"
+          onConfirm={() => {
+            V(false);
+            o();
+          }}
+          onCancel={() => V(false)}
+        />
+      )}
+      {F && (
+        <ConfirmDialog
+          title="Reset all your inputs?"
+          message="Every status, severity, note, observation, step check, recording, and screenshot you've logged in this session will be permanently deleted. This action cannot be undone."
+          confirmLabel="Reset everything"
+          danger={true}
+          onConfirm={() => {
+            se(false);
+            s();
+          }}
+          onCancel={() => se(false)}
+        />
+      )}
+    </aside>
+    </Fragment>
+  );
+}
+// ── test detail building blocks ──────────────────────────────────
+var STATUS_UI = {
+  Pass: { key: "P", icon: CircleCheck, on: "bg-green-600 border-green-600 text-white", ic: "text-green-400" },
+  Fail: { key: "F", icon: CircleX, on: "bg-red-500 border-red-500 text-white", ic: "text-red-400" },
+  Blocked: { key: "B", icon: CircleAlert, on: "bg-orange-500 border-orange-500 text-gray-950", ic: "text-orange-400" },
+  "Needs Review": { key: "R", icon: CircleHelp, on: "bg-yellow-500 border-yellow-500 text-white", ic: "text-yellow-400" },
+};
+var isTypingTarget = (t) => !!(t && t.closest && t.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]'));
+var anyModalOpen = () => !!document.querySelector('[role="dialog"][aria-modal="true"], .fixed.inset-0.z-50');
+function KeyHint({ k }) {
+  return <kbd className="hidden sm:inline ml-0.5 px-1 rounded-sm border border-current text-[10px] leading-[14px] font-mono opacity-60">{k}</kbd>;
+}
+function StatusPill({ status }) {
+  let st = status || "Not Tested";
+  let cfg = getTesterStatus(st);
+  let ui = STATUS_UI[st];
+  let Icon = ui ? ui.icon : Clock;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-sm whitespace-nowrap ${cfg.badge}`}>
+      <Icon className="w-3.5 h-3.5" />
+      {cfg.label}
+    </span>
+  );
+}
+function TestCrumb({ tc: e }) {
+  return (
+    <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap text-xs text-gray-500">
+      <span className="font-mono font-medium text-gray-300" title={e.row_num ? `Sheet row ${e.row_num}` : undefined}>
+        {e.test_id || "—"}
+      </span>
+      {(e.module || (e.feature && e.feature !== "—")) && (
+        <span>
+          {e.module}
+          {e.module && e.feature && e.feature !== "—" ? " › " : ""}
+          {e.feature && e.feature !== "—" ? e.feature : ""}
+        </span>
+      )}
+      {e.initial_tester && <span>· Assigned to {e.initial_tester}</span>}
+      {e.priority && (
+        <span className="font-mono text-[11px] px-1 border border-gray-700 rounded-sm text-gray-300" title={`Priority: ${e.priority}`}>
+          {e.priority}
+        </span>
+      )}
+      {e.focus && (
+        <span className="px-1.5 border border-gray-700 rounded-sm text-gray-300" title={`Focus area: ${e.focus}`}>
+          {e.focus}
+        </span>
+      )}
+      {e.dev_branch_name && (
+        <span className="inline-flex items-center gap-1 px-1.5 border border-gray-700 rounded-sm text-gray-300" title={`Dev branch: ${e.dev_branch_name}`}>
+          <GitBranch className="w-3 h-3" />
+          <span className="font-mono">{e.dev_branch_name}</span>
+        </span>
+      )}
+    </div>
+  );
+}
+// Copy-link icon right after the test title, like a heading anchor: faint until you hover the
+// title (always visible on touch screens and when focused with the keyboard).
+function TitleLinkButton({ tc }) {
+  let mk = useContext(TestLinkContext);
+  let [done, setDone] = useState(false);
+  if (!mk || !tc?.test_id) return null;
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        let u = mk(tc);
+        try {
+          await navigator.clipboard.writeText(u);
+        } catch {
+          window.prompt("Copy this link:", u);
+        }
+        setDone(true);
+        setTimeout(() => setDone(false), 1800);
+      }}
+      title={done ? "Link copied" : "Copy a link that opens this test"}
+      aria-label="Copy link to this test"
+      className={`ml-1 inline-flex items-center justify-center w-6 h-6 align-[-1px] rounded-sm transition-all ${done ? "text-green-400 opacity-100" : "text-gray-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 hover:bg-gray-800 hover:text-gray-100"}`}
+    >
+      {done ? <Check className="w-4 h-4" strokeWidth={3} /> : <Link className="w-4 h-4" />}
+    </button>
+  );
+}
+// Options menu at the right of the test header (after a divider): share link + clear entry.
+function TestOptionsMenu({ tc, clearLabel, clearTitle, clearMessage, onClear }) {
+  let mk = useContext(TestLinkContext);
+  let [open, setOpen] = useState(false);
+  let [copied, setCopied] = useState(false);
+  let [confirm, setConfirm] = useState(false);
+  let ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    let down = (ev) => ref.current && !ref.current.contains(ev.target) && setOpen(false);
+    let key = (ev) => ev.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", down);
+    window.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("mousedown", down);
+      window.removeEventListener("keydown", key);
+    };
+  }, [open]);
+  let copy = async () => {
+    let u = mk(tc);
+    try {
+      await navigator.clipboard.writeText(u);
+    } catch {
+      window.prompt("Copy this link:", u);
+    }
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+      setOpen(false);
+    }, 900);
+  };
+  let itemCls = "w-full flex items-center gap-2.5 px-3 py-2 text-left text-[13px] rounded-sm transition-colors";
+  return (
+    <div className="relative flex-shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="More options"
+        title={open ? undefined : "More options"}
+        className={`w-8 h-8 flex items-center justify-center rounded-sm border transition-colors ${open ? "bg-gray-800 border-gray-600 text-gray-100" : "border-transparent text-gray-400 hover:bg-gray-800 hover:text-gray-100"}`}
+      >
+        <Ellipsis className="w-5 h-5" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-full mt-1 z-40 w-64 p-1 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl">
+          {mk && tc?.test_id && (
+            <button role="menuitem" onClick={copy} className={`${itemCls} ${copied ? "text-green-400" : "text-gray-200 hover:bg-gray-800"}`}>
+              {copied ? <Check className="w-4 h-4" strokeWidth={3} /> : <Link className="w-4 h-4 text-gray-400" />}
+              {copied ? "Link copied" : "Copy link to this test"}
+            </button>
           )}
-          {(priorityOptions.length > 0 || focusOptions.length > 0) && (
-            <div className="flex gap-1.5 mb-2">
-              {priorityOptions.length > 0 && (
-                <FilterSelect value={fp} onChange={setFp} active={fp !== "All"}>
-                  <option value="All">All priorities</option>
-                  {priorityOptions.map((O) => (
-                    <option value={O} key={O}>
-                      {O} ({l.filter((B) => B.priority === O).length})
-                    </option>
-                  ))}
-                  {hasNoPriority && <option value="">No priority</option>}
-                </FilterSelect>
-              )}
-              {focusOptions.length > 0 && (
-                <FilterSelect value={ff} onChange={setFf} active={ff !== "All"}>
-                  <option value="All">All focus areas</option>
-                  {focusOptions.map((O) => (
-                    <option value={O} key={O}>
-                      {O} ({l.filter((B) => B.focus === O).length})
-                    </option>
-                  ))}
-                  {hasNoFocus && <option value="">No focus area</option>}
-                </FilterSelect>
-              )}
-            </div>
-          )}
-          {m && (
-            <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 bg-emerald-950/40 border border-emerald-800/50 rounded-sm text-xs">
-              <Filter className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-              <span className="text-emerald-200">
-                Focused: {m.size} of {l.length}
-              </span>
+          {onClear && (
+            <Fragment>
+              <div className="my-1 border-t border-gray-800" />
               <button
-                onClick={f}
-                className="ml-auto text-emerald-400 hover:text-emerald-200 transition-colors"
-                title="Clear focus filter"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  setConfirm(true);
+                }}
+                className={`${itemCls} text-red-400 hover:bg-red-500/10`}
               >
-                <X className="w-3 h-3" />
+                <Trash2 className="w-4 h-4" />
+                {clearLabel}
               </button>
-            </div>
+            </Fragment>
           )}
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {d.length === 0 ? (
-            <EmptyState
-              hasAnyTests={l.length > 0}
-              suggestions={[
-                k === "mine" &&
-                  l.length > 0 && {
-                    label: "Show all tests instead",
-                    onClick: () => C("all"),
-                  },
-                m && {
-                  label: "Clear focus",
-                  onClick: f,
-                },
-                g !== "All" && {
-                  label: "Clear status filter",
-                  onClick: () => v("All"),
-                },
-                fp !== "All" && {
-                  label: "Clear priority filter",
-                  onClick: () => setFp("All"),
-                },
-                ff !== "All" && {
-                  label: "Clear focus area filter",
-                  onClick: () => setFf("All"),
-                },
-                _ && {
-                  label: "Clear search",
-                  onClick: () => S(""),
-                },
-              ]}
-            />
-          ) : (
-            d.map((O) => {
-              let B = i[O.id];
-              let ne = B?.status || "Not Tested";
-              let he = getTesterStatus(ne);
-              let ie = O.id === h;
-              let ue = c && c.has(O.id);
-              let pe = (p && p[O.id]) || [];
-              let me =
-                pe.length === 1
-                  ? `${pe[0]} Fixing`
-                  : pe.length > 1
-                    ? `${pe[0]} +${pe.length - 1} Fixing`
-                    : null;
-              let fp = !ue && fixPendingIds.has(O.id);
-              let Y = (O.feature && O.feature !== "—") || ue || me || fp;
-              return (
-                <button
-                  data-tc-id={O.id}
-                  onClick={() => b(O.id)}
-                  className={`w-full text-left px-3 py-2.5 border-b border-gray-800 border-l-4 flex items-start gap-2 hover:bg-gray-800/60 ${ie ? "bg-emerald-950/40 border-l-emerald-400 shadow-[inset_6px_0_20px_-4px_rgba(16,185,129,0.4)]" : "border-l-transparent"}`}
-                  key={O.id}
-                >
-                  <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${he.dot}`} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-0.5">
-                      <span className="font-mono text-emerald-400">{O.test_id || "—"}</span>
-                      {O.priority && <PriorityBadge value={O.priority} size="xs" />}
-                      {sheetUpdateUnseen(O, B) && (
-                        <span
-                          className="text-[9px] px-1 border rounded-sm font-bold tracking-wider bg-orange-950/50 text-orange-300 border-orange-800 flex-shrink-0"
-                          title="Steps or expected results changed in the sheet since you last worked on this test"
-                        >
-                          UPDATED
-                        </span>
-                      )}
-                      {O.module && !sameModuleForAll(l) && <span className="truncate">· {O.module}</span>}
-                      <StatusText value={ne} />
-                      {O.focus && <span className="truncate text-gray-600">· {O.focus}</span>}
-                    </div>
-                    <div
-                      className={`text-sm leading-tight ${ie ? "text-gray-100 font-semibold" : "text-gray-300"}`}
-                    >
-                      {O.title || "Untitled"}
-                    </div>
-                    {Y && (
-                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                        {ue && (
-                          <span
-                            className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-emerald-900/40 text-emerald-300 border border-emerald-700"
-                            title="A dev marked this fixed after your last edit — re-test when you can."
-                          >
-                            Review Fix
-                          </span>
-                        )}
-                        {fp && (
-                          <span
-                            className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-transparent text-emerald-400 border border-emerald-600"
-                            title="A developer has fixed this, but it isn't on the test site yet. No need to re-test for now."
-                          >
-                            Fixed – not merged
-                          </span>
-                        )}
-                        {me && (
-                          <span
-                            className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-amber-900/40 text-amber-300 border border-amber-700"
-                            title={
-                              pe.length > 1 ? `In progress: ${pe.join(", ")}` : `${pe[0]} is working on a fix`
-                            }
-                          >
-                            {me}
-                          </span>
-                        )}
-                        {O.feature && O.feature !== "—" && (
-                          <span className="text-[10px] uppercase tracking-wider text-gray-500">
-                            {O.feature}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })
-          )}
+      )}
+      {confirm && (
+        <ConfirmDialog
+          title={clearTitle}
+          message={clearMessage}
+          confirmLabel="Clear"
+          danger={true}
+          onConfirm={() => {
+            setConfirm(false);
+            onClear();
+          }}
+          onCancel={() => setConfirm(false)}
+        />
+      )}
+    </div>
+  );
+}
+function HeaderRight({ children, menu }) {
+  // On phones the status controls take the full width and wrap; the ⋯ menu stays at the end of the first row.
+  return (
+    <div className="flex items-start sm:items-center gap-3 w-full sm:w-auto">
+      <div className="flex-1 min-w-0">{children}</div>
+      <div className="hidden sm:block w-px h-6 bg-gray-800 flex-shrink-0" aria-hidden="true" />
+      {menu}
+    </div>
+  );
+}
+function DetailHeader({ tc, right }) {
+  return (
+    <div className="rd-detail-head flex-shrink-0 flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 py-3 border-b border-gray-800 bg-gray-900">
+      <div className="flex-1 min-w-0 basis-[260px]">
+        <TestCrumb tc={tc} />
+        <h1 className="group mt-0.5 text-lg font-semibold leading-snug text-gray-100">
+          {tc.title || "Untitled"}
+        </h1>
+      </div>
+      {right}
+    </div>
+  );
+}
+function SectionLabel({ children, hint }) {
+  return (
+    <div className="text-xs text-gray-400 mb-1.5">
+      {children}
+      {hint && <span className="text-gray-500"> · {hint}</span>}
+    </div>
+  );
+}
+function Callout({ tone = "info", icon: Icon, title, children }) {
+  let tones = {
+    retest: "bg-sky-500/10 border-sky-500/40 text-sky-200",
+    ok: "bg-green-500/10 border-green-500/40 text-green-200",
+    bad: "bg-red-500/10 border-red-500/40 text-red-200",
+    info: "bg-gray-800/50 border-gray-700 text-gray-300",
+  };
+  return (
+    <div className={`flex items-start gap-2.5 px-3 py-2.5 border rounded-sm text-sm ${tones[tone]}`}>
+      {Icon && <Icon className="w-4 h-4 mt-0.5 flex-shrink-0" />}
+      <div className="flex-1 min-w-0">
+        {title && <div className="font-semibold">{title}</div>}
+        {children}
+      </div>
+    </div>
+  );
+}
+function TwoUp({ children }) {
+  let kids = (Array.isArray(children) ? children : [children]).filter(Boolean);
+  if (kids.length === 0) return null;
+  return <div className={`grid gap-4 ${kids.length > 1 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>{kids}</div>;
+}
+function RecordingList({ recordings, onPlay, onRemove }) {
+  if (!recordings || recordings.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-col gap-1">
+      {recordings.map((f, w) => {
+        let label = parseRecordingUrl(f.url)?.label || "Link";
+        return (
+          <div className="group flex items-center gap-2 px-2.5 py-1.5 border border-gray-800 rounded-sm hover:border-gray-700" key={w}>
+            <span className="font-mono text-[10.5px] px-1.5 rounded-sm bg-gray-800 text-gray-300 flex-shrink-0">{label}</span>
+            <button
+              onClick={() => onPlay(w)}
+              className="flex-1 min-w-0 truncate text-left text-xs text-gray-400 hover:text-gray-100"
+              title="Play in app"
+            >
+              {f.url}
+            </button>
+            <button onClick={() => onPlay(w)} className="p-0.5 text-gray-400 hover:text-gray-100 flex-shrink-0" title="Play in app">
+              <Play className="w-4 h-4" />
+            </button>
+            <a
+              href={f.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-0.5 text-gray-500 hover:text-gray-100 flex-shrink-0"
+              title="Open in new tab"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+            {onRemove && (
+              <button onClick={() => onRemove(w)} className="p-0.5 text-gray-500 hover:text-gray-100 flex-shrink-0" title="Remove">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function TestDefinitionColumn({ c, p, ro, onToggleStep, onStepNote, stepsCheckLeft = false, devNotes = [], myDevName = null, onDevNote = null }) {
+  let has = (v) => v && v !== "—";
+  return (
+    <div className="flex flex-col gap-5 min-w-0">
+      <TwoUp>
+        {has(c.pre_conditions) && <DetailField label="Pre-conditions" value={c.pre_conditions} key="pre" />}
+        {has(c.test_data) && <DetailField label="Test data" value={c.test_data} key="data" />}
+      </TwoUp>
+      {(c.steps || []).length > 0 && (
+        <div>
+          <SectionLabel hint={!ro && onToggleStep ? "tick the box: done, needs review, unable to proceed" : null}>Steps</SectionLabel>
+          <div className="flex flex-col gap-1.5">
+            {(c.steps || []).map((f, w) => (
+              <StepRow
+                idx={w}
+                step={f}
+                state={(p.step_checks || {})[w]}
+                note={(p.step_notes || {})[w]}
+                onToggle={ro || !onToggleStep ? null : () => onToggleStep(w)}
+                onNote={ro || !onStepNote ? null : (j) => onStepNote(w, j)}
+                checkLeft={stepsCheckLeft}
+                devNotes={devNotes.filter((n) => n.step_key === String(w))}
+                myDevName={myDevName}
+                onDevNote={onDevNote ? (v) => onDevNote(String(w), v) : null}
+                key={w}
+              />
+            ))}
+          </div>
         </div>
-        {E && (
-          <SettingsModal
-            baseUrl={T}
-            setBaseUrl={A}
-            hasBaseUrlOverride={j}
-            resetBaseUrl={M}
-            myName={r}
-            roleLabel="Signed in"
-            onSwitchRequested={() => V(true)}
-            onResetRequested={s ? () => se(true) : undefined}
-            resetDescription="Delete every status, severity, note, observation, step check, recording, and screenshot in your own tab. Other testers' tabs are not affected."
-            onClose={() => D(false)}
-          />
-        )}
-        {W && (
-          <ConfirmDialog
-            title="Switch user?"
-            message="You'll be returned to the role picker and signed out. Your saved progress for this session isn't affected."
-            confirmLabel="Switch"
-            onConfirm={() => {
-              V(false);
-              o();
-            }}
-            onCancel={() => V(false)}
-          />
-        )}
-        {F && (
-          <ConfirmDialog
-            title="Reset all your inputs?"
-            message="Every status, severity, note, observation, step check, recording, and screenshot you've logged in this session will be permanently deleted. This action cannot be undone."
-            confirmLabel="Reset everything"
-            danger={true}
-            onConfirm={() => {
-              se(false);
-              s();
-            }}
-            onCancel={() => se(false)}
-          />
-        )}
-      </aside>
-    );
-  } else {
-    return null;
-  }
+      )}
+      {has(c.expected_result) && (
+        <ExpectedResultChecklist
+          value={c.expected_result}
+          checks={p.step_checks}
+          onToggle={ro || !onToggleStep ? null : (f) => onToggleStep(expectedCheckKey(f))}
+          notes={p.step_notes}
+          onNote={ro || !onStepNote ? null : (f, w) => onStepNote(f, w)}
+        />
+      )}
+      <TwoUp>
+        {has(c.downstream_check) && <DetailField label="Downstream check" value={c.downstream_check} key="down" />}
+        {has(c.edge_case) && <DetailField label="Edge case" value={c.edge_case} key="edge" />}
+      </TwoUp>
+    </div>
+  );
 }
 function TesterTestDetail({
   testCase: e,
@@ -9508,6 +10268,7 @@ function TesterTestDetail({
   onAddScreenshots: i,
   onRemoveScreenshot: u,
   onDismissScreenshotError: d,
+  devStepNotes: dsn = [],
 }) {
   let c = e;
   let p = t || {
@@ -9584,369 +10345,339 @@ function TesterTestDetail({
       b("");
     }
   };
+  let cur = p.status || "Not Tested";
+  // A dev's fix that's live on the test site and newer than this tab's last edit.
+  let rr = (a || [])
+    .filter((f) => isRetestReady(f))
+    .sort((f, w) => new Date(w.done_at) - new Date(f.done_at))[0];
+  let needsRetest = !!rr && (!p.updated_at || new Date(rr.done_at) > new Date(p.updated_at));
+  let pendingFix = !needsRetest && (a || []).find((f) => isNotMerged(f));
+  let devNotes = g.filter((f) => !(needsRetest && f === rr));
+  // P / F / B / R set the status (not while typing or with a dialog open).
+  useEffect(() => {
+    if (ro) return;
+    let h2 = (ev) => {
+      if (ev.metaKey || ev.ctrlKey || ev.altKey || ev.defaultPrevented) return;
+      if (isTypingTarget(ev.target) || I !== null || anyModalOpen()) return;
+      let k2 = String(ev.key || "").toLowerCase();
+      let st = Object.keys(STATUS_UI).find((z) => STATUS_UI[z].key.toLowerCase() === k2);
+      if (!st) return;
+      ev.preventDefault();
+      if (cur !== st) l({ status: st });
+    };
+    window.addEventListener("keydown", h2);
+    return () => window.removeEventListener("keydown", h2);
+  }, [ro, cur, I, l]);
+  let statusControls = ro ? (
+    <StatusPill status={cur} />
+  ) : (
+    <div className="flex items-center gap-1 flex-wrap sm:justify-end" role="group" aria-label="Status">
+      {Object.keys(STATUS_UI).map((st) => {
+        let ui = STATUS_UI[st];
+        let on = cur === st;
+        let Icon = ui.icon;
+        let label = getTesterStatus(st).label;
+        return (
+          <button
+            key={st}
+            onClick={() => !on && l({ status: st })}
+            aria-pressed={on}
+            title={on ? "Current status" : `Mark as ${label} (${ui.key})`}
+            className={`inline-flex items-center gap-1.5 h-8 px-2.5 border rounded-sm text-[13px] transition-colors ${on ? `${ui.on} font-medium` : "border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-gray-100"}`}
+          >
+            <Icon className={`w-4 h-4 ${on ? "" : ui.ic}`} />
+            {label}
+            <KeyHint k={ui.key} />
+          </button>
+        );
+      })}
+      {cur !== "Not Tested" && (
+        <button
+          onClick={() => l({ status: "Not Tested" })}
+          className="h-8 px-2 text-[13px] text-gray-500 hover:text-gray-200"
+          title="Set back to Not run"
+        >
+          Clear
+        </button>
+      )}
+    </div>
+  );
+  let shots = p.screenshots || [];
+  let recs = p.recordings || [];
+  let evidenceCount = shots.length + recs.length;
+  let sev = getSeverity(p.bug_severity);
+  let inputCls =
+    "w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-gray-600 resize-y";
   return (
     <FigureContext.Provider value={{ shots: p.screenshots || [], open: (f) => x(f) }}>
-    <div className="flex-1 overflow-y-auto">
-      {/* Extra bottom space so the floating Read me / Sample files buttons never cover the last section. */}
-      <div className="max-w-6xl mx-auto px-6 pt-6 pb-24">
-        <div className="mb-3 pb-4 border-b border-gray-800 flex items-start gap-4">
-          <div className="flex-1 min-w-0">
-            <Breadcrumb tc={c} />
-            <h1 className="text-xl font-bold text-gray-100">{c.title || "Untitled"}</h1>
-            {sheetUpdateUnseen(c, p) && (
-              <div className="mt-2 inline-flex items-start gap-2 px-2.5 py-1.5 bg-orange-950/40 border border-orange-800 rounded-sm text-xs text-orange-200">
-                <AlertTriangle className="w-3.5 h-3.5 mt-px flex-shrink-0 text-orange-400" />
-                <span>
-                  Steps updated from the sheet on {new Date(c.content_updated_at).toLocaleDateString()}. Ticks on
-                  reworded lines were cleared, so please re-check them. This note goes away once you make a change.
-                </span>
-              </div>
-            )}
-          </div>
-          {!ro && (
-            <div className="pt-1 flex-shrink-0">
-              <SaveIndicator saving={!!r} />
-            </div>
-          )}
-        </div>
+      <div className="flex-1 min-h-0 flex flex-col">
+        <DetailHeader
+          tc={c}
+          right={
+            <HeaderRight
+              menu={
+                <TestOptionsMenu
+                  tc={c}
+                  clearLabel="Clear my entry for this test"
+                  clearTitle="Clear your entry for this test?"
+                  clearMessage="Your status, severity, notes, step ticks, screenshots and recordings for this test will be removed. Other testers’ results aren’t affected."
+                  onClear={
+                    ro
+                      ? null
+                      : () =>
+                          l({
+                            status: "Not Tested",
+                            bug_severity: "",
+                            notes: "",
+                            other_observations: "",
+                            step_checks: {},
+                            step_notes: {},
+                            recordings: [],
+                            screenshots: [],
+                          })
+                  }
+                />
+              }
+            >
+              {statusControls}
+            </HeaderRight>
+          }
+        />
         {ro && (
-          <div className="mb-4 flex items-center gap-2.5 px-3 py-2 bg-sky-950/40 border border-sky-800 rounded-md text-xs text-sky-100">
-            <Eye className="w-4 h-4 flex-shrink-0 text-sky-400" />
+          <div className="flex-shrink-0 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 px-4 sm:px-6 py-2 bg-gray-100 text-gray-950 text-sm">
+            <Lock className="w-4 h-4 flex-shrink-0" />
             <span className="flex-1 min-w-0">
-              You're viewing <span className="font-semibold">{vn}</span>'s results. This tab is read-only.
+              You’re viewing <span className="font-semibold">{vn}</span>’s results. They’re read-only.
             </span>
             {backToMine && (
               <button
                 onClick={backToMine}
-                className="flex-shrink-0 px-2.5 py-1 rounded-md border border-sky-700 text-sky-100 hover:bg-sky-900/60"
+                className="flex-shrink-0 h-7 px-3 rounded-sm bg-gray-950 text-gray-100 text-[13px] font-medium hover:bg-gray-800"
               >
                 Back to my tab
               </button>
             )}
           </div>
         )}
-        {p.updated_at && (p.status || "Not Tested") !== "Not Tested" && (
-          <div
-            className="mb-5 text-[11px] text-gray-500 flex items-center gap-1.5"
-            title={new Date(p.updated_at).toLocaleString()}
-          >
-            <Clock className="w-3 h-3 flex-shrink-0" />
-            <span>Last edited {timeAgo(p.updated_at)}</span>
-          </div>
-        )}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-5">
-            {c.pre_conditions && c.pre_conditions !== "—" && (
-              <DetailField label="Pre-conditions" value={c.pre_conditions} />
-            )}
-            {c.test_data && c.test_data !== "—" && <DetailField label="Test Data" value={c.test_data} />}
-            {(c.steps || []).length > 0 && (
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Steps</div>
-                <div className="space-y-1.5">
-                  {(c.steps || []).map((f, w) => {
-                    let T = (p.step_checks || {})[w];
-                    let A = (p.step_notes || {})[w];
-                    return (
-                      <StepRow
-                        idx={w}
-                        step={f}
-                        state={T}
-                        note={A}
-                        onToggle={ro ? null : () => k(w)}
-                        onNote={ro ? null : (j) => C(w, j)}
-                        key={w}
-                      />
-                    );
-                  })}
-                </div>
+        <div className="flex-shrink-0 flex items-center gap-1.5 px-4 sm:px-6 pt-2.5 text-xs text-gray-500">
+          {p.updated_at && cur !== "Not Tested" ? (
+            <span title={new Date(p.updated_at).toLocaleString()}>
+              Last edit{p.updated_by ? ` by ${p.updated_by}` : ""} · {timeAgo(p.updated_at)}
+            </span>
+          ) : (
+            <span>Not edited yet</span>
+          )}
+          {!ro && (
+            <span className="ml-auto">
+              <SaveIndicator saving={!!r} />
+            </span>
+          )}
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {/* Extra bottom space so the floating Pings / Read me / Sample files buttons never cover the last section. */}
+          <div className="max-w-[1180px] px-4 sm:px-6 pt-3 pb-24">
+            {sheetUpdateUnseen(c, p) && (
+              <div className="mb-4">
+                <Callout tone="info" icon={AlertTriangle}>
+                  Steps updated from the sheet on {new Date(c.content_updated_at).toLocaleDateString()}. Ticks on reworded
+                  lines were cleared, so please re-check them. This note goes away once you make a change.
+                </Callout>
               </div>
             )}
-            {c.expected_result && c.expected_result !== "—" && (
-              <ExpectedResultChecklist
-                value={c.expected_result}
-                checks={p.step_checks}
-                onToggle={ro ? null : (f) => k(expectedCheckKey(f))}
-                notes={p.step_notes}
-                onNote={ro ? null : (f, w) => C(f, w)}
-              />
-            )}
-            {c.downstream_check && c.downstream_check !== "—" && (
-              <DetailField label="Downstream Check" value={c.downstream_check} />
-            )}
-            {c.edge_case && c.edge_case !== "—" && <DetailField label="Edge Case" value={c.edge_case} />}
-          </div>
-          <div className="space-y-5">
-            {g.length > 0 && (
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                  Developer notes <span className="normal-case font-normal text-gray-500">({g.length})</span>
-                </div>
-                <div className="space-y-2">
-                  {g.map((f) => (
-                    <DevMarkCard mark={f} key={f.developer_name} forTester />
-                  ))}
-                </div>
-              </div>
-            )}
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Status</div>
-              <div className="flex flex-wrap gap-1.5">
-                {TESTER_STATUSES.map((f) => {
-                  let w = (p.status || "Not Tested") === f.value;
-                  return (
-                    <button
-                      onClick={() =>
-                        !w &&
-                        l({
-                          status: f.value,
-                        })
-                      }
-                      disabled={ro}
-                      aria-pressed={w}
-                      className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${w ? f.badge : `bg-gray-900 text-gray-400 border-gray-800 ${ro ? "opacity-40" : "hover:text-gray-200 hover:border-gray-700"}`}`}
-                      key={f.value}
-                    >
-                      {f.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Severity</div>
-              <div className="flex flex-wrap gap-1.5">
-                {SEVERITIES.map((f) => {
-                  let w = getSeverity(p.bug_severity)?.value === f.value;
-                  return (
-                    <button
-                      onClick={() =>
-                        l({
-                          bug_severity: w ? "" : f.value,
-                        })
-                      }
-                      disabled={ro}
-                      aria-pressed={w}
-                      title={ro ? f.description : w ? "Click to clear" : f.description}
-                      className={`px-2.5 py-1.5 text-xs font-medium border rounded-sm transition-colors ${w ? f.badge : `bg-gray-900 text-gray-400 border-gray-800 ${ro ? "opacity-40" : "hover:text-gray-200 hover:border-gray-700"}`}`}
-                      key={f.value}
-                    >
-                      {f.value}
-                    </button>
-                  );
-                })}
-              </div>
-              {getSeverity(p.bug_severity) && (
-                <div className="mt-2 text-xs text-gray-400">
-                  <span className="text-gray-200 font-medium">{getSeverity(p.bug_severity).value}</span> ={" "}
-                  {getSeverity(p.bug_severity).description.replace(/^./, (f) => f.toLowerCase())}
-                </div>
-              )}
-            </div>
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Tester Notes{" "}
-                <span className="normal-case tracking-normal font-normal text-gray-500">· @ to ping someone · # to link a screenshot</span>
-              </div>
-              <MentionTextarea
-                value={p.notes || ""}
-                onChange={(f) =>
-                  l({
-                    notes: prettyArrows(f.target.value),
-                  })
-                }
-                rows={4}
-                readOnly={ro}
-                placeholder={ro ? "No notes" : "Observations, summary of issues found, deviations from expected result…"}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
-              />
-            </div>
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Other Observations
-              </div>
-              <MentionTextarea
-                value={p.other_observations || ""}
-                onChange={(f) =>
-                  l({
-                    other_observations: prettyArrows(f.target.value),
-                  })
-                }
-                rows={3}
-                readOnly={ro}
-                placeholder={ro ? "No observations" : "Anything else worth flagging — UX, performance, side effects…"}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
-              />
-            </div>
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Screen recordings{" "}
-                {(p.recordings || []).length > 0 && (
-                  <span className="normal-case font-normal text-gray-500">
-                    ({(p.recordings || []).length})
-                  </span>
-                )}
-              </div>
-              {ro ? (
-                (p.recordings || []).length === 0 && <div className="text-xs text-gray-600 italic">No recordings</div>
-              ) : (
-              <>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={h}
-                  onChange={(f) => b(f.target.value)}
-                  onKeyDown={(f) => {
-                    if (f.key === "Enter") {
-                      f.preventDefault();
-                      m();
-                    }
-                  }}
-                  placeholder="Paste a Google Drive share link…"
-                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                <button
-                  onClick={m}
-                  disabled={!h.trim()}
-                  className="px-3 py-2 bg-emerald-600 text-white text-sm font-medium rounded-sm hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-500"
-                >
-                  Add
-                </button>
-              </div>
-              <div className="mt-1.5 text-[11px] text-gray-500 leading-relaxed">
-                Upload your recording to Google Drive, set sharing to{" "}
-                <span className="text-gray-300 font-medium">"Anyone with the link"</span>, then paste the
-                share URL here.<span className="text-gray-600"> Loom / YouTube / Vimeo URLs also work.</span>
-              </div>
-              </>
-              )}
-              {(p.recordings || []).length > 0 && (
-                <div className="mt-2 space-y-1.5">
-                  {(p.recordings || []).map((f, w) => {
-                    let A = parseRecordingUrl(f.url)?.label || "Link";
-                    return (
-                      <div
-                        className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-800/60 border border-gray-700 rounded-sm group"
-                        key={w}
-                      >
-                        <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-gray-900 text-emerald-300 border border-gray-700 rounded-sm flex-shrink-0">
-                          {A}
-                        </span>
-                        <button
-                          onClick={() =>
-                            S({
-                              recordings: p.recordings,
-                              startIdx: w,
-                            })
-                          }
-                          className="text-xs text-gray-300 hover:text-emerald-300 truncate flex-1 min-w-0 text-left"
-                          title="Play in app"
-                        >
-                          {f.url}
-                        </button>
-                        <a
-                          href={f.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1 text-gray-500 hover:text-emerald-400 flex-shrink-0"
-                          title="Open in new tab"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                        {!ro && <button
-                          onClick={() =>
-                            l({
-                              recordings: (p.recordings || []).filter((j, M) => M !== w),
-                            })
-                          }
-                          className="opacity-40 group-hover:opacity-100 hover:text-red-400 text-gray-400 text-sm leading-none px-1"
-                          title="Remove"
-                        >
-                          ×
-                        </button>}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+              <TestDefinitionColumn c={c} p={p} ro={ro} onToggleStep={k} onStepNote={C} devNotes={dsn} />
+              <div className="flex flex-col gap-5 min-w-0">
+                {needsRetest && (
+                  <Callout tone="retest" icon={RefreshCw} title={`Fixed by ${rr.developer_name} · ${timeAgo(rr.done_at)}, ready to retest`}>
+                    {rr.note && rr.note.trim() && (
+                      <div className="mt-0.5 text-[13px] whitespace-pre-wrap opacity-90">
+                        {normalizePath(rr.note)}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Screenshots
-                {(p.screenshots || []).length > 0 && (
-                  <span className="normal-case font-normal text-gray-500">
-                    {" "}
-                    ({(p.screenshots || []).length})
-                  </span>
-                )}
-              </div>
-              {ro ? (
-                (p.screenshots || []).length === 0 && <div className="text-xs text-gray-600 italic">No screenshots</div>
-              ) : (
-                <ScreenshotDropzone disabled={!!o} isUploading={!!o} onFiles={(f) => i && i(f)} />
-              )}
-              {s && s.length > 0 && (
-                <div className="mt-2 p-2.5 bg-red-950/40 border border-red-800 rounded-sm flex items-start gap-2">
-                  <CircleAlert className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0 text-xs text-red-200 space-y-0.5">
-                    <div className="font-semibold text-red-100">
-                      Couldn't upload {s.length === 1 ? "this file" : `${s.length} files`}
+                    )}
+                    <div className="mt-1 text-xs opacity-80">
+                      {ro ? "Waiting for this tester to retest." : "Set a new status once you’ve retested."}
                     </div>
-                    {s.map((f, w) => (
-                      <div className="opacity-90 break-words" key={w}>
-                        {f}
-                      </div>
-                    ))}
+                  </Callout>
+                )}
+                {pendingFix && (
+                  <Callout tone="info" icon={Clock} title={`Fixed by ${pendingFix.developer_name}, not on the test site yet`}>
+                    <div className="text-xs opacity-80">No need to retest for now.</div>
+                  </Callout>
+                )}
+                {devNotes.length > 0 && (
+                  <div>
+                    <SectionLabel>
+                      Developer notes <span className="text-gray-500">{devNotes.length}</span>
+                    </SectionLabel>
+                    <div className="flex flex-col gap-1.5">
+                      {devNotes.map((f) => (
+                        <DevMarkCard mark={f} key={f.developer_name} forTester />
+                      ))}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => d && d()}
-                    className="text-red-400 hover:text-red-200 flex-shrink-0"
-                    title="Dismiss"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                )}
+                {(v || sev) && (
+                  <div>
+                    <SectionLabel>Severity</SectionLabel>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SEVERITIES.map((f) => {
+                        let w = sev?.value === f.value;
+                        return (
+                          <button
+                            onClick={() => l({ bug_severity: w ? "" : f.value })}
+                            disabled={ro}
+                            aria-pressed={w}
+                            title={ro ? f.description : w ? "Click to clear" : f.description}
+                            className={`h-8 px-2.5 text-[13px] border rounded-sm transition-colors ${w ? "bg-gray-700 border-gray-500 text-gray-100 font-medium" : `border-gray-700 text-gray-400 ${ro ? "opacity-40" : "hover:text-gray-100 hover:bg-gray-800"}`}`}
+                            key={f.value}
+                          >
+                            {f.value}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {sev && (
+                      <div className="mt-1.5 text-xs text-gray-400">
+                        <span className="text-gray-200 font-medium">{sev.value}</span> ={" "}
+                        {sev.description.replace(/^./, (f) => f.toLowerCase())}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div>
+                  <SectionLabel hint={ro ? null : "@ to ping someone · # to link a screenshot"}>Tester notes</SectionLabel>
+                  <MentionTextarea
+                    value={p.notes || ""}
+                    onChange={(f) => l({ notes: prettyArrows(f.target.value) })}
+                    rows={4}
+                    readOnly={ro}
+                    placeholder={
+                      ro
+                        ? "No notes"
+                        : "Type @ to ping someone, # to link a screenshot."
+                    }
+                    className={inputCls}
+                  />
                 </div>
-              )}
-              {(p.screenshots || []).length > 0 && (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {(p.screenshots || []).map((f, w) => (
-                    <ScreenshotThumb
-                      shot={f}
-                      idx={w}
-                      onRemove={ro ? null : () => u && u(w)}
-                      onOpen={(T) => x(T)}
-                      key={f.path || f.url || w}
+                {/* Older results may still have text in the separate Other observations field. */}
+                {(p.other_observations || "").trim() && (
+                  <div>
+                    <SectionLabel hint="from the earlier layout">Other observations</SectionLabel>
+                    <MentionTextarea
+                      value={p.other_observations || ""}
+                      onChange={(f) => l({ other_observations: prettyArrows(f.target.value) })}
+                      rows={2}
+                      readOnly={ro}
+                      className={inputCls}
                     />
-                  ))}
+                  </div>
+                )}
+                <div>
+                  <SectionLabel>
+                    Evidence {evidenceCount > 0 && <span className="text-gray-500">{evidenceCount}</span>}
+                  </SectionLabel>
+                  {ro ? (
+                    evidenceCount === 0 && (
+                      <div className="px-3 py-2 border border-gray-800 rounded-sm text-sm text-gray-500">No screenshots or recordings</div>
+                    )
+                  ) : (
+                    <ScreenshotDropzone disabled={!!o} isUploading={!!o} onFiles={(f) => i && i(f)} />
+                  )}
+                  {s && s.length > 0 && (
+                    <div className="mt-2">
+                      <Callout tone="bad" icon={CircleAlert} title={`Couldn’t upload ${s.length === 1 ? "this file" : `${s.length} files`}`}>
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 min-w-0 text-xs space-y-0.5">
+                            {s.map((f, w) => (
+                              <div className="break-words" key={w}>
+                                {f}
+                              </div>
+                            ))}
+                          </div>
+                          <button onClick={() => d && d()} className="flex-shrink-0 opacity-70 hover:opacity-100" title="Dismiss">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </Callout>
+                    </div>
+                  )}
+                  {shots.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                      {shots.map((f, w) => (
+                        <ScreenshotThumb
+                          shot={f}
+                          idx={w}
+                          onRemove={ro ? null : () => u && u(w)}
+                          onOpen={(T) => x(T)}
+                          key={f.path || f.url || w}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {!ro && (
+                    <div className="mt-2 flex gap-1.5">
+                      <input
+                        type="url"
+                        value={h}
+                        onChange={(f) => b(f.target.value)}
+                        onKeyDown={(f) => {
+                          if (f.key === "Enter") {
+                            f.preventDefault();
+                            m();
+                          }
+                        }}
+                        placeholder="Paste a Google Drive, Loom or YouTube link"
+                        className="flex-1 min-w-0 h-8 px-2.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-[13px] focus:outline-none focus:border-gray-600"
+                      />
+                      <button
+                        onClick={m}
+                        disabled={!h.trim()}
+                        className="h-8 px-3 border border-gray-700 text-[13px] text-gray-100 rounded-sm hover:bg-gray-800 disabled:text-gray-600 disabled:hover:bg-transparent"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
+                  {!ro && (
+                    <div className="mt-1.5 text-xs text-gray-500 leading-relaxed">
+                      Upload your recording to Google Drive, set sharing to{" "}
+                      <span className="font-medium text-gray-300">“Anyone with the link”</span>, then paste the share link here.
+                      Loom, YouTube and Vimeo links also work.
+                    </div>
+                  )}
+                  <RecordingList
+                    recordings={recs}
+                    onPlay={(w) => S({ recordings: recs, startIdx: w })}
+                    onRemove={ro ? null : (w) => l({ recordings: recs.filter((j2, M2) => M2 !== w) })}
+                  />
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
+        {_ && <RecordingPlayer recordings={_.recordings} startIdx={_.startIdx} onClose={() => S(null)} />}
+        {I !== null && (p.screenshots || []).length > 0 && (
+          <ScreenshotLightbox
+            screenshots={p.screenshots || []}
+            startIdx={I}
+            onClose={() => x(null)}
+            editable={!ro}
+            onAnnotationsChange={(f, w) => {
+              let A = (p.screenshots || []).map((j, M) =>
+                M === f
+                  ? {
+                      ...j,
+                      annotations: w,
+                    }
+                  : j,
+              );
+              l({
+                screenshots: A,
+              });
+            }}
+          />
+        )}
       </div>
-      {_ && <RecordingPlayer recordings={_.recordings} startIdx={_.startIdx} onClose={() => S(null)} />}
-      {I !== null && (p.screenshots || []).length > 0 && (
-        <ScreenshotLightbox
-          screenshots={p.screenshots || []}
-          startIdx={I}
-          onClose={() => x(null)}
-          editable={!ro}
-          onAnnotationsChange={(f, w) => {
-            let A = (p.screenshots || []).map((j, M) =>
-              M === f
-                ? {
-                    ...j,
-                    annotations: w,
-                  }
-                : j,
-            );
-            l({
-              screenshots: A,
-            });
-          }}
-        />
-      )}
-    </div>
     </FigureContext.Provider>
   );
 }
@@ -9975,7 +10706,7 @@ function ExpectedItemNote({ note: e, onNote: t }) {
   let [a, r] = useState(false);
   if (!t) {
     return e ? (
-      <div className="ml-[26px] mt-1 mb-0.5 px-2 py-1 bg-gray-950/70 border-l-2 border-amber-600 text-xs text-gray-200 whitespace-pre-wrap rounded-sm">
+      <div className="ml-[26px] mt-1 mb-0.5 px-2 py-1 bg-gray-950/70 border-l-2 border-gray-600 text-xs text-gray-200 whitespace-pre-wrap rounded-sm">
         {normalizePath(e)}
       </div>
     ) : null;
@@ -9988,7 +10719,7 @@ function ExpectedItemNote({ note: e, onNote: t }) {
         onChange={(o) => t(prettyArrows(o.target.value))}
         onBlur={() => r(false)}
         rows={2}
-        placeholder="Note for this item… (@ to ping, # to link a screenshot)"
+        placeholder="Type @ to ping someone, # to link a screenshot."
         className="w-full px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-sm text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
       />
     </div>
@@ -10005,7 +10736,7 @@ function ExpectedItemNote({ note: e, onNote: t }) {
 function ExpectedResultChecklist({ value: e, checks: t, onToggle: a, notes: nt, onNote: on }) {
   let r = parseExpectedChecklist(e);
   if (!r) {
-    return <DetailField label="Expected Result" value={e} highlight={true} />;
+    return <DetailField label="Expected result" value={e} highlight={true} />;
   }
   let o = t || {};
   let l = r.items.filter((i, u) => o[expectedCheckKey(u)] === "done").length;
@@ -10013,15 +10744,15 @@ function ExpectedResultChecklist({ value: e, checks: t, onToggle: a, notes: nt, 
   let n = r.items.filter((u, d) => o[expectedCheckKey(d)] === "unsure").length;
   return (
     <div>
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-        Expected Result
-        <span className="normal-case tracking-normal font-normal text-gray-500">
+      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1.5">
+        Expected result
+        <span className="text-gray-500">· 
           {l} of {r.items.length} met{i > 0 ? ` · ${i} not met` : ""}
           {n > 0 ? ` · ${n} unsure` : ""}
         </span>
       </div>
-      <div className="bg-amber-950/30 border-l-4 border-amber-500 rounded-sm py-1.5">
-        {r.intro && <div className="px-3 pb-1 text-sm text-amber-100 whitespace-pre-wrap">{normalizePath(r.intro)}</div>}
+      <div className="bg-gray-800/60 rounded-sm py-1.5">
+        {r.intro && <div className="px-3 pb-1 text-sm text-gray-100 whitespace-pre-wrap">{normalizePath(r.intro)}</div>}
         {r.items.map((u, d) => {
           let c = o[expectedCheckKey(d)];
           let p = c === "done";
@@ -10030,7 +10761,7 @@ function ExpectedResultChecklist({ value: e, checks: t, onToggle: a, notes: nt, 
           let b = p ? "Mark as not met" : h ? "Mark as unsure" : q ? "Clear" : "Mark as met";
           let _ = (
             <span
-              className={`w-4 h-4 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 transition-colors ${p ? "bg-green-600 border-2 border-green-600" : h ? "bg-red-600 border-2 border-red-600" : q ? "bg-orange-500 border-2 border-orange-500" : `border-2 border-amber-700/70 ${a ? "group-hover:border-amber-500" : ""}`}`}
+              className={`w-4 h-4 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 transition-colors ${p ? "bg-green-600 border-2 border-green-600" : h ? "bg-red-600 border-2 border-red-600" : q ? "bg-yellow-500 border-2 border-yellow-500" : `border-2 border-gray-600 ${a ? "group-hover:border-gray-400" : ""}`}`}
             >
               {p && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
               {h && <X className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
@@ -10038,12 +10769,12 @@ function ExpectedResultChecklist({ value: e, checks: t, onToggle: a, notes: nt, 
             </span>
           );
           let S = (
-            <span className={`flex-1 min-w-0 text-sm whitespace-pre-wrap ${p ? "text-green-200" : h ? "text-red-200" : q ? "text-orange-200" : "text-amber-100"}`}>
+            <span className={`flex-1 min-w-0 text-sm whitespace-pre-wrap ${p ? "text-green-200" : h ? "text-red-200" : q ? "text-yellow-200" : "text-gray-100"}`}>
               {normalizePath(u)}
               {h && (
-                <span className="ml-2 text-[10px] uppercase tracking-wider text-red-400 font-bold">Not as expected</span>
+                <span className="ml-2 text-[11px] font-semibold text-red-300">Not as expected</span>
               )}
-              {q && <span className="ml-2 text-[10px] uppercase tracking-wider text-orange-400 font-bold">Unsure</span>}
+              {q && <span className="ml-2 text-[11px] font-semibold text-yellow-300">Unsure</span>}
             </span>
           );
           let m = (nt || {})[expectedCheckKey(d)];
@@ -10054,7 +10785,7 @@ function ExpectedResultChecklist({ value: e, checks: t, onToggle: a, notes: nt, 
                   type="button"
                   onClick={() => a(d)}
                   title={b}
-                  className="group w-full flex items-start gap-2.5 text-left rounded-sm transition-colors hover:bg-amber-900/20"
+                  className="group w-full flex items-start gap-2.5 text-left rounded-sm transition-colors hover:bg-gray-800"
                 >
                   {_}
                   {S}
@@ -10076,46 +10807,53 @@ function ExpectedResultChecklist({ value: e, checks: t, onToggle: a, notes: nt, 
 function DetailField({ label: e, value: t, highlight: a }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">{e}</div>
-      <div
-        className={`text-sm whitespace-pre-wrap ${a ? "bg-amber-950/30 border-l-4 border-amber-500 px-3 py-2 rounded-sm text-amber-100" : "text-gray-200"}`}
-      >
+      <div className="text-xs text-gray-400 mb-1.5">{e}</div>
+      <div className={`text-sm whitespace-pre-wrap ${a ? "bg-gray-800/60 px-3 py-2.5 rounded-sm text-gray-100" : "text-gray-200"}`}>
         {normalizePath(t)}
       </div>
     </div>
   );
 }
-function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s }) {
+function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s, checkLeft: cl = false, devNotes = [], myDevName = null, onDevNote = null }) {
   let [l, i] = useState(false);
+  let [devOpen, setDevOpen] = useState(false);
+  let myDev = onDevNote ? (devNotes.find((n) => n.developer_name === myDevName) || {}).note || "" : "";
+  let otherDev = onDevNote ? devNotes.filter((n) => n.developer_name !== myDevName) : devNotes;
   let u = a === "done";
   let d = a === "blocked";
   let v = a === "review";
   let c = u ? "Mark as works but needs review" : v ? "Mark as unable to proceed" : d ? "Clear check" : "Mark as done";
+  let roLabel = u ? "Done" : v ? "Works but needs review" : d ? "Unable to proceed" : "Not checked";
+  let box = (
+    <span
+      className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-colors ${u ? "bg-green-600 border-green-600" : v ? "bg-yellow-500 border-yellow-500" : d ? "bg-red-500 border-red-500" : o ? "border-gray-600 group-hover:border-gray-400" : "border-gray-700"}`}
+    >
+      {(u || v) && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+      {d && <X className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+    </span>
+  );
   return (
     <div
-      className={`p-2.5 border rounded-sm ${u ? "bg-green-900/15 border-green-800" : v ? "bg-orange-900/15 border-orange-800" : d ? "bg-red-900/15 border-red-800" : "bg-gray-900 border-gray-800"}`}
+      className={`border rounded-sm ${u ? "bg-green-500/10 border-green-500/40" : v ? "bg-yellow-500/10 border-yellow-500/40" : d ? "bg-red-500/10 border-red-500/45" : "bg-gray-900 border-gray-800"}`}
     >
-      <div className="flex items-start gap-2.5">
-        <div className="text-[11px] font-bold text-emerald-400 mt-1 font-mono w-5 flex-shrink-0 text-right">
-          {e + 1}.
-        </div>
+      <div className="flex items-start gap-2.5 px-2.5 py-2">
+        {cl && !o && (
+          <span className="mt-px flex-shrink-0" title={roLabel}>
+            {box}
+          </span>
+        )}
+        <div className="font-mono text-xs text-gray-500 leading-[21px] min-w-[20px] text-right flex-shrink-0">{e + 1}.</div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm text-gray-200">
+          <div className="text-sm text-gray-100 leading-[21px]">
             {normalizePath(t)}
-            {d && (
-              <span className="ml-2 text-[10px] uppercase tracking-wider text-red-400 font-bold">
-                Unable to proceed
-              </span>
-            )}
-            {v && (
-              <span className="ml-2 text-[10px] uppercase tracking-wider text-orange-400 font-bold">
-                Works but needs review
-              </span>
-            )}
+            {d && <span className="ml-2 text-[11px] font-semibold text-red-300 whitespace-nowrap">Unable to proceed</span>}
+            {v && <span className="ml-2 text-[11px] font-semibold text-yellow-300 whitespace-nowrap">Works but needs review</span>}
           </div>
           {!s ? (
             r ? (
-              <div className="mt-2 px-2 py-1.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-xs whitespace-pre-wrap">{r}</div>
+              <div className="mt-1.5 px-2 py-1.5 bg-gray-950 border border-gray-800 text-gray-300 rounded-sm text-[13px] whitespace-pre-wrap">
+                {normalizePath(r)}
+              </div>
             ) : null
           ) : l || r ? (
             <MentionTextarea
@@ -10123,31 +10861,53 @@ function StepRow({ idx: e, step: t, state: a, note: r, onToggle: o, onNote: s })
               value={r || ""}
               onChange={(p) => s(prettyArrows(p.target.value))}
               onBlur={() => i(false)}
-              rows={2}
-              placeholder="Note for this step… (@ to ping, # to link a screenshot)"
-              className="mt-2 w-full px-2 py-1.5 bg-gray-950 border border-gray-700 text-gray-200 placeholder-gray-500 rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
+              rows={1}
+              placeholder="Type @ to ping someone, # to link a screenshot."
+              className="mt-1.5 w-full px-2 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-[13px] focus:outline-none focus:border-gray-600 resize-y"
             />
           ) : (
-            <button onClick={() => i(true)} className="mt-1 text-[11px] text-gray-500 hover:text-gray-300">
+            <button onClick={() => i(true)} className="mt-0.5 text-xs text-gray-500 hover:text-gray-200">
               + Add note
             </button>
           )}
+          {otherDev.map((n) => (
+            <div key={n.developer_name} className="mt-1.5 pl-2.5 py-1 border-l-2 border-gray-500 rounded-none">
+              <div className="text-[11px] text-gray-400">{n.developer_name} · developer</div>
+              <div className="text-[13px] text-gray-200 whitespace-pre-wrap">{normalizePath(n.note)}</div>
+            </div>
+          ))}
+          {/* Developers reply to a tester's step note; no tester note, no reply box (an existing reply still shows). */}
+          {onDevNote &&
+            (r || myDev) &&
+            (devOpen || myDev ? (
+              <div className="mt-1.5">
+                <div className="text-[11px] text-gray-400 mb-1">Your reply · visible to testers</div>
+                <textarea
+                  autoFocus={devOpen && !myDev}
+                  value={myDev}
+                  onChange={(p) => onDevNote(prettyArrows(p.target.value))}
+                  onBlur={() => setDevOpen(false)}
+                  rows={1}
+                  placeholder="Reply to the tester’s note."
+                  className="w-full px-2 py-1.5 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-[13px] focus:outline-none focus:border-gray-600 resize-y"
+                />
+              </div>
+            ) : (
+              <button onClick={() => setDevOpen(true)} className="mt-0.5 text-xs text-gray-500 hover:text-gray-200">
+                + Reply to this note
+              </button>
+            ))}
         </div>
-        <div className="relative group flex-shrink-0">
-          <button
-            onClick={o || undefined}
-            disabled={!o}
-            className={`w-5 h-5 mt-0.5 rounded-sm border-2 flex items-center justify-center transition-colors ${u ? "bg-green-600 border-green-600" : v ? "bg-orange-500 border-orange-500" : d ? "bg-red-600 border-red-600" : o ? "border-gray-600 hover:border-gray-500" : "border-gray-700"}`}
-          >
-            {(u || v) && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-            {d && <X className="w-3 h-3 text-white" strokeWidth={3} />}
+        {o && (
+          <button onClick={o} title={c} aria-label={`Step ${e + 1}: ${roLabel}. ${c}`} className="group mt-px flex-shrink-0">
+            {box}
           </button>
-          {o && (
-          <span className="hidden group-hover:block absolute z-50 right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-950 border border-gray-700 rounded-sm text-[11px] text-gray-100 whitespace-nowrap shadow-lg pointer-events-none">
-            {c}
+        )}
+        {!o && !cl && (
+          <span className="mt-px flex-shrink-0" title={roLabel}>
+            {box}
           </span>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -10219,7 +10979,8 @@ function DevEntry({ sessionId: e }) {
     } catch {}
     navigateTo(sessionUrl(e));
   };
-  if (d && !c) {
+  // the portals work on phones, so no "Best on desktop" stop.
+  if (false && d && !c) {
     return <DesktopOnlyNotice onContinueAnyway={() => p(true)} />;
   }
   if (t === "loading") {
@@ -10283,7 +11044,10 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let [v, k] = useState("");
   let [C, m] = useState(false);
   let [f, w] = useState("all");
-  let [T, A] = useState(true);
+  let [T, A] = useState((() => !(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT)));
+  let [listGrouped, setListGrouped] = useListGrouped();
+  let devStepNotes = useDevStepNotes(e.id);
+  let isNarrow = useIsMobile(MOBILE_BREAKPOINT);
   usePortalTabTitle(e, "Dev");
   useOpenLinkedTest(r, testerTabNames(e.testers, allF), g, setDevTab);
   useSearchShortcut(() => A(true), () => m(true), () => {
@@ -10645,6 +11409,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
     (i[$.id] || []).some((H) => H.developer_name === t && H.status === "fixed"),
   ).length;
   let be = inFocus.filter(($) => isIssueStatus(s[$.id]?.status)).length;
+  if (listGrouped && !sameModuleForAll(r)) ie = sortByModuleGroups(ie);
   useSidebarArrowNav(ie, x, g);
   if (d) {
     return <Notice>Loading session…</Notice>;
@@ -10689,6 +11454,8 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
       <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100">
       <div className="flex-1 min-h-0 flex">
         <DevSidebar
+          listGrouped={listGrouped}
+          setListGrouped={setListGrouped}
           open={T}
           onClose={() => A(false)}
           onSetFixStage={($, H) => B($, "fixed", H)}
@@ -10728,13 +11495,15 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           hasBaseUrlOverride={S}
           resetBaseUrl={I}
         />
-        <div className="flex-1 min-w-0 flex flex-col relative">
+        <div className="flex-1 min-w-0 flex flex-col relative" data-side-closed={!T && !isNarrow ? "" : undefined}>
+          {/* On phones the "Show test list" button joins the floating Pings / Read me row, at its left end. */}
           {!T && (
             <button
               onClick={() => A(true)}
-              className="absolute top-3 left-3 z-20 p-2 bg-gray-900 border border-gray-800 rounded-sm hover:bg-gray-800"
+              className={`flex items-center justify-center bg-gray-900 border rounded-sm text-gray-400 hover:text-gray-100 ${isNarrow ? "fixed bottom-14 left-4 z-30 w-9 h-[34px] border-gray-700 shadow-lg" : "absolute top-3.5 left-3 z-20 w-8 h-8 border-gray-800 hover:border-gray-700"}`}
+              title="Show test list"
             >
-              <PanelLeftOpen className="w-4 h-4 text-gray-400" />
+              <PanelLeftOpen className="w-4 h-4" />
             </button>
           )}
           {ue ? (
@@ -10751,12 +11520,24 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
               onSetStatus={($) => B(ue.id, $)}
               onSetFixStage={($) => B(ue.id, "fixed", $)}
               onSetNote={($) => ne(ue.id, $)}
+              devStepNotes={devStepNotes.forTest(ue.id)}
+              onDevStepNote={devStepNotes.ok ? ($, H) => devStepNotes.save(ue.id, t, $, H) : null}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
               No test case selected.
             </div>
           )}
+          <TesterTabBar
+            names={tabNames}
+            active={devTab}
+            onSelect={setDevTab}
+            stats={tabStats}
+            hints={[
+              { keys: ["I", "F", "R"], label: "mark" },
+              { keys: ["↑", "↓"], label: "previous / next" },
+            ]}
+          />
         </div>
         <FocusModeModal
           open={W}
@@ -10785,7 +11566,6 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           }}
         />
       </div>
-      <TesterTabBar names={tabNames} active={devTab} onSelect={setDevTab} stats={tabStats} />
       </div>
     </TestLinkContext.Provider>
     </PeopleContext.Provider>
@@ -10801,6 +11581,9 @@ var EXPORT_ISSUE_STATUSES = [
   { value: "Fail", color: "#dc2626" },
   { value: "Blocked", color: "#dc2626" },
   { value: "Needs Review", color: "#d97706" },
+  // Only used when "Export all" is ticked (colours for the report, not rows in the Include list).
+  { value: "Pass", color: "#16a34a", extra: true },
+  { value: "Not Tested", color: "#6b7280", extra: true },
 ];
 var STEP_MARK = {
   done: { sym: "✓", label: "Done", color: "#16a34a" },
@@ -10815,7 +11598,7 @@ var EXP_MARK = {
 };
 var exportEsc = (e) =>
   String(e ?? "").replace(/[&<>"']/g, (t) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[t]);
-var exportFileBase = (e) => `${String(e || "UAT").replace(/[\\/:*?"<>|]+/g, "-").trim()} - issues ${new Date().toISOString().slice(0, 10)}`;
+var exportFileBase = (e) => `${String(e || "UAT").replace(/[\\/:*?"<>|]+/g, "-").trim()} - tests ${new Date().toISOString().slice(0, 10)}`;
 // Draws a screenshot plus its annotations onto a canvas. Falls back to the plain URL if the image can't be read.
 var renderAnnotatedShot = async (e) => {
   try {
@@ -10904,11 +11687,12 @@ var renderAnnotatedShot = async (e) => {
   }
 };
 // Collects everything needed for the report, in session order.
-var collectIssueReport = (e, t, a) =>
+var collectIssueReport = (e, t, a, all = false) =>
   e
-    .filter((r) => a.includes(t[r.id]?.status))
+    .filter((r) => all || a.includes(t[r.id]?.status))
     .map((r) => {
-      let o = t[r.id] || {};
+      let o0 = t[r.id] || {};
+      let o = { ...o0, status: o0.status || "Not Tested" };
       let s = o.step_checks || {};
       let l = o.step_notes || {};
       let i = parseExpectedChecklist(r.expected_result);
@@ -10994,7 +11778,7 @@ figure{margin:8px 0 12px;break-inside:avoid}figure img{max-width:100%;max-height
 .pb{break-before:page}
 @media print{body{padding:0}}
 </style></head><body>
-<h1>${exportEsc(t || "UAT")} · issues</h1>
+<h1>${exportEsc(t || "UAT")} · tests</h1>
 <div class="sub">Exported ${exportEsc(new Date().toLocaleString())} · ${e.length} test${e.length === 1 ? "" : "s"}${u.length ? ` · ${u.map((c) => `${c.n} ${exportEsc(getTesterStatus(c.value).label.toLowerCase())}`).join(" · ")}` : ""}</div>
 <table><thead><tr><th>ID</th><th>Test</th><th>Result</th><th>Severity</th></tr></thead><tbody>${d}</tbody></table>
 ${i}
@@ -11032,7 +11816,7 @@ var buildIssuesDocx = async (e, t, a) => {
     return b;
   };
   let l = [];
-  l.push(new Paragraph({ heading: HeadingLevel.TITLE, children: [new TextRun({ text: `${t || "UAT"} · issues` })] }));
+  l.push(new Paragraph({ heading: HeadingLevel.TITLE, children: [new TextRun({ text: `${t || "UAT"} · tests` })] }));
   l.push(
     new Paragraph({
       spacing: { after: 200 },
@@ -11144,6 +11928,7 @@ var buildIssuesDocx = async (e, t, a) => {
 };
 function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleCases: r, doneMarks: marks = {}, myName: me = "", onClose: o }) {
   let [s, l] = useState(["Fail", "Blocked", "Needs Review"]);
+  let [exportAll, setExportAll] = useState(false);
   // Which tests to export: the current sidebar list (default), this developer's own Fixing/Fixed tests, or the whole session.
   let myMarked = t.filter((C) => (marks[C.id] || []).some((m) => m.developer_name === me && (m.status === "in_progress" || m.status === "fixed")));
   let [i, u] = useState("list");
@@ -11159,7 +11944,7 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
   }, [o, p]);
   let S = i === "mine" ? myMarked : i === "list" ? r : t;
   let I = (C) => S.filter((m) => a[m.id]?.status === C).length;
-  let x = collectIssueReport(S, a, s);
+  let x = collectIssueReport(S, a, s, exportAll);
   let g = x.reduce((C, m) => C + (m.f.screenshots || []).length, 0);
   let v = async () => {
     if (!x.length || p) return;
@@ -11214,18 +11999,18 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !p && o()}>
       <div className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-md shadow-2xl" onClick={(C) => C.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800">
-          <h2 className="text-base font-bold text-gray-100">Export issues</h2>
+          <h2 className="text-base font-bold text-gray-100">Export tests</h2>
           <button onClick={o} disabled={!!p} className="text-gray-400 hover:text-gray-100 p-1" title="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="px-5 py-4 space-y-4">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">From</div>
+            <div className="text-xs font-medium text-gray-400 mb-1.5">From</div>
             <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
               {[
                 { key: "list", title: "Current sidebar list", sub: "Uses your tab, filters and search", count: r.length },
-                { key: "mine", title: "My Fixing and Fixed tests", sub: "Tests you've marked In Progress or Fixed", count: myMarked.length },
+                { key: "mine", title: "My In progress and Fixed tests", sub: "Tests you’ve marked In progress, Fixed or Ready to retest", count: myMarked.length },
                 { key: "all", title: "All tests in this session", sub: "Everyone's, whoever is fixing them", count: t.length },
               ].map((C) => (
                 <label key={C.key} className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-800/50">
@@ -11239,23 +12024,40 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
               ))}
             </div>
             {i === "mine" && myMarked.length === 0 && (
-              <div className="text-xs text-gray-500 mt-1.5">You haven't marked any tests as Fixing or Fixed yet.</div>
+              <div className="text-xs text-gray-500 mt-1.5">You haven’t marked any tests as In progress, Fixed or Ready to retest yet.</div>
             )}
           </div>
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Include</div>
+            <div className="text-xs font-medium text-gray-400 mb-1.5">Include</div>
             <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
-              {EXPORT_ISSUE_STATUSES.map((C) => (
-                <label key={C.value} className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-800/50">
-                  <input type="checkbox" checked={s.includes(C.value)} onChange={() => k(C.value)} className="accent-emerald-500 w-4 h-4" />
+              {EXPORT_ISSUE_STATUSES.filter((C) => !C.extra).map((C) => (
+                <label
+                  key={C.value}
+                  className={`flex items-center gap-3 px-3 py-2 text-sm ${exportAll ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/50"}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={exportAll || s.includes(C.value)}
+                    disabled={exportAll}
+                    onChange={() => k(C.value)}
+                    className="accent-emerald-500 w-4 h-4"
+                  />
                   <span className="flex-1 text-gray-100">{getTesterStatus(C.value).label}</span>
                   <span className="text-xs text-gray-500">{I(C.value)}</span>
                 </label>
               ))}
+              <label className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-800/50">
+                <input type="checkbox" checked={exportAll} onChange={() => setExportAll(!exportAll)} className="accent-emerald-500 w-4 h-4" />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-gray-100">Export all</span>
+                  <span className="block text-[11px] text-gray-500 leading-snug">Every test, including Pass and Not run</span>
+                </span>
+                <span className="text-xs text-gray-500">{S.length}</span>
+              </label>
             </div>
           </div>
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Format</div>
+            <div className="text-xs font-medium text-gray-400 mb-1.5">Format</div>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { key: "pdf", title: "PDF", sub: "Opens the print view, then choose Save as PDF" },
@@ -11287,9 +12089,9 @@ function ExportIssuesModal({ sessionName: e, testCases: t, findings: a, visibleC
           <button
             onClick={v}
             disabled={!x.length || !!p}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-sm font-medium bg-emerald-600 text-gray-950 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500"
           >
-            <FileDown className="w-4 h-4" /> {p ? "Exporting…" : "Export"}
+            <FileUp className="w-4 h-4" /> {p ? "Exporting…" : "Export"}
           </button>
         </div>
       </div>
@@ -11333,90 +12135,170 @@ function DevSidebar({
   resetBaseUrl: j,
   onSetFixStage: setFixStage = () => {},
   onMarkRetestReady: markRetestReady = async () => {},
+  listGrouped = true,
+  setListGrouped = () => {},
 }) {
   let [M, W] = useState(false);
   let [batchOpen, setBatchOpen] = useState(false);
+  let mobile = useIsMobile(MOBILE_BREAKPOINT);
+  let [sideW, setSideW] = useSidebarWidth();
   // This developer's own fixes that aren't merged yet (for the "Mark retest ready" batch on the Fixed tab).
   let myNotMerged = l.filter((D) => isNotMerged((u[D.id] || []).find((O) => O.developer_name === r)));
   let [V, F] = useState(false);
   let [se, E] = useState(false);
+  let [exportOpen, setExportOpen] = useState(false);
   let sevOf = (D) => getSeverity(i[D.id]?.bug_severity)?.value || "";
-  // Counts (shortcuts, tabs, filter menus) follow the Focus filter when one is active.
+  // Counts (tabs, filter menus) follow the Focus filter when one is active.
   let lc = C ? l.filter((D) => C.has(D.id)) : l;
   let sevCounts = {};
   lc.forEach((D) => {
     let O = sevOf(D);
     sevCounts[O] = (sevCounts[O] || 0) + 1;
   });
-  let [exportOpen, setExportOpen] = useState(false);
-  let resultShortcuts = [
-    { value: "Fail", label: "Failed", text: "text-red-400", dot: "bg-red-500", active: "bg-red-900/50 border-red-600 text-red-100" },
-    { value: "Blocked", label: "Blocked", text: "text-red-300", dot: "bg-red-400", active: "bg-red-900/50 border-red-600 text-red-100" },
-    { value: "Needs Review", label: "Needs review", text: "text-amber-400", dot: "bg-amber-500", active: "bg-amber-900/40 border-amber-600 text-amber-100" },
-  ]
-    .map((D) => ({ ...D, count: lc.filter((O) => i[O.id]?.status === D.value).length }))
-    .filter((D) => D.count > 0);
-  let failedOnly = lc.filter((D) => isFailureStatus(i[D.id]?.status)).length;
-  let reviewOnly = lc.filter((D) => String(i[D.id]?.status || "").toLowerCase() === "needs review").length;
   let resCounts = {};
   lc.forEach((D) => {
     let O = i[D.id]?.status || "Not Tested";
     resCounts[O] = (resCounts[O] || 0) + 1;
   });
+  // Quick filters under the progress bar (from the live app): click to show only that tester result.
+  let resultShortcuts = [
+    { value: "Fail", label: "failed", text: "text-red-400", dot: "bg-red-500" },
+    { value: "Blocked", label: "blocked", text: "text-orange-300", dot: "bg-orange-500" },
+    { value: "Needs Review", label: "needs review", text: "text-yellow-300", dot: "bg-yellow-500" },
+  ]
+    .map((D) => ({ ...D, count: lc.filter((O) => i[O.id]?.status === D.value).length }))
+    .filter((D) => D.count > 0);
   let priOptions = sortPriorities(Array.from(new Set(l.map((D) => D.priority).filter(Boolean))));
   let priHasNone = priOptions.length > 0 && l.some((D) => !D.priority);
   let devTabs = [
-    { key: "all", label: "All", count: lc.length },
-    { key: "failed", label: "Issues", count: p, alert: p > 0, hint: "Failed, blocked or needs review" },
-    { key: "mywip", label: "Fixing", count: d, hint: "Tests you've marked In Progress" },
-    { key: "myfixed", label: "Fixed", count: c, hint: "Tests you've marked Fixed" },
+    { key: "all", label: "All", count: lc.length, hint: "Show all tests" },
+    { key: "failed", label: "Needs attention", count: p, alert: p > 0, hint: "Tests this tester marked Fail, Blocked or Needs review" },
+    { key: "mywip", label: "In progress", count: d, hint: "Tests you’ve marked In progress" },
+    { key: "myfixed", label: "Fixed", count: c, hint: "Tests you’ve marked Fixed" },
   ];
-  if (e) {
+  if (!e && !mobile) {
+    return null;
+  }
+  let renderRow = (D) => {
+    let O = i[D.id];
+    let B = O?.status || "Not Tested";
+    let he = u[D.id] || [];
+    let mine = he.find((be) => be.developer_name === r);
+    let ue = mine?.status || null;
+    let pe = he.filter((be) => be.developer_name !== r && (be.status === "fixed" || be.status === "in_progress"));
+    let fe = D.id === b;
+    let Ce = ue === "fixed" && B === "Pass";
+    let sev = getSeverity(O?.bug_severity);
     return (
-      <aside className="w-[360px] flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-800">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <button onClick={t} className="p-1 hover:bg-gray-800 rounded-sm flex-shrink-0" title="Collapse">
-                <PanelLeftClose className="w-4 h-4 text-gray-400" />
-              </button>
-              <h2 className="font-bold text-gray-100 truncate">{a}</h2>
-            </div>
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <button
-                onClick={() => setExportOpen(true)}
-                className="p-1 hover:bg-gray-800 rounded-sm"
-                title="Export failed, blocked and needs-review tests"
+      <button
+        data-tc-id={D.id}
+        key={D.id}
+        onClick={() => { _(D.id); if (mobile) t(); }}
+        onMouseOver={truncatedTitleTip}
+        className={`w-full flex items-center gap-2 px-2 py-1.5 min-h-[32px] rounded-sm text-left transition-colors ${fe ? "bg-gray-800" : "hover:bg-gray-800/50"} ${Ce ? "opacity-50" : ""}`}
+      >
+        <StatusDot status={B} />
+        <span className="font-mono text-[11px] text-gray-500 flex-shrink-0">{D.test_id || "—"}</span>
+        <span
+          data-ttl={D.title || "Untitled"}
+          className={`flex-1 min-w-0 truncate text-[13px] ${fe ? "text-gray-100 font-medium" : "text-gray-400"}`}
+        >
+          {D.title || "Untitled"}
+        </span>
+        {sev && (
+          <span className="text-[10px] text-gray-500 flex-shrink-0" title={`Severity: ${sev.value} — ${sev.description}`}>
+            {sev.value}
+          </span>
+        )}
+        {ue === "fixed" &&
+          (() => {
+            let nm = isNotMerged(mine);
+            let flip = (be) => {
+              be.stopPropagation();
+              be.preventDefault();
+              setFixStage(D.id, nm ? "retest_ready" : "not_merged");
+            };
+            return (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={flip}
+                onKeyDown={(be) => {
+                  if (be.key === "Enter" || be.key === " ") flip(be);
+                }}
+                className={`flex-shrink-0 rounded-sm ${nm ? "text-gray-500 hover:text-gray-300" : "text-sky-400 hover:text-sky-300"}`}
+                title={nm ? "Fixed, not merged · Click to mark retest ready" : "Fixed, retest ready · Click to set back to not merged"}
               >
-                <FileDown className="w-4 h-4 text-gray-400" />
-              </button>
-              <button
-                onClick={() => E(true)}
-                className="p-1 hover:bg-gray-800 rounded-sm"
-                title="Settings"
-              >
-                <Settings2 className="w-4 h-4 text-gray-400" />
-              </button>
-            </div>
-          </div>
-          <div className="text-xs text-gray-400 mb-2">
-            Signed in as <span className="text-gray-100 font-medium">{r}</span> <span className="text-gray-500">(Developer)</span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-            <span>
-              {c} / {l.length} fixed by you
+                <CircleCheck className="w-4 h-4" />
+              </span>
+            );
+          })()}
+        {ue === "in_progress" && (
+          <span className="flex-shrink-0 text-wip-400" title="You’re working on this">
+            <Clock className="w-4 h-4" />
+          </span>
+        )}
+        {/* One badge per other developer, coloured by their mark: orange = in progress,
+            blue outline = fixed but not ready to retest yet, solid blue = fixed and ready to retest. */}
+        {pe.map((be) => {
+          let fx = be.status === "fixed";
+          let nm = isNotMerged(be);
+          let n = be.developer_name;
+          return (
+            <span
+              key={n}
+              className={`flex-shrink-0 text-[10px] font-medium px-1 py-0.5 rounded-sm ${fx ? (nm ? "border border-sky-500/60 text-sky-300" : "bg-sky-500/25 text-sky-200") : "bg-wip-600/20 text-wip-300"}`}
+              title={fx ? (nm ? `Fixed by ${n}, not ready to retest yet` : `Fixed by ${n}, ready to retest`) : `${n} is working on this`}
+            >
+              {nameInitials(n)}
             </span>
+          );
+        })}
+      </button>
+    );
+  };
+  return (
+    <Fragment>
+    {mobile && (
+      <div
+        className={`fixed inset-0 z-30 bg-black/50 transition-opacity duration-300 ${e ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={t}
+        aria-hidden="true"
+      />
+    )}
+    <aside
+      className={`bg-gray-900 border-r border-gray-800 flex flex-col ${mobile ? `overflow-hidden fixed inset-y-0 left-0 z-40 w-[min(320px,88vw)] shadow-2xl transition-transform duration-300 ease-out ${e ? "translate-x-0" : "-translate-x-[calc(100%+48px)]"}` : "relative flex-shrink-0"}`}
+      style={mobile ? undefined : { width: sideW }}
+      aria-hidden={mobile && !e ? true : undefined}
+    >
+      {!mobile && <SidebarResizeHandle width={sideW} setWidth={setSideW} />}
+      <div className="px-3 pt-3 pb-3 border-b border-gray-800 flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <button
+            onClick={t}
+            className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100 flex-shrink-0"
+            title="Collapse"
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </button>
+          <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-gray-100">{a}</h2>
+          <button
+            onClick={() => setExportOpen(true)}
+            className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100 flex-shrink-0"
+            title="Export tests"
+          >
+            <FileUp className="w-4 h-4" />
+          </button>
+        </div>
+        <div>
+          <div className="flex h-1.5 rounded-full overflow-hidden bg-gray-800">
+            <div className="bg-sky-500 transition-all" style={{ width: `${l.length ? (c / l.length) * 100 : 0}%` }} />
           </div>
-          <div className={`w-full bg-gray-800 rounded-full h-1 overflow-hidden ${resultShortcuts.length ? "mb-2" : "mb-3"}`}>
-            <div
-              className="bg-emerald-500 h-1 rounded-full transition-all"
-              style={{
-                width: `${l.length ? (c / l.length) * 100 : 0}%`,
-              }}
-            />
+          <div className="text-xs text-gray-400 mt-1.5">
+            {c} of {l.length} fixed by you
           </div>
           {resultShortcuts.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-xs">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs" role="group" aria-label="Quick filters">
               {resultShortcuts.map((D) => {
                 let O = resF === D.value;
                 return (
@@ -11431,310 +12313,224 @@ function DevSidebar({
                       if (v === "mywip" || v === "myfixed") k("all");
                     }}
                     aria-pressed={O}
-                    title={O ? "Click again to show all results" : `Show only ${D.label.toLowerCase()} tests`}
-                    className={`inline-flex items-center gap-1 ${D.text} underline-offset-2 transition-colors ${O ? "font-semibold underline decoration-2" : "hover:underline"}`}
+                    title={O ? "Click again to show all results" : `Show only ${D.label} tests`}
+                    className={`group inline-flex items-center gap-1 ${D.text} transition-colors ${O ? "font-semibold" : ""}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${D.dot}`} />
-                    {D.count} {D.label.toLowerCase()}
+                    <span className={`underline-offset-2 ${O ? "underline decoration-2" : "group-hover:underline"}`}>
+                      {D.count} {D.label}
+                    </span>
                     {O && <X className="w-3 h-3" />}
                   </button>
                 );
               })}
             </div>
           )}
-          <div className="grid grid-cols-4 border border-gray-700 rounded-sm overflow-hidden mb-2">
-            {devTabs.map((D, O) => {
-              let B = v === D.key;
-              return (
-                <button
-                  key={D.key}
-                  onClick={() => k(D.key)}
-                  title={D.hint}
-                  aria-pressed={B}
-                  className={`h-8 px-1 flex items-center justify-center gap-1 text-[11px] font-medium transition-colors ${O > 0 ? "border-l border-gray-700" : ""} ${B ? "bg-emerald-600 text-white" : "bg-gray-800/60 text-gray-400 hover:bg-gray-800 hover:text-gray-200"}`}
-                >
-                  <span className="truncate">{D.label}</span>
-                  <span className={B ? "text-emerald-100/80" : D.alert ? "text-red-400" : "text-gray-500"}>{D.count}</span>
-                </button>
-              );
-            })}
-          </div>
-          {x ? (
-            <SidebarSearch value={S} onChange={I} onClose={() => g(false)} />
-          ) : (
-            <div className="flex gap-1.5">
-              <button
-                onClick={() => g(true)}
-                className={`flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${S ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
-                title={`Search test cases (${SEARCH_SHORTCUT_LABEL})`}
-              >
-                <Search className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={f}
-                className={`relative flex-shrink-0 flex items-center justify-center border rounded-sm transition-colors w-8 h-8 ${C ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-500" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-300 hover:border-emerald-700 hover:bg-gray-700"}`}
-                title={C ? `Focus filter active (${C.size} tests)` : "Focus on a hand-picked set of tests"}
-              >
-                <Filter className="w-3.5 h-3.5" />
-              </button>
-              <FilterSelect value={resF} onChange={setResF} active={resF !== "All"}>
-                <option value="All">Tester result</option>
-                {TESTER_STATUSES.map((D) => (
-                  <option value={D.value} key={D.value}>
-                    {D.label} ({resCounts[D.value] || 0})
-                  </option>
-                ))}
-              </FilterSelect>
-              <FilterSelect value={sevF} onChange={setSevF} active={sevF !== "All"}>
-                <option value="All">Severity</option>
-                {SEVERITIES.map((D) => (
-                  <option value={D.value} key={D.value}>
-                    {D.value} ({sevCounts[D.value] || 0})
-                  </option>
-                ))}
-                <option value="">Not set ({sevCounts[""] || 0})</option>
-              </FilterSelect>
-            </div>
-          )}
-          {priOptions.length > 0 && (
-          <div className="flex gap-1.5 mt-1.5">
-              {priOptions.length > 0 && (
-                <FilterSelect value={priF} onChange={setPriF} active={priF !== "All"}>
-                  <option value="All">Priority</option>
-                  {priOptions.map((D) => (
-                    <option value={D} key={D}>
-                      {D} ({l.filter((O) => O.priority === D).length})
-                    </option>
-                  ))}
-                  {priHasNone && <option value="">No priority</option>}
-                </FilterSelect>
-              )}
-          </div>
-          )}
-          {C && (
-            <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 bg-emerald-950/40 border border-emerald-800/50 rounded-sm text-xs">
-              <Filter className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-              <span className="text-emerald-200">
-                Focused: {C.size} of {l.length}
-              </span>
-              <button
-                onClick={m}
-                className="ml-auto text-emerald-400 hover:text-emerald-200 transition-colors"
-                title="Clear focus filter"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-          {v === "myfixed" && myNotMerged.length > 0 && (
-            <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 bg-gray-800/60 border border-gray-700 rounded-sm text-xs">
-              <span className="text-gray-300">
-                {myNotMerged.length} of your fix{myNotMerged.length === 1 ? " isn't" : "es aren't"} merged yet
-              </span>
-              <button
-                onClick={() => setBatchOpen(true)}
-                className="ml-auto text-emerald-400 hover:text-emerald-300 font-medium whitespace-nowrap transition-colors"
-              >
-                Mark retest ready…
-              </button>
-            </div>
-          )}
         </div>
-        {batchOpen && (
-          <MarkRetestReadyModal
-            tests={myNotMerged}
-            onClose={() => setBatchOpen(false)}
-            onConfirm={async (ids) => {
-              await markRetestReady(ids);
-              setBatchOpen(false);
-            }}
-          />
-        )}
-        <div className="flex-1 overflow-y-auto">
-          {h.length === 0 ? (
-            <EmptyState
-              hasAnyTests={l.length > 0}
-              suggestions={[
-                C && {
-                  label: "Clear focus",
-                  onClick: m,
-                },
-                v !== "all" && {
-                  label: "Show all tests",
-                  onClick: () => k("all"),
-                },
-                resF !== "All" && {
-                  label: "Clear tester result filter",
-                  onClick: () => setResF("All"),
-                },
-                sevF !== "All" && {
-                  label: "Clear severity filter",
-                  onClick: () => setSevF("All"),
-                },
-                priF !== "All" && {
-                  label: "Clear priority filter",
-                  onClick: () => setPriF("All"),
-                },
-                S && {
-                  label: "Clear search",
-                  onClick: () => I(""),
-                },
-              ]}
-            />
-          ) : (
-            h.map((D) => {
-              let O = i[D.id];
-              let B = O?.status || "Not Tested";
-              let ne = getTesterStatus(B);
-              let he = u[D.id] || [];
-              let ue = he.find((be) => be.developer_name === r)?.status || null;
-              let pe = he.filter((be) => be.developer_name !== r);
-              let me = pe.filter((be) => be.status === "fixed").length;
-              let Y = pe.filter((be) => be.status === "in_progress").length;
-              let fe = D.id === b;
-              let Ce = ue === "fixed" && B === "Pass";
-              return (
-                <button
-                  data-tc-id={D.id}
-                  onClick={() => _(D.id)}
-                  className={`w-full text-left px-3 py-2.5 border-b border-gray-800 border-l-4 flex items-start gap-2 hover:bg-gray-800/60 ${fe ? "bg-emerald-950/40 border-l-emerald-400 shadow-[inset_6px_0_20px_-4px_rgba(16,185,129,0.4)]" : "border-l-transparent"} ${Ce ? "opacity-50" : ""}`}
-                  key={D.id}
-                >
-                  <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${ne.dot}`} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-0.5">
-                      <span className="font-mono text-emerald-400">{D.test_id || "—"}</span>
-                      {D.module && !sameModuleForAll(l) && <span className="truncate">· {D.module}</span>}
-                      <StatusText value={B} />
-                      {getSeverity(O?.bug_severity) && (
-                        <span className="ml-auto">
-                          <SeverityBadge value={O.bug_severity} size="xs" />
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      className={`text-sm leading-tight ${fe ? "text-gray-100 font-semibold" : "text-gray-300"}`}
-                    >
-                      {D.title || "Untitled"}
-                    </div>
-                    {(me > 0 || Y > 0) && (
-                      <div className="mt-1 text-[11px] leading-snug text-gray-500 truncate" title={summarizeDevMarks(pe)}>
-                        {me > 0 && (
-                          <span>
-                            <Check className="inline w-3 h-3 -mt-0.5 mr-0.5 text-emerald-500" strokeWidth={3} />
-                            Fixed by{" "}
-                            {pe
-                              .filter((be) => be.status === "fixed")
-                              .map((be) => be.developer_name + (isNotMerged(be) ? " (not merged)" : ""))
-                              .join(", ")}
-                          </span>
-                        )}
-                        {me > 0 && Y > 0 && " · "}
-                        {Y > 0 && (
-                          <span>
-                            <Clock className="inline w-3 h-3 -mt-0.5 mr-0.5 text-amber-500" strokeWidth={2.5} />
-                            Fixing:{" "}
-                            {pe
-                              .filter((be) => be.status === "in_progress")
-                              .map((be) => be.developer_name)
-                              .join(", ")}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-0.5 mt-0.5 flex-shrink-0">
-                    {ue === "fixed" && (() => {
-                      let nm = isNotMerged(he.find((be) => be.developer_name === r));
-                      let flip = (be) => {
-                        be.stopPropagation();
-                        be.preventDefault();
-                        setFixStage(D.id, nm ? "retest_ready" : "not_merged");
-                      };
-                      return (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={flip}
-                          onKeyDown={(be) => {
-                            if (be.key === "Enter" || be.key === " ") flip(be);
-                          }}
-                          className={`w-5 h-5 -m-0.5 rounded-sm flex items-center justify-center cursor-pointer transition-colors ${nm ? "border border-emerald-600 hover:bg-emerald-900/60" : "bg-emerald-600 hover:bg-emerald-500"}`}
-                          title={nm ? "Fixed, not merged · Click to mark retest ready" : "Fixed, retest ready · Click to set back to not merged"}
-                        >
-                          <Check className={`w-3 h-3 ${nm ? "text-emerald-400" : "text-white"}`} strokeWidth={3} />
-                        </span>
-                      );
-                    })()}
-                    {ue === "in_progress" && (
-                      <span
-                        className="w-4 h-4 bg-amber-600 rounded-sm flex items-center justify-center"
-                        title="You're working on this"
-                      >
-                        <Clock className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })
-          )}
+        <div className="grid grid-cols-2 gap-0.5 p-0.5 bg-gray-800 rounded-sm text-xs" role="group" aria-label="Filter">
+          {devTabs.map((D) => {
+            let B = v === D.key;
+            return (
+              <button
+                key={D.key}
+                onClick={() => k(B && D.key !== "all" ? "all" : D.key)}
+                title={B && D.key !== "all" ? "Click again to show all tests" : D.hint}
+                aria-pressed={B}
+                className={`h-7 px-2 flex items-center justify-between rounded-sm transition-colors ${B ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-400 hover:text-gray-200"}`}
+              >
+                <span className="truncate">{D.label}</span>
+                <span className={`tabular-nums ${D.alert && !B ? "text-red-400" : ""}`}>{D.count}</span>
+              </button>
+            );
+          })}
         </div>
-        {exportOpen && (
-          <ExportIssuesModal
-            sessionName={a}
-            testCases={l}
-            findings={i}
-            visibleCases={h}
-            doneMarks={u}
-            myName={r}
-            onClose={() => setExportOpen(false)}
+        {x ? (
+          <SidebarSearch value={S} onChange={I} onClose={() => g(false)} />
+        ) : (
+          <div className="flex gap-1.5">
+            <SidebarIconButton active={!!S} onClick={() => g(true)} title={`Search test cases (${SEARCH_SHORTCUT_LABEL})`}>
+              <Search className="w-4 h-4" />
+            </SidebarIconButton>
+            <SidebarIconButton
+              active={!!C}
+              onClick={f}
+              title={C ? `Focus filter active (${C.size} tests)` : "Focus on a hand-picked set of tests"}
+            >
+              <Filter className="w-4 h-4" />
+            </SidebarIconButton>
+            <FilterSelect value={resF} onChange={setResF} active={resF !== "All"}>
+              <option value="All">Result</option>
+              {TESTER_STATUSES.map((D) => (
+                <option value={D.value} key={D.value}>
+                  {D.label} ({resCounts[D.value] || 0})
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterSelect value={sevF} onChange={setSevF} active={sevF !== "All"}>
+              <option value="All">Severity</option>
+            {SEVERITIES.map((D) => (
+              <option value={D.value} key={D.value}>
+                {D.value} ({sevCounts[D.value] || 0})
+              </option>
+            ))}
+              <option value="">Not set ({sevCounts[""] || 0})</option>
+            </FilterSelect>
+          </div>
+        )}
+        {priOptions.length > 0 && (
+          <div className="flex gap-1.5">
+            <FilterSelect value={priF} onChange={setPriF} active={priF !== "All"}>
+              <option value="All">All priorities</option>
+              {priOptions.map((D) => (
+                <option value={D} key={D}>
+                  {D} ({l.filter((O) => O.priority === D).length})
+                </option>
+              ))}
+              {priHasNone && <option value="">No priority</option>}
+            </FilterSelect>
+          </div>
+        )}
+        {C && <FocusChip count={C.size} total={l.length} onClear={m} />}
+      </div>
+      {batchOpen && (
+        <MarkRetestReadyModal
+          tests={myNotMerged}
+          onClose={() => setBatchOpen(false)}
+          onConfirm={async (ids) => {
+            await markRetestReady(ids);
+            setBatchOpen(false);
+          }}
+        />
+      )}
+      <div className="flex-1 overflow-y-auto">
+        {h.length === 0 ? (
+          <EmptyState
+            hasAnyTests={l.length > 0}
+            suggestions={[
+              C && {
+                label: "Clear focus",
+                onClick: m,
+              },
+              v !== "all" && {
+                label: "Show all tests",
+                onClick: () => k("all"),
+              },
+              resF !== "All" && {
+                label: "Clear tester result filter",
+                onClick: () => setResF("All"),
+              },
+              sevF !== "All" && {
+                label: "Clear severity filter",
+                onClick: () => setSevF("All"),
+              },
+              priF !== "All" && {
+                label: "Clear priority filter",
+                onClick: () => setPriF("All"),
+              },
+              S && {
+                label: "Clear search",
+                onClick: () => I(""),
+              },
+            ]}
+          />
+        ) : (
+          <ModuleGroupedList
+            items={h}
+            allTests={l}
+            statusOf={(D) => i[D.id]?.status}
+            selectedId={b}
+            renderRow={renderRow}
+            grouped={listGrouped}
           />
         )}
-        {se && (
-          <SettingsModal
-            baseUrl={w}
-            setBaseUrl={T}
-            hasBaseUrlOverride={A}
-            resetBaseUrl={j}
-            myName={r}
-            roleLabel="Reviewing"
-            onSwitchRequested={() => W(true)}
-            onResetRequested={s ? () => F(true) : undefined}
-            resetDescription="Delete every In Progress / Fixed mark you've made in this session, along with any notes you wrote. Other developers' work is not affected."
-            onClose={() => E(false)}
-          />
-        )}
-        {M && (
-          <ConfirmDialog
-            title="Switch user?"
-            message="You'll be returned to the role picker and signed out. Your saved progress for this session isn't affected."
-            confirmLabel="Switch"
-            onConfirm={() => {
-              W(false);
-              o();
+        {h.length > 0 && (v !== "all" || resF !== "All" || sevF !== "All" || priF !== "All" || S || C) && (
+          <ShowAllFooter
+            shown={h.length}
+            total={l.length}
+            onShowAll={() => {
+              k("all");
+              setResF("All");
+              setSevF("All");
+              setPriF("All");
+              I("");
+              g(false);
+              if (C) m();
             }}
-            onCancel={() => W(false)}
           />
         )}
-        {V && (
-          <ConfirmDialog
-            title="Reset all your inputs?"
-            message="Every In Progress / Fixed mark and note you've made in this session will be permanently deleted. This action cannot be undone."
-            confirmLabel="Reset everything"
-            danger={true}
-            onConfirm={() => {
-              F(false);
-              s();
-            }}
-            onCancel={() => F(false)}
-          />
-        )}
-      </aside>
-    );
-  } else {
-    return null;
-  }
+      </div>
+      {/* Floats above the bottom bar on every tab while any of your fixes aren't merged yet. */}
+      {myNotMerged.length > 0 && (
+        <div className="flex-shrink-0">
+          <div className="flex items-center gap-2 pl-3 pr-2 py-2 bg-sky-500/15 border-t border-sky-500/50 text-xs">
+            <span className="flex-1 min-w-0 text-sky-100">
+              Mark retest ready for {myNotMerged.length} fix{myNotMerged.length === 1 ? "" : "es"}
+            </span>
+            <button
+              onClick={() => setBatchOpen(true)}
+              className="flex-shrink-0 h-7 px-2.5 rounded-sm bg-sky-600 text-white font-medium hover:bg-sky-500 whitespace-nowrap"
+              title="Tick the fixes that made it onto the test site so testers are asked to retest them"
+            >
+              Mark
+            </button>
+          </div>
+        </div>
+      )}
+      <SidebarFooter name={r} role="Developer" onSettings={() => E(true)} grouped={listGrouped} onToggleGrouped={sameModuleForAll(l) ? null : setListGrouped} />
+      {exportOpen && (
+        <ExportIssuesModal
+          sessionName={a}
+          testCases={l}
+          findings={i}
+          visibleCases={h}
+          doneMarks={u}
+          myName={r}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
+      {se && (
+        <SettingsModal
+          baseUrl={w}
+          setBaseUrl={T}
+          hasBaseUrlOverride={A}
+          resetBaseUrl={j}
+          myName={r}
+          roleLabel="Reviewing"
+          onSwitchRequested={() => W(true)}
+          onResetRequested={s ? () => F(true) : undefined}
+          resetDescription="Delete every In Progress / Fixed mark you've made in this session, along with any notes you wrote. Other developers' work is not affected."
+          onClose={() => E(false)}
+          testCases={l}
+        />
+      )}
+      {M && (
+        <ConfirmDialog
+          title="Switch user?"
+          message="You'll be returned to the role picker and signed out. Your saved progress for this session isn't affected."
+          confirmLabel="Switch"
+          onConfirm={() => {
+            W(false);
+            o();
+          }}
+          onCancel={() => W(false)}
+        />
+      )}
+      {V && (
+        <ConfirmDialog
+          title="Reset all your inputs?"
+          message="Every In Progress / Fixed mark and note you've made in this session will be permanently deleted. This action cannot be undone."
+          confirmLabel="Reset everything"
+          danger={true}
+          onConfirm={() => {
+            F(false);
+            s();
+          }}
+          onCancel={() => F(false)}
+        />
+      )}
+    </aside>
+    </Fragment>
+  );
 }
 function MarkRetestReadyModal({ tests: e, onClose: t, onConfirm: a }) {
   let [sel, setSel] = useState(() => new Set(e.map((r) => r.id)));
@@ -11774,8 +12570,8 @@ function MarkRetestReadyModal({ tests: e, onClose: t, onConfirm: a }) {
           </div>
           <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
             {e.map((r) => (
-              <label key={r.id} className="flex items-start gap-3 px-3 py-2 cursor-pointer hover:bg-gray-800/50">
-                <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggle(r.id)} className="accent-emerald-500 w-4 h-4 mt-0.5" />
+              <label key={r.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-800/50">
+                <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggle(r.id)} className="accent-emerald-500 w-4 h-4" />
                 <span className="min-w-0">
                   <span className="block font-mono text-[11px] text-emerald-400">{r.test_id || "—"}</span>
                   <span className="block text-sm text-gray-200 leading-snug">{r.title || "Untitled"}</span>
@@ -11794,7 +12590,7 @@ function MarkRetestReadyModal({ tests: e, onClose: t, onConfirm: a }) {
               setBusy(true);
               await a(e.filter((r) => sel.has(r.id)).map((r) => r.id));
             }}
-            className="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-sm flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-gray-950 rounded-sm flex items-center gap-2"
           >
             <Check className="w-4 h-4" strokeWidth={3} />
             {busy ? "Saving…" : `Mark ${sel.size} retest ready`}
@@ -11805,7 +12601,7 @@ function MarkRetestReadyModal({ tests: e, onClose: t, onConfirm: a }) {
   );
 }
 function summarizeDevMarks(e) {
-  let t = e.filter((o) => o.status === "fixed").map((o) => o.developer_name + (isNotMerged(o) ? " (not merged)" : ""));
+  let t = e.filter((o) => o.status === "fixed").map((o) => o.developer_name + (isNotMerged(o) ? " (not ready to retest yet)" : ""));
   let a = e.filter((o) => o.status === "in_progress").map((o) => o.developer_name);
   let r = [];
   if (t.length) {
@@ -11845,12 +12641,12 @@ function FilterSelect({ value: e, onChange: t, children: a, active: r }) {
     <select
       value={e}
       onChange={(o) => t(o.target.value)}
-      className={`flex-1 min-w-0 px-2 py-1.5 text-xs bg-gray-800 border text-gray-100 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 appearance-none ${r ? "border-emerald-600" : "border-gray-700"}`}
+      className={`flex-1 min-w-0 h-8 pl-2.5 text-base sm:text-xs bg-gray-950 border rounded-sm focus:outline-none focus:border-gray-500 appearance-none cursor-pointer transition-colors ${r ? "border-gray-500 text-gray-100" : "border-gray-800 text-gray-300 hover:border-gray-700"}`}
       style={{
-        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%239ca3af' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>")`,
+        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%23A0A7B2' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>")`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: "right 8px center",
-        paddingRight: "28px",
+        paddingRight: "26px",
       }}
     >
       {a}
@@ -11904,7 +12700,7 @@ function TabButton({ active: e, onClick: t, children: a }) {
   return (
     <button
       onClick={t}
-      className={`px-2 py-1 text-[11px] font-medium rounded-sm transition-colors ${e ? "bg-emerald-600 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"}`}
+      className={`px-2 py-1 text-[11px] font-medium rounded-sm transition-colors ${e ? "bg-emerald-600 text-gray-950" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"}`}
     >
       {a}
     </button>
@@ -11912,18 +12708,9 @@ function TabButton({ active: e, onClick: t, children: a }) {
 }
 function SaveIndicator({ saving: e }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-medium flex-shrink-0">
-      {e ? (
-        <Fragment>
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-          <span className="text-amber-400">Saving…</span>
-        </Fragment>
-      ) : (
-        <Fragment>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span className="text-gray-500">Saved</span>
-        </Fragment>
-      )}
+    <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 flex-shrink-0">
+      <span className={`w-1.5 h-1.5 rounded-full ${e ? "bg-[#FACC15] animate-pulse" : "bg-green-500"}`} />
+      {e ? "Saving…" : "Saved"}
     </span>
   );
 }
@@ -11983,12 +12770,183 @@ function ConfirmDialog({
           <button
             onClick={s}
             autoFocus={true}
-            className={`px-3 py-1.5 text-xs rounded-sm font-medium text-white ${o ? "bg-red-600 hover:bg-red-500" : "bg-emerald-600 hover:bg-emerald-500"}`}
+            className={`px-3 py-1.5 text-xs rounded-sm font-medium ${o ? "bg-red-600 hover:bg-red-500 text-white" : "bg-emerald-600 hover:bg-emerald-500 text-gray-950"}`}
           >
             {a}
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+// Appearance (Settings): dark (default), light, or follow the device. Saved on this device.
+var THEME_KEY = "uat-pro-theme";
+var readThemeMode = () => {
+  try {
+    return localStorage.getItem(THEME_KEY) || "dark";
+  } catch {
+    return "dark";
+  }
+};
+function applyThemeMode(m) {
+  let light = m === "light" || (m === "system" && window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches);
+  document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+}
+if (typeof window !== "undefined" && window.matchMedia) {
+  matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+    if (readThemeMode() === "system") applyThemeMode("system");
+  });
+}
+function ThemeSetting({ onPick = () => {} }) {
+  let [m, setM] = useState(readThemeMode);
+  let pick = (v) => {
+    setM(v);
+    onPick(v);
+    try {
+      localStorage.setItem(THEME_KEY, v);
+    } catch {}
+    applyThemeMode(v);
+  };
+  let opts = [
+    { v: "dark", label: "Dark", icon: Moon },
+    { v: "light", label: "Light", icon: Sun },
+    { v: "system", label: "Match device", icon: Monitor },
+  ];
+  return (
+    <div>
+      <div className="text-[11px] text-gray-400 font-semibold mb-2">Appearance</div>
+      <div className="grid grid-cols-3 gap-0.5 p-0.5 bg-gray-800 rounded-sm text-xs" role="radiogroup" aria-label="Appearance">
+        {opts.map((o) => {
+          let on = m === o.v;
+          let Icon = o.icon;
+          return (
+            <button
+              key={o.v}
+              role="radio"
+              aria-checked={on}
+              onClick={() => pick(o.v)}
+              className={`h-8 flex items-center justify-center gap-1.5 rounded-sm transition-colors ${on ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-400 hover:text-gray-200"}`}
+            >
+              <Icon className="w-4 h-4" />
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="text-[11px] text-gray-500 mt-1.5">Saved on this device.</div>
+    </div>
+  );
+}
+// Options → "What this session can show": each thing the app can display for a test, and whether
+// this session has it. Anything missing is because the imported sheet didn't provide that column.
+// (The original sheet isn't kept, so this is worked out from the imported tests.)
+var IMPORT_FIELDS = [
+  { key: "test_id", camel: "testId", label: "Test ID", col: "ID", desc: "Shown on every test and in links" },
+  { key: "title", camel: "title", label: "Test title", col: "Title", desc: "The name of each test" },
+  { key: "module", camel: "module", label: "Module groups", col: "Module", desc: "Module in the breadcrumb, and grouping the list by module" },
+  { key: "feature", camel: "feature", label: "Feature", col: "Feature", desc: "Feature in the breadcrumb" },
+  { key: "pre_conditions", camel: "preConditions", label: "Pre-conditions", col: "Pre-conditions", desc: "What to set up before testing" },
+  { key: "test_data", camel: "testData", label: "Test data", col: "Test data", desc: "Data or files to use" },
+  { key: "steps", camel: "steps", label: "Step checklist", col: "Steps", desc: "Steps testers tick off and leave notes on" },
+  { key: "expected_result", camel: "expectedResult", label: "Expected result checklist", col: "Expected result", desc: "What testers check results against" },
+  { key: "downstream_check", camel: "downstreamCheck", label: "Downstream check", col: "Downstream check", desc: "Follow-on effects to verify" },
+  { key: "edge_case", camel: "edgeCase", label: "Edge case", col: "Edge case", desc: "Unusual situations to try" },
+  { key: "initial_tester", camel: "initialTester", label: "Suggested tests", col: "Tester", desc: "Each tester’s own list (Suggested / All switch)" },
+  { key: "priority", camel: "priority", label: "Priority", col: "Priority", desc: "Priority labels and the priority filter" },
+  { key: "focus", camel: "focus", label: "Focus areas", col: "Focus area", desc: "Focus area labels and filter" },
+  { key: "dev_branch_name", camel: "devBranchName", label: "Dev branch", col: "Dev branch", desc: "Which branch a test belongs to" },
+];
+var importFilled = (t, key) => {
+  let v = t[key];
+  if (Array.isArray(v)) return v.some((x) => String(x || "").trim());
+  let s2 = String(v ?? "").trim();
+  return !!s2 && s2 !== "—";
+};
+// parsed = tests straight from the sheet in the admin's Create session wizard (camelCase fields).
+function ImportedDataSection({ testCases, parsed = false, heading = "What this session can show", fixHint = "To add something that’s missing, add the column to the sheet and ask your admin to re-import it.", defaultOpen = false }) {
+  let [open, setOpen] = useState(defaultOpen);
+  let n = testCases.length;
+  let rows = IMPORT_FIELDS.map((f) => ({ ...f, count: testCases.filter((t) => importFilled(t, parsed ? f.camel : f.key)).length }));
+  let none = rows.filter((r2) => r2.count === 0);
+  return (
+    <div>
+      {heading && <div className="text-[11px] text-gray-400 font-semibold mb-2">{heading}</div>}
+      <div className="text-sm text-gray-200">
+        {rows.length - none.length} of {rows.length} shown
+        {none.length > 0 && <span className="text-gray-400"> · {none.length} missing because the sheet didn’t include them</span>}
+      </div>
+      {/* With the list always shown (About panel), the "Missing: …" line and the toggle would just repeat it. */}
+      {!defaultOpen && none.length > 0 && (
+        <div className="text-xs text-gray-400 mt-0.5">Missing: {none.map((r2) => r2.label).join(", ")}</div>
+      )}
+      {!defaultOpen && (
+        <button onClick={() => setOpen(!open)} className="mt-1.5 text-xs text-gray-400 hover:text-gray-100 inline-flex items-center gap-1" aria-expanded={open}>
+          <ChevronRight className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
+          {open ? "Hide details" : "Show details"}
+        </button>
+      )}
+      {open && (
+        <div className={`${defaultOpen ? "mt-3" : "mt-2"} border border-gray-800 rounded-sm divide-y divide-gray-800`}>
+          {rows.map((r2) => {
+            let all = r2.count === n && n > 0;
+            let zero = r2.count === 0;
+            return (
+              <div key={r2.key} className="flex items-center gap-2.5 px-3 py-2 text-sm">
+                <span className={`flex-shrink-0 ${zero ? "text-gray-600" : "text-green-400"}`}>
+                  {zero ? <CircleX className="w-4 h-4" /> : <CircleCheck className="w-4 h-4" />}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className={zero ? "text-gray-400" : "text-gray-100"}>{r2.label}</div>
+                  <div className="text-xs text-gray-500">
+                    {zero ? `Missing: the sheet didn’t include a ${r2.col} column.` : r2.desc}
+                  </div>
+                </div>
+                <span className={`text-xs whitespace-nowrap ${zero ? "text-gray-500" : "text-gray-400"}`}>
+                  {zero ? "Missing" : all ? "Shown" : `Shown on ${r2.count} of ${n}`}
+                </span>
+              </div>
+            );
+          })}
+          <div className="px-3 py-2 text-[11px] text-gray-500">{fixHint}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+// Admin header: its own Appearance switch (same setting as Options in the portals).
+function AdminThemeButton() {
+  let [open, setOpen] = useState(false);
+  let [, bump] = useState(0);
+  let ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    let down = (ev) => ref.current && !ref.current.contains(ev.target) && setOpen(false);
+    let key = (ev) => ev.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", down);
+    window.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("mousedown", down);
+      window.removeEventListener("keydown", key);
+    };
+  }, [open]);
+  let light = document.documentElement.getAttribute("data-theme") === "light";
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label="Appearance"
+        title={open ? undefined : "Appearance: dark, light or match device"}
+        className={`h-[38px] w-[38px] flex items-center justify-center border rounded-sm transition-colors ${open ? "bg-gray-800 border-gray-600 text-gray-100" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+      >
+        {light ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 z-40 w-96 max-w-[calc(100vw-32px)] p-4 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl">
+          <ThemeSetting onPick={() => bump((x) => x + 1)} />
+        </div>
+      )}
     </div>
   );
 }
@@ -12003,6 +12961,7 @@ function SettingsModal({
   onResetRequested: i,
   resetDescription: u,
   onClose: d,
+  testCases = null,
 }) {
   useEffect(() => {
     let c = (p) => {
@@ -12016,19 +12975,21 @@ function SettingsModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={d}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-md shadow-2xl"
+        className="bg-gray-900 border border-gray-700 rounded-sm w-full max-w-2xl shadow-2xl max-h-[calc(100vh-32px)] flex flex-col"
         onClick={(c) => c.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800">
-          <h3 className="text-sm font-bold text-gray-100">Settings</h3>
+        <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-800">
+          <h3 className="text-sm font-bold text-gray-100">Options</h3>
           <button onClick={d} className="p-1 text-gray-400 hover:text-gray-100" title="Close (Esc)">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="px-5 py-4 space-y-5">
+        <div className="px-5 py-4 space-y-5 overflow-y-auto">
+          <ThemeSetting />
+          <div className="border-t border-gray-800" />
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
+              <label className="text-[11px] text-gray-400 font-semibold">
                 Path chip prefix
               </label>
               {a && r && (
@@ -12049,7 +13010,7 @@ function SettingsModal({
               autoCapitalize="off"
               autoComplete="off"
               spellCheck="false"
-              className={`w-full px-2.5 py-1.5 text-xs font-mono bg-gray-800 border rounded-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 ${e ? "border-emerald-800" : "border-gray-700"}`}
+              className={`w-full px-2.5 py-1.5 text-xs font-mono bg-gray-950 border rounded-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 ${e ? "border-emerald-800" : "border-gray-800"}`}
             />
             <div className="text-[11px] text-gray-500 mt-2 leading-relaxed">
               {e ? (
@@ -12071,7 +13032,7 @@ function SettingsModal({
           </div>
           <div className="border-t border-gray-800" />
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-2">
+            <div className="text-[11px] text-gray-400 font-semibold mb-2">
               Session
             </div>
             <div className="text-xs text-gray-400 mb-3">
@@ -12091,7 +13052,7 @@ function SettingsModal({
             <Fragment>
               <div className="border-t border-gray-800" />
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-red-400 font-semibold mb-2">
+                <div className="text-[11px] text-red-400 font-semibold mb-2">
                   Danger zone
                 </div>
                 {u && <div className="text-[11px] text-gray-500 mb-3 leading-relaxed">{u}</div>}
@@ -12166,7 +13127,7 @@ function SidebarSearch({ value: e, onChange: t, onClose: a, className: r = "" })
               o();
             }
           }}
-          className="w-full h-8 pl-8 pr-12 text-base sm:text-xs bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="w-full h-8 pl-8 pr-12 text-base sm:text-xs bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
         <kbd className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 px-1 text-[10px] font-sans text-gray-500 border border-gray-700 rounded-sm pointer-events-none">
           {SEARCH_SHORTCUT_LABEL}
@@ -12244,9 +13205,6 @@ function ScreenshotThumb({ shot: e, idx: t, onRemove: a, onOpen: r }) {
     : (s) => <a href={e.url} target="_blank" rel="noopener noreferrer" className="block" {...s} />;
   return (
     <div className="relative group border border-gray-800 rounded-sm overflow-hidden bg-gray-950">
-      <div className="absolute top-1.5 left-1.5 z-10 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm shadow">
-        Fig. {t + 1}
-      </div>
       <_Component19>
         <img
           src={e.url}
@@ -12268,12 +13226,8 @@ function ScreenshotThumb({ shot: e, idx: t, onRemove: a, onOpen: r }) {
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       )}
-      <div
-        className="px-2 py-1 text-[10px] text-gray-500 truncate bg-gray-900 border-t border-gray-800"
-        title={e.name}
-      >
-        {e.name || `screenshot-${t + 1}`}
-      </div>
+      {/* Labelled by figure number (matches "#1" / "[Fig. 1]" links in notes) rather than the file name. */}
+      <div className="px-2.5 py-1.5 text-sm font-medium text-gray-200 bg-gray-900 border-t border-gray-800">Fig. {t + 1}</div>
     </div>
   );
 }
@@ -12513,7 +13467,7 @@ function ScreenshotLightbox({
       <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={a}>
         <div className="w-full max-w-5xl flex flex-col" onClick={(M) => M.stopPropagation()}>
           <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-950 border border-gray-800 border-b-0 rounded-t-sm flex-shrink-0">
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-emerald-600 text-white border border-emerald-700 rounded-sm flex-shrink-0">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-emerald-600 text-gray-950 border border-emerald-700 rounded-sm flex-shrink-0">
               Fig. {l + 1}
             </span>
             <span className="text-xs text-gray-300 truncate min-w-0 flex-1" title={u.name}>
@@ -12554,7 +13508,7 @@ function ScreenshotLightbox({
                       m([]);
                       S(null);
                     }}
-                    className="px-2 py-1 text-[11px] rounded-sm bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-red-300 inline-flex items-center gap-1 flex-shrink-0"
+                    className="px-2 py-1 text-[11px] rounded-sm bg-gray-950 border border-gray-800 text-gray-300 hover:bg-gray-700 hover:text-red-300 inline-flex items-center gap-1 flex-shrink-0"
                     title="Remove all arrows, circles and text on this screenshot"
                   >
                     <Trash2 className="w-3 h-3" /> Clear
@@ -12830,12 +13784,12 @@ function ScreenshotLightbox({
             </div>
           </div>
           {(e.length > 1 || r) && (
-            <div className="flex items-center justify-between px-3 py-2 bg-gray-950 border border-gray-800 border-t-0 rounded-b-sm flex-shrink-0 gap-3">
+            <div className="flex items-center justify-between px-3 py-2.5 bg-gray-950 border border-gray-800 border-t-0 rounded-b-sm flex-shrink-0 gap-3">
               {e.length > 1 ? (
                 <button
                   onClick={() => i((M) => M - 1)}
                   disabled={!c}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-sm text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
                   title="Previous (←)"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> Previous
@@ -12844,7 +13798,7 @@ function ScreenshotLightbox({
                 <span />
               )}
               {r && (
-                <span className="text-[10px] text-gray-500 truncate">
+                <span className="text-sm text-gray-300 text-center min-w-0">
                   {h === "arrow"
                     ? "Drag on the image to draw arrows. Add as many as you like, then click Done or press Esc."
                     : h === "circle"
@@ -12862,7 +13816,7 @@ function ScreenshotLightbox({
                 <button
                   onClick={() => i((M) => M + 1)}
                   disabled={!p}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-sm text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
                   title="Next (→)"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5" />
@@ -12987,7 +13941,7 @@ function RecordingPlayer({ recordings: e, startIdx: t = 0, onClose: a }) {
           onClick={(c) => c.stopPropagation()}
         >
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-800 flex-shrink-0">
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-gray-900 text-emerald-300 border border-gray-700 rounded-sm flex-shrink-0">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-gray-900 text-emerald-300 border border-gray-700 rounded-sm flex-shrink-0">
               {i?.label || "Link"}
             </span>
             <span className="text-xs text-gray-400 truncate min-w-0 flex-1" title={l.url}>
@@ -13045,7 +13999,7 @@ function RecordingPlayer({ recordings: e, startIdx: t = 0, onClose: a }) {
                   href={l.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-sm hover:bg-emerald-500 mt-1"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-gray-950 text-xs font-medium rounded-sm hover:bg-emerald-500 mt-1"
                 >
                   <ExternalLink className="w-3.5 h-3.5" /> Open in new tab
                 </a>
@@ -13057,7 +14011,7 @@ function RecordingPlayer({ recordings: e, startIdx: t = 0, onClose: a }) {
               <button
                 onClick={() => s((c) => c - 1)}
                 disabled={!u}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
+                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-sm text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
                 title="Previous (←)"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Previous
@@ -13065,7 +14019,7 @@ function RecordingPlayer({ recordings: e, startIdx: t = 0, onClose: a }) {
               <button
                 onClick={() => s((c) => c + 1)}
                 disabled={!d}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
+                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-sm text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
                 title="Next (→)"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
@@ -13083,33 +14037,28 @@ function DevMarkCard({ mark: e, forTester: ft = false }) {
   let t = e.status === "fixed";
   let nm = isNotMerged(e);
   let a = e.status === "in_progress";
+  let pill = t
+    ? nm
+      ? { label: ft ? "Fixed, not on the test site yet" : "Fixed · not merged", cls: "border border-gray-600 text-gray-300" }
+      : { label: ft ? "Fixed · ready to retest" : "Fixed · retest ready", cls: "bg-sky-500/15 text-sky-300" }
+    : a
+      ? { label: "In progress", cls: "bg-gray-800 text-gray-300" }
+      : null;
   return (
-    <div className="px-3 py-2 bg-gray-900/60 border border-gray-800 rounded-sm">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-sm font-medium text-gray-200">{e.developer_name}</span>
-        {t && nm && (
-          <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-transparent text-emerald-400 border border-emerald-600 whitespace-nowrap">
-            {ft ? "Fixed – not merged" : "Fixed · Not merged"}
-          </span>
-        )}
-        {t && !nm && (
-          <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-emerald-900/40 text-emerald-300 border border-emerald-700 whitespace-nowrap">
-            {ft ? "Fixed · Ready to retest" : "Fixed · Retest ready"}
-          </span>
-        )}
-        {a && (
-          <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm bg-amber-900/40 text-amber-300 border border-amber-700 whitespace-nowrap">
-            In progress
-          </span>
-        )}
-        <span className="ml-auto text-[10px] text-gray-500" title={new Date(e.done_at).toLocaleString()}>
+    <div className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-sm">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-100">{e.developer_name}</span>
+        {pill && <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-sm whitespace-nowrap ${pill.cls}`}>{pill.label}</span>}
+        <span className="ml-auto text-xs text-gray-500" title={new Date(e.done_at).toLocaleString()}>
           {timeAgo(e.done_at)}
         </span>
       </div>
       {e.note ? (
-        <div className="text-sm text-gray-300 whitespace-pre-wrap">{e.note}</div>
+        <div className="mt-1 text-[13px] text-gray-300 whitespace-pre-wrap">
+          {normalizePath(e.note)}
+        </div>
       ) : (
-        <div className="text-xs text-gray-600 italic">(no note left)</div>
+        <div className="mt-1 text-xs text-gray-500">No note left</div>
       )}
     </div>
   );
@@ -13127,6 +14076,8 @@ function DevTestDetail({
   noteIsSaving: l,
   onSetStatus: i,
   onSetNote: u,
+  devStepNotes: dsn = [],
+  onDevStepNote: onDsn = null,
 }) {
   let d = e;
   let c = t || {};
@@ -13146,268 +14097,219 @@ function DevTestDetail({
     v(null);
   }, [d.id]);
   let k = a.filter((C) => C.developer_name !== r).sort((C, m) => new Date(C.done_at) - new Date(m.done_at));
+  let shots = c.screenshots || [];
+  let recs = c.recordings || [];
+  let evidenceCount = shots.length + recs.length;
+  let mine = (a || []).find((C) => C.developer_name === r);
+  let sev = getSeverity(c.bug_severity);
+  let waitingRetest = o === "fixed" && myStage !== "not_merged" && mine && (!c.updated_at || new Date(mine.done_at) > new Date(c.updated_at));
+  let passedAfter = o === "fixed" && mine && p === "Pass" && c.updated_at && new Date(c.updated_at) > new Date(mine.done_at);
+  // Your mark: In progress → Fixed (not on the test site yet) → Ready to retest.
+  let myMark = o === "in_progress" ? "in_progress" : o === "fixed" ? (myStage === "not_merged" ? "fixed" : "ready") : null;
+  let markOptions = [
+    { key: "in_progress", label: "In progress", k: "I", icon: Clock, hint: "Let testers and devs know you’re working on this", on: "bg-wip-600 border-wip-600 text-white" },
+    { key: "fixed", label: "Fixed", k: "F", icon: CircleCheck, hint: "Fixed, but not on the test site yet", on: "bg-sky-500/10 border-sky-500 text-sky-300" },
+    { key: "ready", label: "Ready to retest", k: "R", icon: RefreshCw, hint: "On the test site: testers are asked to retest", on: "bg-sky-600 border-sky-600 text-white" },
+  ];
+  let pickMark = (key) => {
+    if (myMark === key) return i(null);
+    if (key === "in_progress") return i("in_progress");
+    setStage(key === "fixed" ? "not_merged" : "retest_ready");
+  };
+  // I / F / R pick a mark (not while typing or with a dialog open).
+  useEffect(() => {
+    let h2 = (ev) => {
+      if (ev.metaKey || ev.ctrlKey || ev.altKey || ev.defaultPrevented) return;
+      if (isTypingTarget(ev.target) || I || g !== null || anyModalOpen()) return;
+      let k2 = String(ev.key || "").toLowerCase();
+      let key = k2 === "i" ? "in_progress" : k2 === "f" ? "fixed" : k2 === "r" ? "ready" : null;
+      if (!key) return;
+      ev.preventDefault();
+      pickMark(key);
+    };
+    window.addEventListener("keydown", h2);
+    return () => window.removeEventListener("keydown", h2);
+  });
   return (
     <FigureContext.Provider value={{ shots: c.screenshots || [], open: (f) => v(f) }}>
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-6 pt-6 pb-24">
-        <div className="mb-6 pb-4 border-b border-gray-800 flex items-start gap-4 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <Breadcrumb tc={d} />
-            <h1 className="text-xl font-bold text-gray-100">{d.title || "Untitled"}</h1>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <span
-              className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wider border rounded-sm ${b.badge}`}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <DetailHeader
+          tc={d}
+          right={
+            <HeaderRight
+              menu={
+                <TestOptionsMenu
+                  tc={d}
+                  clearLabel="Clear my dev status and note"
+                  clearTitle="Clear your dev status and note?"
+                  clearMessage="Your In progress / Fixed / Ready to retest status and your note on this test will be removed. The tester’s results and other developers’ work aren’t affected."
+                  onClear={
+                    o || _
+                      ? () => {
+                          S("");
+                          u("");
+                          if (o) i(null);
+                        }
+                      : null
+                  }
+                />
+              }
             >
-              {p}
+              <StatusPill status={p} />
+            </HeaderRight>
+          }
+        />
+        <div className="flex-shrink-0 flex items-center gap-1.5 px-4 sm:px-6 pt-2.5 text-xs text-gray-500">
+          {c.updated_at && p !== "Not Tested" ? (
+            <span title={new Date(c.updated_at).toLocaleString()}>
+              Last edit{c.updated_by ? ` by ${c.updated_by}` : ""} · {timeAgo(c.updated_at)}
             </span>
-            {getSeverity(c.bug_severity) && <SeverityBadge value={c.bug_severity} />}
-            <span className="self-stretch w-px bg-gray-800 mx-1" aria-hidden="true" />
-            <button
-              onClick={() => i(o === "in_progress" ? null : "in_progress")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-sm border flex items-center gap-1.5 transition-colors ${o === "in_progress" ? "bg-amber-600 text-white border-amber-600 hover:bg-amber-500" : "bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700"}`}
-              title={o === "in_progress" ? "Click to clear status" : "Mark that you're working on this"}
-            >
-              <Clock className="w-3.5 h-3.5" strokeWidth={2.5} />
-              In Progress
-            </button>
-            <button
-              onClick={() => i(o === "fixed" ? null : "fixed")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-sm border flex items-center gap-1.5 transition-colors ${o === "fixed" ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-500" : "bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700"}`}
-              title={o === "fixed" ? "Click to clear status" : "Mark this as fixed"}
-            >
-              <Check className="w-3.5 h-3.5" strokeWidth={3} />
-              {o === "fixed" ? (myStage === "not_merged" ? "Fixed · Not merged" : "Fixed · Retest ready") : "Mark as Fixed"}
-            </button>
-          </div>
-          {o === "fixed" && (
-            <div className="flex justify-end">
-              <div role="radiogroup" aria-label="Fix stage" className="flex items-center gap-4 text-xs">
-                {[
-                  { key: "not_merged", label: "Fixed – not merged", hint: "Testers see “Fixed – not merged” and don't re-test yet" },
-                  { key: "retest_ready", label: "Fixed – retest ready", hint: "Testers are asked to re-test" },
-                ].map((C) => {
-                  let on = (myStage === "not_merged" ? "not_merged" : "retest_ready") === C.key;
-                  return (
-                    <label key={C.key} title={C.hint} className={`flex items-center gap-1.5 cursor-pointer ${on ? "text-gray-100" : "text-gray-400 hover:text-gray-200"}`}>
-                      <input type="radio" name={`fix-stage-${d.id}`} checked={on} onChange={() => setStage(C.key)} className="accent-emerald-500 w-3.5 h-3.5" />
-                      {C.label}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
+          ) : (
+            <span>{tn ? `${tn} hasn’t tested this yet` : "Not tested yet"}</span>
           )}
-          </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-5">
-            {d.pre_conditions && d.pre_conditions !== "—" && (
-              <DetailField label="Pre-conditions" value={d.pre_conditions} />
-            )}
-            {d.test_data && d.test_data !== "—" && <DetailField label="Test Data" value={d.test_data} />}
-            {(d.steps || []).length > 0 && (
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Steps</div>
-                <div className="space-y-1.5">
-                  {(d.steps || []).map((C, m) => {
-                    let f = (c.step_checks || {})[m];
-                    let w = (c.step_notes || {})[m];
-                    let T = f === "done";
-                    let A = f === "blocked";
-                    let R = f === "review";
-                    return (
-                      <div
-                        className={`p-2.5 border rounded-sm ${T ? "bg-green-900/15 border-green-800" : R ? "bg-orange-900/15 border-orange-800" : A ? "bg-red-900/15 border-red-800" : "bg-gray-900 border-gray-800"}`}
-                        key={m}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-[1180px] px-4 sm:px-6 pt-3 pb-24">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+              <TestDefinitionColumn c={d} p={c} ro={true} stepsCheckLeft={true} devNotes={dsn} myDevName={r} onDevNote={onDsn} />
+              <div className="flex flex-col gap-5 min-w-0">
+                <div className="border border-gray-800 rounded-sm bg-gray-900">
+                  <div className="flex items-center gap-2 flex-wrap px-3 py-2.5 border-b border-gray-800">
+                    <span className="text-sm font-medium text-gray-100">Result from {tn || "tester"}</span>
+                    <StatusPill status={p} />
+                    {sev && (
+                      <span
+                        className="px-1.5 py-0.5 text-xs border border-gray-700 rounded-sm text-gray-300"
+                        title={`Severity: ${sev.value} — ${sev.description}`}
                       >
-                        <div className="flex items-start gap-2.5">
-                          <div
-                            className={`w-5 h-5 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 ${T ? "bg-green-600" : R ? "bg-orange-500" : A ? "bg-red-600" : "border-2 border-gray-700"}`}
-                          >
-                            {(T || R) && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                            {A && <X className="w-3 h-3 text-white" strokeWidth={3} />}
+                        {sev.value}
+                      </span>
+                    )}
+                    {c.updated_at && p !== "Not Tested" && (
+                      <span className="ml-auto text-xs text-gray-500" title={new Date(c.updated_at).toLocaleString()}>
+                        Last edit {timeAgo(c.updated_at)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-3 flex flex-col gap-4">
+                    {p === "Not Tested" && !c.notes ? (
+                      <div className="text-sm text-gray-500">{tn || "This tester"} hasn’t tested this yet.</div>
+                    ) : (
+                      <Fragment>
+                        <div>
+                          <SectionLabel>Tester notes</SectionLabel>
+                          <div className={`text-sm whitespace-pre-wrap ${c.notes ? "text-gray-200" : "text-gray-500"}`}>
+                            {c.notes ? normalizePath(c.notes) : "No notes"}
                           </div>
-                          <div className="text-[11px] font-bold text-emerald-400 mt-1 font-mono w-5 text-right flex-shrink-0">
-                            {m + 1}.
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm text-gray-200">
-                              {normalizePath(C)}
-                              {A && (
-                                <span className="ml-2 text-[10px] uppercase tracking-wider text-red-400 font-bold">
-                                  Unable to proceed
-                                </span>
-                              )}
-                              {R && (
-                                <span className="ml-2 text-[10px] uppercase tracking-wider text-orange-400 font-bold">
-                                  Works but needs review
-                                </span>
-                              )}
+                        </div>
+                        {c.other_observations && (
+                          <div>
+                            <SectionLabel>Other observations</SectionLabel>
+                            <div className="text-sm text-gray-200 whitespace-pre-wrap">
+                              {normalizePath(c.other_observations)}
                             </div>
-                            {w && (
-                              <div className={`mt-1.5 border-l-2 px-2 py-1 text-xs rounded-sm whitespace-pre-wrap ${T ? "bg-green-950/40 border-green-500 text-green-100" : A ? "bg-red-950/40 border-red-500 text-red-100" : "bg-amber-950/30 border-amber-500 text-amber-100"}`}>
-                                {normalizePath(w)}
-                              </div>
-                            )}
                           </div>
+                        )}
+                        <div>
+                          <SectionLabel>
+                            Evidence {evidenceCount > 0 && <span className="text-gray-500">{evidenceCount}</span>}
+                          </SectionLabel>
+                          {evidenceCount === 0 && <div className="text-sm text-gray-500">No screenshots or recordings</div>}
+                          {shots.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {shots.map((C, m) => (
+                                <ScreenshotThumb shot={C} idx={m} onOpen={(f) => v(f)} key={C.path || C.url || m} />
+                              ))}
+                            </div>
+                          )}
+                          <RecordingList recordings={recs} onPlay={(w) => x({ recordings: recs, startIdx: w })} />
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {d.expected_result && d.expected_result !== "—" && (
-              <ExpectedResultChecklist value={d.expected_result} checks={c.step_checks} notes={c.step_notes} />
-            )}
-            {d.downstream_check && d.downstream_check !== "—" && (
-              <DetailField label="Downstream Check" value={d.downstream_check} />
-            )}
-            {d.edge_case && d.edge_case !== "—" && <DetailField label="Edge Case" value={d.edge_case} />}
-          </div>
-          <div className="space-y-5">
-            <div className="bg-gray-900/40 border border-gray-800 rounded-sm p-4">
-              <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-3">
-                Tester findings
-                {tn && <span className="normal-case tracking-normal font-normal text-gray-400"> from {tn}</span>}
-              </div>
-
-              <div className="mb-3">
-                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Notes</div>
-                <div className="text-sm text-gray-200 whitespace-pre-wrap bg-gray-950 border border-gray-800 px-3 py-2 rounded-sm">
-                  {c.notes ? normalizePath(c.notes) : <span className="text-gray-600 italic">No notes</span>}
-                </div>
-              </div>
-              {c.other_observations && (
-                <div className="mb-3">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">
-                    Other observations
-                  </div>
-                  <div className="text-sm text-gray-200 whitespace-pre-wrap bg-gray-950 border border-gray-800 px-3 py-2 rounded-sm">
-                    {normalizePath(c.other_observations)}
+                      </Fragment>
+                    )}
                   </div>
                 </div>
-              )}
-              {(c.recordings || []).length > 0 && (
-                <div className="mb-3">
-                  <style>{`@keyframes recPulse{0%,100%{background-color:#047857;box-shadow:0 0 0 0 rgba(16,185,129,0)}50%{background-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.25)}}.rec-pulse{animation:recPulse 1.6s ease-in-out infinite}@media (prefers-reduced-motion: reduce){.rec-pulse{animation:none;background-color:#059669}}`}</style>
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
-                    Screen recordings ({(c.recordings || []).length})
-                  </div>
-                  <div className="space-y-1.5">
-                    {(c.recordings || []).map((C, m) => {
-                      let w = parseRecordingUrl(C.url)?.label || "Link";
+                {waitingRetest && (
+                  <Callout tone="retest" icon={Clock} title={`Waiting for ${tn || "the tester"} to retest`}>
+                    <div className="text-xs opacity-80">Any tester setting Fail, Blocked or Needs review again will clear your Fixed mark.</div>
+                  </Callout>
+                )}
+                {passedAfter && (
+                  <Callout tone="ok" icon={CircleCheck} title={`${tn || "The tester"} passed it after your fix`}>
+                    <div className="text-xs opacity-80">{timeAgo(c.updated_at)}</div>
+                  </Callout>
+                )}
+                <div>
+                  <SectionLabel>Dev status</SectionLabel>
+                  {/* One control for the whole journey of a fix. Clicking the selected option clears your mark. */}
+                  <div className="inline-flex flex-wrap gap-0.5 p-0.5 bg-gray-950 border border-gray-700 rounded-sm" role="radiogroup" aria-label="Dev status">
+                    {markOptions.map((m2) => {
+                      let on = myMark === m2.key;
+                      let Icon = m2.icon;
                       return (
-                        <div
-                          className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-950 border border-gray-800 rounded-sm hover:border-emerald-700 hover:bg-gray-900 group"
-                          key={m}
+                        <button
+                          key={m2.key}
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => pickMark(m2.key)}
+                          title={on ? `Click to clear (${m2.k})` : `${m2.hint} (${m2.k})`}
+                          className={`inline-flex items-center gap-1.5 h-8 px-3 text-[13px] rounded-sm border transition-colors ${on ? `${m2.on} font-medium` : "border-transparent text-gray-400 hover:bg-gray-800 hover:text-gray-100"}`}
                         >
-                          <button
-                            onClick={() =>
-                              x({
-                                recordings: c.recordings,
-                                startIdx: m,
-                              })
-                            }
-                            className="rec-pulse inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-1 text-white border border-emerald-500 rounded-sm flex-shrink-0 hover:brightness-110"
-                            title="Play the recording"
-                          >
-                            <Play className="w-3 h-3 fill-current" />
-                            {w}
-                          </button>
-                          <button
-                            onClick={() =>
-                              x({
-                                recordings: c.recordings,
-                                startIdx: m,
-                              })
-                            }
-                            className="text-xs text-gray-300 group-hover:text-emerald-300 truncate flex-1 min-w-0 text-left"
-                            title="Play in app"
-                          >
-                            {C.url}
-                          </button>
-                          <a
-                            href={C.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1 text-gray-500 hover:text-emerald-400 flex-shrink-0"
-                            title="Open in new tab"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
+                          <Icon className="w-4 h-4" />
+                          {m2.label}
+                          <KeyHint k={m2.k} />
+                        </button>
                       );
                     })}
                   </div>
-                </div>
-              )}
-              {(c.screenshots || []).length > 0 && (
-                <div className="mb-3">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
-                    Screenshots ({(c.screenshots || []).length})
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(c.screenshots || []).map((C, m) => (
-                      <ScreenshotThumb shot={C} idx={m} onOpen={(f) => v(f)} key={C.path || C.url || m} />
-                    ))}
+                  <div className="mt-1.5 text-xs text-gray-500">
+                    {myMark === "in_progress"
+                      ? "You’re working on it. Testers can see who’s on it."
+                      : myMark === "fixed"
+                        ? "Fixed, but not on the test site yet. Testers aren’t asked to retest."
+                        : myMark === "ready"
+                          ? "On the test site. Testers are asked to retest."
+                          : "Not marked yet."}
                   </div>
                 </div>
-              )}
-              {c.updated_by && c.updated_at && (c.status || "Not Tested") !== "Not Tested" && (
-                <div className="text-[10px] text-gray-500 pt-2 mt-2 border-t border-gray-800">
-                  Last tester edit: {c.updated_by} · {new Date(c.updated_at).toLocaleString()}
-                </div>
-              )}
-            </div>
-            <div className="bg-gray-900/40 border border-gray-800 rounded-sm p-4">
-              <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-3">
-                Dev notes
-              </div>
-              <div className="mb-4">
-                <div className="flex items-baseline justify-between mb-1">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500">
-                    Your note{" "}
-                    <span className="normal-case text-gray-600">— visible to testers and other devs</span>
-                  </div>
-                  <SaveIndicator saving={!!l} />
-                </div>
-                <MentionTextarea
-                  value={_}
-                  onChange={(C) => {
-                    let m = prettyArrows(C.target.value);
-                    S(m);
-                    u(m);
-                  }}
-                  rows={3}
-                  allowFigures={false}
-                  placeholder="@ to ping someone"
-                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-600 rounded-sm text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
-                />
-              </div>
-              {k.length > 0 && (
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
-                    Other dev activity ({k.length})
+                  <div className="flex items-baseline justify-between gap-2">
+                    <SectionLabel hint="visible to testers and other devs · @ to ping someone">Note</SectionLabel>
+                    <SaveIndicator saving={!!l} />
                   </div>
-                  <div className="space-y-2">
-                    {k.map((C) => (
-                      <DevMarkCard mark={C} key={C.developer_name} />
-                    ))}
-                  </div>
+                  <MentionTextarea
+                    value={_}
+                    onChange={(C) => {
+                      let m = prettyArrows(C.target.value);
+                      S(m);
+                      u(m);
+                    }}
+                    rows={3}
+                    allowFigures={false}
+                    placeholder="Type @ to ping someone."
+                    className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-gray-600 resize-y"
+                  />
                 </div>
-              )}
+                {k.length > 0 && (
+                  <div>
+                    <SectionLabel>
+                      Other developers <span className="text-gray-500">{k.length}</span>
+                    </SectionLabel>
+                    <div className="flex flex-col gap-1.5">
+                      {k.map((C) => (
+                        <DevMarkCard mark={C} key={C.developer_name} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+        {I && <RecordingPlayer recordings={I.recordings} startIdx={I.startIdx} onClose={() => x(null)} />}
+        {g !== null && (c.screenshots || []).length > 0 && (
+          <ScreenshotLightbox screenshots={c.screenshots || []} startIdx={g} onClose={() => v(null)} />
+        )}
       </div>
-      {I && <RecordingPlayer recordings={I.recordings} startIdx={I.startIdx} onClose={() => x(null)} />}
-      {g !== null && (c.screenshots || []).length > 0 && (
-        <ScreenshotLightbox screenshots={c.screenshots || []} startIdx={g} onClose={() => v(null)} />
-      )}
-    </div>
     </FigureContext.Provider>
   );
 }

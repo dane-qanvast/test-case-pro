@@ -3,24 +3,309 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#064e3b" />
+  <meta name="theme-color" content="#0F1115" />
   <title>UAT Collaborator</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23059669'/%3E%3Cpath d='M30 50l15 15 25-30' stroke='white' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23E8EAED'/%3E%3Cpath d='M30 50l15 15 25-30' stroke='%230F1115' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..24,400..700,0..1,0&display=block" rel="stylesheet" />
+  <script>
+    // Apply the saved theme before anything draws (Settings → Appearance). Default: dark.
+    (function () {
+      var m = 'dark';
+      try { m = localStorage.getItem('uat-pro-theme') || 'dark'; } catch (e) {}
+      var light = m === 'light' || (m === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+      document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>if (window.tailwind) tailwind.config = { future: { hoverOnlyWhenSupported: true } };</script>
+  <script>
+    // Design tokens. Colour families are remapped so the existing classes pick up the new palette:
+    // gray = neutrals; green/red/orange/yellow = Pass/Fail/Blocked/Needs review;
+    // sky/blue = "fixed, ready to retest"; emerald/indigo/amber/violet (old accents) = neutral highlights.
+    (function () {
+      // Every colour family reads CSS variables (defined below) so the whole app can switch
+      // between dark and light. Families are remapped: gray = neutrals; green/red/orange/yellow =
+      // Pass/Fail/Blocked/Needs review; sky/blue = "fixed, ready to retest"; emerald/indigo =
+      // primary actions; amber/violet/purple/teal = neutral highlights; wip = in progress (orange);
+      // chip = path chips (purple).
+      var fam = function (name) {
+        var o = {};
+        [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].forEach(function (k) { o[k] = 'rgb(var(--' + name + '-' + k + ') / <alpha-value>)'; });
+        return o;
+      };
+      var map = {"gray": "gray", "slate": "gray", "zinc": "gray", "neutral": "gray", "emerald": "pri", "indigo": "pri", "amber": "ink", "violet": "ink", "purple": "ink", "teal": "ink", "green": "pass", "red": "fail", "rose": "fail", "orange": "blocked", "yellow": "review", "sky": "retest", "blue": "retest", "wip": "wip", "chip": "chip"};
+      var colors = {};
+      Object.keys(map).forEach(function (k) { colors[k] = fam(map[k]); });
+      if (window.tailwind) tailwind.config = {
+        future: { hoverOnlyWhenSupported: true },
+        theme: { extend: {
+          fontFamily: {
+            sans: ['"Instrument Sans"', 'ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+          },
+          borderRadius: { sm: '6px', DEFAULT: '6px', md: '6px' },
+          colors: colors,
+        } },
+      };
+    })();
+  </script>
   <style id="app-base-css">
+    /* Theme colours (dark default, light via Settings → Appearance). Every Tailwind colour reads these. */
+    :root {
+      --gray-50: 245 246 247;
+      --gray-100: 232 234 237;
+      --gray-200: 211 215 220;
+      --gray-300: 185 191 199;
+      --gray-400: 160 167 178;
+      --gray-500: 110 118 130;
+      --gray-600: 74 81 92;
+      --gray-700: 53 59 70;
+      --gray-800: 37 42 50;
+      --gray-900: 23 26 32;
+      --gray-950: 15 17 21;
+      --ink-50: 250 250 251;
+      --ink-100: 245 246 247;
+      --ink-200: 238 240 242;
+      --ink-300: 221 225 230;
+      --ink-400: 201 206 214;
+      --ink-500: 110 118 130;
+      --ink-600: 58 65 77;
+      --ink-700: 46 52 62;
+      --ink-800: 38 43 51;
+      --ink-900: 31 35 42;
+      --ink-950: 23 26 32;
+      --pass-50: 234 249 241;
+      --pass-100: 207 242 223;
+      --pass-200: 163 230 194;
+      --pass-300: 111 219 162;
+      --pass-400: 76 207 140;
+      --pass-500: 52 194 122;
+      --pass-600: 38 160 100;
+      --pass-700: 31 127 81;
+      --pass-800: 27 100 66;
+      --pass-900: 22 79 54;
+      --pass-950: 11 45 30;
+      --fail-50: 254 241 241;
+      --fail-100: 253 220 220;
+      --fail-200: 251 189 189;
+      --fail-300: 255 146 146;
+      --fail-400: 246 117 117;
+      --fail-500: 240 93 93;
+      --fail-600: 217 59 59;
+      --fail-700: 180 44 44;
+      --fail-800: 146 40 40;
+      --fail-900: 120 38 38;
+      --fail-950: 65 16 16;
+      --blocked-50: 254 247 236;
+      --blocked-100: 253 234 203;
+      --blocked-200: 250 213 150;
+      --blocked-300: 248 196 111;
+      --blocked-400: 245 181 80;
+      --blocked-500: 242 169 59;
+      --blocked-600: 217 138 16;
+      --blocked-700: 180 108 12;
+      --blocked-800: 146 85 15;
+      --blocked-900: 120 70 17;
+      --blocked-950: 69 36 5;
+      --review-50: 245 242 254;
+      --review-100: 236 230 254;
+      --review-200: 220 208 253;
+      --review-300: 198 179 255;
+      --review-400: 178 154 248;
+      --review-500: 162 133 245;
+      --review-600: 133 101 234;
+      --review-700: 110 79 208;
+      --review-800: 90 65 168;
+      --review-900: 74 56 135;
+      --review-950: 45 32 84;
+      --retest-50: 239 246 254;
+      --retest-100: 220 235 253;
+      --retest-200: 190 218 251;
+      --retest-300: 147 198 255;
+      --retest-400: 107 176 248;
+      --retest-500: 76 157 245;
+      --retest-600: 47 127 224;
+      --retest-700: 36 102 187;
+      --retest-800: 34 84 151;
+      --retest-900: 33 71 122;
+      --retest-950: 23 44 75;
+      --wip-50: 255 247 237;
+      --wip-100: 255 237 213;
+      --wip-200: 254 215 170;
+      --wip-300: 253 186 116;
+      --wip-400: 251 146 60;
+      --wip-500: 249 115 22;
+      --wip-600: 234 88 12;
+      --wip-700: 194 65 12;
+      --wip-800: 154 52 18;
+      --wip-900: 124 45 18;
+      --wip-950: 67 20 7;
+      --chip-50: 250 245 255;
+      --chip-100: 243 232 255;
+      --chip-200: 233 213 255;
+      --chip-300: 216 180 254;
+      --chip-400: 192 132 252;
+      --chip-500: 168 85 247;
+      --chip-600: 147 51 234;
+      --chip-700: 126 34 206;
+      --chip-800: 107 33 168;
+      --chip-900: 88 28 135;
+      --chip-950: 59 7 100;
+      --pri-50: 250 250 251;
+      --pri-100: 245 246 247;
+      --pri-200: 238 240 242;
+      --pri-300: 221 225 230;
+      --pri-400: 201 206 214;
+      --pri-500: 255 255 255;
+      --pri-600: 232 234 237;
+      --pri-700: 46 52 62;
+      --pri-800: 38 43 51;
+      --pri-900: 31 35 42;
+      --pri-950: 23 26 32;
+      color-scheme: dark;
+    }
+    :root[data-theme="light"] {
+      --gray-50: 11 13 16;
+      --gray-100: 21 24 29;
+      --gray-200: 42 47 54;
+      --gray-300: 63 70 80;
+      --gray-400: 89 97 109;
+      --gray-500: 124 132 143;
+      --gray-600: 167 174 184;
+      --gray-700: 203 208 216;
+      --gray-800: 226 229 234;
+      --gray-900: 255 255 255;
+      --gray-950: 244 245 247;
+      --ink-50: 11 13 16;
+      --ink-100: 21 24 29;
+      --ink-200: 42 47 54;
+      --ink-300: 63 70 80;
+      --ink-400: 89 97 109;
+      --ink-500: 124 132 143;
+      --ink-600: 167 174 184;
+      --ink-700: 203 208 216;
+      --ink-800: 226 229 234;
+      --ink-900: 255 255 255;
+      --ink-950: 244 245 247;
+      --pri-50: 11 13 16;
+      --pri-100: 21 24 29;
+      --pri-200: 42 47 54;
+      --pri-300: 63 70 80;
+      --pri-400: 89 97 109;
+      --pri-500: 42 47 54;
+      --pri-600: 21 24 29;
+      --pri-700: 203 208 216;
+      --pri-800: 226 229 234;
+      --pri-900: 255 255 255;
+      --pri-950: 244 245 247;
+      --pass-50: 11 45 30;
+      --pass-100: 22 79 54;
+      --pass-200: 27 100 66;
+      --pass-300: 31 127 81;
+      --pass-400: 38 160 100;
+      --pass-500: 52 194 122;
+      --pass-600: 38 160 100;
+      --pass-700: 111 219 162;
+      --pass-800: 163 230 194;
+      --pass-900: 207 242 223;
+      --pass-950: 234 249 241;
+      --fail-50: 65 16 16;
+      --fail-100: 120 38 38;
+      --fail-200: 146 40 40;
+      --fail-300: 180 44 44;
+      --fail-400: 217 59 59;
+      --fail-500: 240 93 93;
+      --fail-600: 217 59 59;
+      --fail-700: 255 146 146;
+      --fail-800: 251 189 189;
+      --fail-900: 253 220 220;
+      --fail-950: 254 241 241;
+      --blocked-50: 69 36 5;
+      --blocked-100: 120 70 17;
+      --blocked-200: 146 85 15;
+      --blocked-300: 180 108 12;
+      --blocked-400: 217 138 16;
+      --blocked-500: 242 169 59;
+      --blocked-600: 217 138 16;
+      --blocked-700: 248 196 111;
+      --blocked-800: 250 213 150;
+      --blocked-900: 253 234 203;
+      --blocked-950: 254 247 236;
+      --review-50: 45 32 84;
+      --review-100: 74 56 135;
+      --review-200: 90 65 168;
+      --review-300: 110 79 208;
+      --review-400: 133 101 234;
+      --review-500: 162 133 245;
+      --review-600: 133 101 234;
+      --review-700: 198 179 255;
+      --review-800: 220 208 253;
+      --review-900: 236 230 254;
+      --review-950: 245 242 254;
+      --retest-50: 23 44 75;
+      --retest-100: 33 71 122;
+      --retest-200: 34 84 151;
+      --retest-300: 36 102 187;
+      --retest-400: 47 127 224;
+      --retest-500: 76 157 245;
+      --retest-600: 47 127 224;
+      --retest-700: 147 198 255;
+      --retest-800: 190 218 251;
+      --retest-900: 220 235 253;
+      --retest-950: 239 246 254;
+      --wip-50: 67 20 7;
+      --wip-100: 124 45 18;
+      --wip-200: 154 52 18;
+      --wip-300: 194 65 12;
+      --wip-400: 234 88 12;
+      --wip-500: 249 115 22;
+      --wip-600: 234 88 12;
+      --wip-700: 253 186 116;
+      --wip-800: 254 215 170;
+      --wip-900: 255 237 213;
+      --wip-950: 255 247 237;
+      --chip-50: 59 7 100;
+      --chip-100: 88 28 135;
+      --chip-200: 107 33 168;
+      --chip-300: 126 34 206;
+      --chip-400: 147 51 234;
+      --chip-500: 168 85 247;
+      --chip-600: 147 51 234;
+      --chip-700: 216 180 254;
+      --chip-800: 233 213 255;
+      --chip-900: 243 232 255;
+      --chip-950: 250 245 255;
+      color-scheme: light;
+    }
     html { color-scheme: dark; }
-    html, body { height: 100%; margin: 0; background: #030712; color: #f3f4f6; }
+    html, body { height: 100%; margin: 0; background: rgb(var(--gray-950)); color: rgb(var(--gray-100)); }
+    body { font-family: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
     #root { min-height: 100vh; }
-    html, body, * { scrollbar-color: #2a2a35 #0a0a0f !important; scrollbar-width: thin !important; }
+    html, body, * { scrollbar-color: rgb(var(--gray-700)) rgb(var(--gray-950)) !important; scrollbar-width: thin !important; }
     *::-webkit-scrollbar              { -webkit-appearance: none !important; width: 10px !important; height: 10px !important; }
-    *::-webkit-scrollbar-track        { background: #0a0a0f !important; }
-    *::-webkit-scrollbar-thumb        { background: #2a2a35 !important; border: 2px solid #0a0a0f !important; }
-    *::-webkit-scrollbar-thumb:hover  { background: #3a3a48 !important; }
-    *::-webkit-scrollbar-corner       { background: #0a0a0f !important; }
+    *::-webkit-scrollbar-track        { background: rgb(var(--gray-950)) !important; }
+    *::-webkit-scrollbar-thumb        { background: rgb(var(--gray-700)) !important; border: 2px solid rgb(var(--gray-950)) !important; }
+    *::-webkit-scrollbar-thumb:hover  { background: rgb(var(--gray-600)) !important; }
+    *::-webkit-scrollbar-corner       { background: rgb(var(--gray-950)) !important; }
     .boot-splash { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; color: #9ca3af; font-family: ui-sans-serif, system-ui, sans-serif; }
-    .boot-spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #374151; border-top-color: #10b981; animation: spin 0.8s linear infinite; }
+    .boot-spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgb(var(--gray-700)); border-top-color: rgb(var(--gray-100)); animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* Icons: Material Symbols drawn by lucide-shim.jsx */
+    .ms-ic { font-family: "Material Symbols Outlined"; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; white-space: nowrap; direction: ltr; -webkit-font-feature-settings: "liga"; font-feature-settings: "liga"; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: visible; user-select: none; }
+    /* Leave room for the "show test list" button when the side panel is collapsed */
+    [data-side-closed] .rd-detail-head { padding-left: 56px; }
+    /* One checkbox style everywhere: 16px, 4px corners, near-white with a dark tick when checked
+       (matches the app's own drawn checkboxes). */
+    input[type="checkbox"] { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; flex-shrink: 0; margin: 0; border: 2px solid rgb(var(--gray-600)); border-radius: 4px; background: transparent no-repeat center / 12px 12px; cursor: pointer; vertical-align: middle; transition: background-color .15s, border-color .15s; }
+    input[type="checkbox"]:checked { background-color: rgb(var(--pri-600)); border-color: rgb(var(--pri-600)); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-4.9' fill='none' stroke='%230F1115' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+    input[type="checkbox"]:indeterminate { background-color: rgb(var(--pri-600)); border-color: rgb(var(--pri-600)); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6h6' stroke='%230F1115' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); }
+    :root[data-theme="light"] input[type="checkbox"]:checked { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-4.9' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+    :root[data-theme="light"] input[type="checkbox"]:indeterminate { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6h6' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); }
+    input[type="checkbox"]:focus-visible { outline: 2px solid rgb(var(--gray-400)); outline-offset: 2px; }
+    input[type="checkbox"]:disabled { opacity: .4; cursor: not-allowed; }
+    @media (hover: hover) { input[type="checkbox"]:not(:checked):not(:disabled):hover { border-color: rgb(var(--gray-400)); } }
   </style>
 </head>
 <body>
