@@ -4380,6 +4380,315 @@ function InfoField({ label: e, value: t, highlight: a }) {
     </div>
   );
 }
+// ---- Test Overview: a read-only, sheet-like page of every test and result, for anyone in the company with the link ----
+// Opened with ?session=<id>&view=overview&key=<report key> (same key as the findings report; older "public" / "manager" links still work).
+// Rows = tests, grouped by module; columns = each tester's result, notes and evidence, then developers.
+var managerUrl = (sessionId, key) => `${window.location.origin}${window.location.pathname}?session=${sessionId}&view=overview&key=${key}`;
+var STATUS_RANK = { Fail: 5, Blocked: 4, "Needs Review": 3, Pass: 2, "Not Tested": 1 };
+function ManagerNotes({ text }) {
+  let [open, setOpen] = useState(false);
+  if (!text || !String(text).trim()) return <span className="text-gray-600">—</span>;
+  let long = String(text).length > 140 || String(text).split("\n").length > 3;
+  return (
+    <div>
+      <div className={`whitespace-pre-wrap text-gray-200 ${open ? "" : "line-clamp-3"}`}>{normalizePath(text)}</div>
+      {long && (
+        <button onClick={() => setOpen(!open)} className="mt-0.5 text-[11px] text-gray-400 hover:text-gray-100">
+          {open ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+}
+function ManagerDevChip({ m }) {
+  let fx = m.status === "fixed";
+  let nm = isNotMerged(m);
+  let label = m.status === "in_progress" ? "In progress" : fx ? (nm ? "Fixed" : "Ready to retest") : "Note";
+  let cls =
+    m.status === "in_progress" ? "bg-wip-600/20 text-wip-300" : fx ? (nm ? "border border-sky-500/60 text-sky-300" : "bg-sky-500/25 text-sky-200") : "bg-gray-800 text-gray-300";
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[11px] font-medium whitespace-nowrap ${cls}`} title={m.done_at ? new Date(m.done_at).toLocaleString() : undefined}>
+      {m.developer_name}: {label}
+    </span>
+  );
+}
+function ManagerView({ sessionId, accessKey }) {
+  let [state, setState] = useState({ loading: true, error: "", session: null, tests: [], findings: [], marks: [], at: null });
+  let [q, setQ] = useState("");
+  let [show, setShow] = useState("all");
+  let [viewer, setViewer] = useState(null); // { kind: "shots" | "recs", list, idx }
+  let load = async () => {
+    try {
+      let { data: s, error: e1 } = await supabase.from("sessions").select("*").eq("id", sessionId).single();
+      if (e1 || !s || !s.report_key || s.report_key !== accessKey) {
+        setState((p) => ({ ...p, loading: false, error: "invalid" }));
+        return;
+      }
+      let [t, f, m] = await Promise.all([
+        supabase.from("test_cases").select("*").eq("session_id", sessionId).order("position", { ascending: true }),
+        supabase.from("findings").select("*").eq("session_id", sessionId),
+        supabase.from("done_marks").select("*").eq("session_id", sessionId),
+      ]);
+      if (t.error || f.error || m.error) throw t.error || f.error || m.error;
+      setState({ loading: false, error: "", session: s, tests: t.data || [], findings: f.data || [], marks: m.data || [], at: new Date() });
+    } catch (err) {
+      setState((p) => ({ ...p, loading: false, error: err.message || "Couldn’t load the results" }));
+    }
+  };
+  useEffect(() => {
+    load();
+    let iv = setInterval(load, 60000);
+    return () => clearInterval(iv);
+  }, [sessionId, accessKey]);
+  useEffect(() => {
+    if (state.session) document.title = `${state.session.name} · Test Overview – UAT Collaborator`;
+  }, [state.session]);
+  if (state.loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-sm text-gray-400">Loading…</div>;
+  if (state.error === "invalid")
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
+        <div className="max-w-sm text-center">
+          <div className="text-base font-semibold text-gray-100 mb-1.5">This link isn’t working</div>
+          <div className="text-sm text-gray-400">The admin may have turned the link off or reset it. Ask them for the current link.</div>
+        </div>
+      </div>
+    );
+  if (state.error)
+    return <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6 text-sm text-red-300">{state.error}</div>;
+
+  let { session, tests, findings, marks } = state;
+  let testers = Array.isArray(session.testers) && session.testers.length ? session.testers : Array.from(new Set(findings.map((f) => f.tester_name)));
+  let F = {};
+  findings.forEach((f) => ((F[f.test_case_id] ||= {})[f.tester_name] = f));
+  let M = {};
+  marks.forEach((m) => (M[m.test_case_id] ||= []).push(m));
+  let overall = (t) => {
+    let best = "Not Tested";
+    testers.forEach((n) => {
+      let st = F[t.id]?.[n]?.status || "Not Tested";
+      if ((STATUS_RANK[st] || 0) > (STATUS_RANK[best] || 0)) best = st;
+    });
+    return best;
+  };
+  let counts = {};
+  tests.forEach((t) => (counts[overall(t)] = (counts[overall(t)] || 0) + 1));
+  let tested = tests.length - (counts["Not Tested"] || 0);
+  let readyRetest = tests.filter((t) => (M[t.id] || []).some((m) => m.status === "fixed" && !isNotMerged(m))).length;
+  let needle = q.trim().toLowerCase();
+  let visible = tests.filter((t) => {
+    let o = overall(t);
+    if (show === "issues" && !isIssueStatus(o)) return false;
+    if (show === "notrun" && o !== "Not Tested") return false;
+    if (show === "pass" && o !== "Pass") return false;
+    if (!needle) return true;
+    let hay = [t.test_id, t.title, t.module, t.feature, ...testers.map((n) => F[t.id]?.[n]?.notes || "")].join(" ").toLowerCase();
+    return hay.includes(needle);
+  });
+  let groups = groupByModule(visible);
+  let colCount = 3 + testers.length * 3 + 1;
+  let th = "px-3 py-2 text-left text-xs font-medium text-gray-400 whitespace-nowrap border-b border-r border-gray-800 bg-gray-900";
+  let td = "px-3 py-2 align-top border-b border-r border-gray-800 text-[13px]";
+  return (
+    <div className="h-screen bg-gray-950 flex flex-col">
+      <header className="flex-shrink-0 bg-gray-900 border-b border-gray-800">
+        <div className="px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="text-xs text-gray-500">Test Overview · read-only</div>
+            <h1 className="text-lg font-semibold text-gray-100 truncate">{session.name}</h1>
+          </div>
+          <span className="text-xs text-gray-500" title="Refreshes every minute">
+            Updated {state.at ? state.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+          </span>
+          <button onClick={load} className="h-[38px] px-3 inline-flex items-center gap-1.5 border border-gray-700 rounded-sm text-sm text-gray-300 hover:text-gray-100 hover:border-gray-600" title="Refresh now">
+            <RefreshCw className="w-4 h-4" /> Refresh
+          </button>
+          <AdminThemeButton />
+        </div>
+        <div className="px-4 sm:px-6 pb-3 flex items-center gap-x-5 gap-y-2 flex-wrap text-sm">
+          <div className="w-48">
+            <StatusSplitBar counts={counts} />
+            <div className="text-xs text-gray-400 mt-1">
+              {tested} of {tests.length} tested
+            </div>
+          </div>
+          {[
+            ["Pass", "bg-green-500"],
+            ["Fail", "bg-red-500"],
+            ["Blocked", "bg-orange-500"],
+            ["Needs Review", "bg-yellow-500"],
+            ["Not Tested", "border-[1.5px] border-gray-500"],
+          ].map(([k, c]) => (
+            <span key={k} className="inline-flex items-center gap-1.5 text-gray-300">
+              <span className={`w-2 h-2 rounded-full ${c}`} />
+              {getTesterStatus(k).label} <span className="tabular-nums text-gray-100 font-semibold">{counts[k] || 0}</span>
+            </span>
+          ))}
+          <span className="inline-flex items-center gap-1.5 text-sky-300">
+            <RefreshCw className="w-3.5 h-3.5" /> Ready to retest <span className="tabular-nums font-semibold">{readyRetest}</span>
+          </span>
+        </div>
+        <div className="px-4 sm:px-6 pb-3 flex items-center gap-2 flex-wrap">
+          <div className="flex bg-gray-800 p-0.5 rounded-sm text-xs" role="group" aria-label="Show">
+            {[
+              ["all", `All ${tests.length}`],
+              ["issues", "Needs attention"],
+              ["notrun", "Not run"],
+              ["pass", "Passed"],
+            ].map(([k, l]) => (
+              <button key={k} onClick={() => setShow(k)} aria-pressed={show === k} className={`px-3 h-7 rounded-sm ${show === k ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-400 hover:text-gray-200"}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 h-8 px-2.5 bg-gray-950 border border-gray-800 rounded-sm text-gray-500 w-full sm:w-72">
+            <Search className="w-4 h-4" />
+            <input value={q} onChange={(ev) => setQ(ev.target.value)} placeholder="Search tests and notes" className="flex-1 min-w-0 bg-transparent text-base sm:text-sm text-gray-100 placeholder-gray-500 focus:outline-none" />
+          </label>
+          <span className="text-xs text-gray-500">Showing {visible.length}</span>
+        </div>
+      </header>
+      {/* Only the table scrolls, so its header row and the Test column stay in view, like a sheet. */}
+      <div className="flex-1 min-h-0 overflow-auto">
+        <table className="border-separate border-spacing-0 min-w-full">
+          <thead className="sticky top-0 z-20">
+            <tr>
+              <th className={`${th} sticky left-0 z-10 min-w-[300px]`} rowSpan={2}>Test</th>
+              <th className={th} rowSpan={2}>Priority</th>
+              <th className={th} rowSpan={2}>Overall</th>
+              {testers.map((n) => (
+                <th key={n} className={`${th} text-center text-gray-200`} colSpan={3}>
+                  {n}
+                </th>
+              ))}
+              <th className={th} rowSpan={2}>Developers</th>
+            </tr>
+            <tr>
+              {testers.map((n) => (
+                <Fragment key={n}>
+                  <th className={th}>Result</th>
+                  <th className={`${th} min-w-[260px]`}>Notes</th>
+                  <th className={th}>Evidence</th>
+                </Fragment>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {visible.length === 0 && (
+              <tr>
+                <td colSpan={colCount} className="px-4 py-10 text-center text-sm text-gray-500">
+                  No tests match.
+                </td>
+              </tr>
+            )}
+            {groups.map((g) => (
+              <Fragment key={g.module}>
+                {groups.length > 1 && (
+                  <tr>
+                    <td colSpan={colCount} className="px-3 py-1.5 bg-gray-800/70 border-b border-gray-800 text-xs font-semibold text-gray-200">
+                      <span className="sticky left-3">
+                        {g.module} <span className="font-normal text-gray-400">· {g.items.length}</span>
+                      </span>
+                    </td>
+                  </tr>
+                )}
+                {g.items.map((t) => {
+                  let o = overall(t);
+                  return (
+                    <tr key={t.id} className="hover:bg-gray-900/60">
+                      <td className={`${td} sticky left-0 z-10 bg-gray-950 min-w-[300px] max-w-[380px]`}>
+                        <div className="flex items-start gap-2">
+                          <span className="font-mono text-[11px] text-gray-500 mt-0.5 flex-shrink-0">{t.test_id || "—"}</span>
+                          <div className="min-w-0">
+                            <div className="text-gray-100 font-medium">{t.title || "Untitled"}</div>
+                            {(t.feature && t.feature !== "—") || t.focus ? (
+                              <div className="text-[11px] text-gray-500 mt-0.5">{[t.feature !== "—" && t.feature, t.focus].filter(Boolean).join(" · ")}</div>
+                            ) : null}
+                          </div>
+                        </div>
+                      </td>
+                      <td className={`${td} font-mono text-xs text-gray-400`}>{t.priority || "—"}</td>
+                      <td className={td}>
+                        <StatusPill status={o} />
+                      </td>
+                      {testers.map((n) => {
+                        let f = F[t.id]?.[n];
+                        let st = f?.status || "Not Tested";
+                        let shots = (f?.screenshots || []).filter((z) => z && z.url);
+                        let recs = (f?.recordings || []).filter((z) => z && z.url);
+                        let sev = getSeverity(f?.bug_severity);
+                        return (
+                          <Fragment key={n}>
+                            <td className={td}>
+                              <div className="flex flex-col items-start gap-1">
+                                <StatusPill status={st} />
+                                {sev && isFailureStatus(st) && <span className="text-[11px] text-gray-400">{sev.value}</span>}
+                              </div>
+                            </td>
+                            <td className={`${td} min-w-[260px] max-w-[420px]`}>
+                              <FigureContext.Provider value={{ shots, open: (i) => setViewer({ kind: "shots", list: shots, idx: i }) }}>
+                                <ManagerNotes text={f?.notes} />
+                              </FigureContext.Provider>
+                            </td>
+                            <td className={td}>
+                              {shots.length || recs.length ? (
+                                <div className="flex flex-wrap gap-1 max-w-[180px]">
+                                  {shots.map((z, i) => (
+                                    <button
+                                      key={z.path || i}
+                                      onClick={() => setViewer({ kind: "shots", list: shots, idx: i })}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-gray-700 text-[11px] text-gray-200 hover:border-gray-500 whitespace-nowrap"
+                                      title={(z.annotations || []).length ? "Screenshot with annotations" : "Screenshot"}
+                                    >
+                                      <ImageIcon className="w-3 h-3" /> Fig. {i + 1}
+                                    </button>
+                                  ))}
+                                  {recs.map((z, i) => (
+                                    <button
+                                      key={i}
+                                      onClick={() => setViewer({ kind: "recs", list: recs, idx: i })}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-gray-700 text-[11px] text-gray-200 hover:border-gray-500 whitespace-nowrap"
+                                      title="Play recording"
+                                    >
+                                      <Play className="w-3 h-3" /> Rec {i + 1}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-600">—</span>
+                              )}
+                            </td>
+                          </Fragment>
+                        );
+                      })}
+                      <td className={`${td} min-w-[220px] max-w-[360px]`}>
+                        {(M[t.id] || []).filter((m) => m.status || (m.note || "").trim()).length ? (
+                          <div className="flex flex-col gap-1.5">
+                            {(M[t.id] || [])
+                              .filter((m) => m.status || (m.note || "").trim())
+                              .map((m) => (
+                                <div key={m.developer_name}>
+                                  <ManagerDevChip m={m} />
+                                  {(m.note || "").trim() && <div className="mt-0.5 text-xs text-gray-400 whitespace-pre-wrap">{normalizePath(m.note)}</div>}
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-600">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {viewer && viewer.kind === "shots" && <ScreenshotLightbox screenshots={viewer.list} startIdx={viewer.idx} onClose={() => setViewer(null)} />}
+      {viewer && viewer.kind === "recs" && <RecordingPlayer recordings={viewer.list} startIdx={viewer.idx} onClose={() => setViewer(null)} />}
+    </div>
+  );
+}
 function App() {
   if (EDITION !== "Pro") {
     return <LightApp />;
@@ -4391,7 +4700,9 @@ function App() {
     return () => window.removeEventListener("popstate", r);
   }, []);
   let a;
-  if (e.role === "tester") {
+  if (e.role === "manager") {
+    a = <ManagerView sessionId={e.sessionId} accessKey={e.key} />;
+  } else if (e.role === "tester") {
     a = <TesterEntry sessionId={e.sessionId} />;
   } else if (e.role === "dev") {
     a = <DevEntry sessionId={e.sessionId} />;
@@ -4550,6 +4861,9 @@ function readRoute() {
   let e = new URLSearchParams(window.location.search);
   let t = e.get("role");
   let a = e.get("session") || null;
+  if (a && ["overview", "public", "manager"].includes(e.get("view"))) {
+    return { role: "manager", sessionId: a, key: e.get("key") || "" };
+  }
   if (a && (t === "tester" || t === "dev")) {
     return {
       role: t,
@@ -6599,7 +6913,7 @@ function LiveReportButton({ url }) {
       window.removeEventListener("keydown", key);
     };
   }, [open]);
-  if (!url) return null;
+  // Off (no link): a still grey dot; the panel explains why the report isn't available.
   return (
     <div className="relative flex-shrink-0" ref={ref}>
       <button
@@ -6607,18 +6921,26 @@ function LiveReportButton({ url }) {
         onClick={toggle}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label="Live findings report"
-        title={open ? undefined : "Live findings report"}
+        aria-label={url ? "Live findings report" : "Live findings report (off)"}
+        title={open ? undefined : url ? "Live findings report" : "Live findings report: off"}
         className={`w-7 h-7 flex items-center justify-center rounded-sm transition-colors ${open ? "bg-gray-800" : "hover:bg-gray-800"}`}
       >
-        <span className="rec-dot w-2.5 h-2.5 rounded-full bg-red-500" />
+        {url ? <span className="rec-dot w-2.5 h-2.5 rounded-full bg-red-500" /> : <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-500" />}
       </button>
       {open && (
         <div className="fixed z-50 p-3.5 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl" style={{ top: pos.top, left: pos.left, width: pos.width }}>
           <div className="flex items-center gap-2 mb-1">
-            <span className="rec-dot w-2 h-2 rounded-full bg-red-500" />
-            <span className="text-sm font-semibold text-gray-100">Live findings report</span>
+            {url ? <span className="rec-dot w-2 h-2 rounded-full bg-red-500" /> : <span className="inline-block w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" />}
+            <span className="text-sm font-semibold text-gray-100">Live findings report{url ? "" : " is off"}</span>
           </div>
+          {!url && (
+            <div className="text-xs text-gray-400 leading-relaxed">
+              Your admin has turned the report link off for this session, or reset it, so any link shared before no longer works.
+              Ask your admin to turn it on or send you the new link.
+            </div>
+          )}
+          {url && (
+          <Fragment>
           <div className="text-xs text-gray-400 leading-relaxed mb-2.5">
             Always up to date, with every test and result. Paste the link into Claude (or another AI assistant) so it can read the findings.
           </div>
@@ -6634,6 +6956,8 @@ function LiveReportButton({ url }) {
               Issues only
             </a>
           </div>
+          </Fragment>
+          )}
         </div>
       )}
     </div>
@@ -6736,14 +7060,20 @@ function ReportLinkSection({ session }) {
   return (
     <div>
       <div className="text-xs font-medium text-gray-400 mb-1.5">
-        Findings report link <span className="font-normal text-gray-500">(optional)</span>
+        Findings report and Test Overview links <span className="font-normal text-gray-500">(optional)</span>
       </div>
       {key ? (
         <div className="space-y-2">
+          <div className="text-[11px] text-gray-400">For AI assistants (plain text report)</div>
           <CopyField value={reportUrl(session.id, key)} label="Copy link" />
+          <div className="text-[11px] text-gray-400 pt-1">Test Overview, for anyone in the company (read-only sheet)</div>
+          <CopyField value={managerUrl(session.id, key)} label="Copy link" />
           <div className="flex items-center gap-3 text-xs">
             <a href={reportUrl(session.id, key)} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-gray-100 underline underline-offset-2">
               Open report
+            </a>
+            <a href={managerUrl(session.id, key)} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-gray-100 underline underline-offset-2">
+              Open Test Overview
             </a>
             <button disabled={busy} onClick={() => save(newReportKey())} className="text-gray-400 hover:text-gray-100" title="Make a new link. The old link stops working straight away.">
               Reset link
@@ -6759,13 +7089,13 @@ function ReportLinkSection({ session }) {
           onClick={() => save(newReportKey())}
           className="h-8 px-3 inline-flex items-center gap-1.5 border border-gray-700 rounded-sm text-xs text-gray-200 hover:bg-gray-800 disabled:opacity-50"
         >
-          <Link className="w-3.5 h-3.5" /> Turn on report link
+          <Link className="w-3.5 h-3.5" /> Turn on report and Test Overview links
         </button>
       )}
       {err && <div className="mt-1.5 text-xs text-red-300 break-words">{err}</div>}
       <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-        A live, read-only page with every test and result, as plain text that people and AI assistants like Claude can read.
-        Anyone with the link can see it, so share it only with your team. Reset the link to stop old copies working.
+        Two live, read-only views of every test and result: a plain-text report for AI assistants like Claude, and a sheet-style Test Overview for anyone in the company.
+        They share one secret key: anyone with a link can see the results, so share them only with your team. Reset to stop old links working.
       </div>
       {key && <AnnotatedCopiesButton sessionId={session.id} />}
     </div>
@@ -9777,10 +10107,20 @@ function ShowAllFooter({ shown, total, onShowAll }) {
     </div>
   );
 }
-function SidebarFooter({ name, role, onSettings, grouped, onToggleGrouped }) {
+function SidebarFooter({ name, role, onSettings, grouped, onToggleGrouped, onCollapse }) {
   return (
-    <div className="border-t border-gray-800 pl-3 pr-2 py-2 flex items-center gap-2 text-sm">
-      <span className="text-gray-300 truncate">{name}</span>
+    <div className="border-t border-gray-800 pl-2 pr-2 py-2 flex items-center gap-2 text-sm">
+      {onCollapse && (
+        <button
+          onClick={onCollapse}
+          className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100 flex-shrink-0"
+          title="Collapse"
+          aria-label="Collapse the test list"
+        >
+          <PanelLeftClose className="w-4 h-4" />
+        </button>
+      )}
+      <span className="font-semibold text-gray-100 truncate">{name}</span>
       <span
         className="flex-shrink-0 text-[10.5px] font-semibold px-1.5 py-px rounded-sm border border-gray-700 text-gray-100"
         title={
@@ -9962,14 +10302,7 @@ function TesterSidebar({
     >
       {!mobile && <SidebarResizeHandle width={sideW} setWidth={setSideW} />}
       <div className="px-3 pt-3 pb-3 border-b border-gray-800 flex flex-col gap-2.5">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <button
-            onClick={t}
-            className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100 flex-shrink-0"
-            title="Collapse"
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-1.5 min-w-0 min-h-[28px]">
           <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-gray-100">{a}</h2>
         </div>
         <div
@@ -10130,7 +10463,7 @@ function TesterSidebar({
           />
         )}
       </div>
-      <SidebarFooter name={r} role="Tester" onSettings={() => D(true)} grouped={listGrouped} onToggleGrouped={sameModuleForAll(l) ? null : setListGrouped} />
+      <SidebarFooter name={r} role="Tester" onCollapse={t} onSettings={() => D(true)} grouped={listGrouped} onToggleGrouped={sameModuleForAll(l) ? null : setListGrouped} />
       {E && (
         <SettingsModal
           baseUrl={T}
@@ -12568,14 +12901,7 @@ function DevSidebar({
     >
       {!mobile && <SidebarResizeHandle width={sideW} setWidth={setSideW} />}
       <div className="px-3 pt-3 pb-3 border-b border-gray-800 flex flex-col gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <button
-            onClick={t}
-            className="w-7 h-7 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100 flex-shrink-0"
-            title="Collapse"
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-1.5 min-w-0 min-h-[28px]">
           <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-gray-100">{a}</h2>
           <LiveReportButton url={reportLinkUrl} />
           <button
@@ -12772,7 +13098,7 @@ function DevSidebar({
           </div>
         </div>
       )}
-      <SidebarFooter name={r} role="Developer" onSettings={() => E(true)} grouped={listGrouped} onToggleGrouped={sameModuleForAll(l) ? null : setListGrouped} />
+      <SidebarFooter name={r} role="Developer" onCollapse={t} onSettings={() => E(true)} grouped={listGrouped} onToggleGrouped={sameModuleForAll(l) ? null : setListGrouped} />
       {exportOpen && (
         <ExportIssuesModal
           sessionName={a}
