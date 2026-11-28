@@ -1006,15 +1006,8 @@ var CODE_TOGGLE_SETUP_SQL =
   "alter table sessions add column if not exists tester_code_required boolean not null default true; alter table sessions add column if not exists developer_code_required boolean not null default true;";
 var isCodeToggleSetupError = (e) => /code_required/i.test(String(e?.message || e || ""));
 var testerCodeOn = (s) => s?.tester_code_required !== false;
-// Tester result shown as coloured text in the sidebar lists ("Not run" shows nothing).
-var STATUS_TEXT = { Pass: ["Pass", "text-green-400"], Fail: ["Fail", "text-red-400"], Blocked: ["Blocked", "text-orange-400"], "Needs Review": ["Needs review", "text-yellow-400"] };
 // When every test shares one module (e.g. they all came from a tab called "UAT"), the label adds nothing, so lists hide it.
 var sameModuleForAll = (e) => new Set((e || []).map((t) => String(t.module || "").trim().toLowerCase())).size <= 1;
-function StatusText({ value: e }) {
-  let t = STATUS_TEXT[e];
-  if (!t) return null;
-  return <span className={`flex-shrink-0 ${t[1]}`}>· {t[0]}</span>;
-}
 // ---- App name + browser tab title ----
 var APP_NAME = "UAT Collaborator";
 var SHORT_NAME_SETUP_SQL = "alter table sessions add column if not exists short_name text;";
@@ -1901,7 +1894,6 @@ function LightApp() {
   };
   let Le = () => {
     try {
-      console.log("Starting HTML export (interactive)...");
       let L = (_e) =>
         String(_e ?? "").replace(
           /[&<>"']/g,
@@ -2522,7 +2514,6 @@ function LightApp() {
       document.body.removeChild(Ne);
       setTimeout(() => URL.revokeObjectURL(He), 1000);
       C(false);
-      console.log("HTML export complete");
     } catch (L) {
       console.error("Export error:", L);
       alert("Export failed: " + L.message);
@@ -2530,7 +2521,6 @@ function LightApp() {
   };
   let We = () => {
     try {
-      console.log("Starting CSV export...");
       let L = I === "focused" && h ? e.filter((Ee) => h.has(Ee.__id)) : e;
       let R = (e[0] && e[0].__testerCol) || "Tester";
       let J = L.map((Ee, at) => {
@@ -2583,7 +2573,6 @@ function LightApp() {
         }
       });
       C(false);
-      console.log("CSV export complete");
     } catch (L) {
       console.error("CSV export error:", L);
       alert("CSV export failed: " + L.message);
@@ -5003,31 +4992,6 @@ function useOpenLinkedTest(testCases, tabNames, selectTest, setTab) {
 }
 // Set by the portals so each test header can offer "Copy link".
 var TestLinkContext = createContext(null);
-function CopyTestLink({ tc: e }) {
-  let mk = useContext(TestLinkContext);
-  let [done, setDone] = useState(false);
-  if (!mk || !e?.test_id) return null;
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        let u = mk(e);
-        try {
-          await navigator.clipboard.writeText(u);
-        } catch {
-          window.prompt("Copy this link:", u);
-        }
-        setDone(true);
-        setTimeout(() => setDone(false), 1800);
-      }}
-      className={`ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[10px] font-sans transition-colors ${done ? "bg-emerald-950/60 border-emerald-700 text-emerald-300" : "bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600"}`}
-      title="Copy a link that opens this test"
-    >
-      {done ? <Check className="w-3 h-3" strokeWidth={3} /> : <Copy className="w-3 h-3" />}
-      {done ? "Link copied" : "Copy link"}
-    </button>
-  );
-}
 var sessionUrl = (e) => `${window.location.origin + window.location.pathname}?session=${e}`;
 var navigateTo = (e) => {
   window.location.assign(e);
@@ -5354,7 +5318,7 @@ function AdminPortal() {
                       ))}
                     </div>
                   </div>
-                  <SessionEditor session={sel} onSaved={() => S((I) => I + 1)} key={sel.id} />
+                  <SessionEditor session={sel} progress={o[sel.id]} onSaved={() => S((I) => I + 1)} key={sel.id} />
                 </div>
               );
             })()
@@ -5395,90 +5359,6 @@ function SessionListItem({ session: e, progress: t, selected, onSelect }) {
         </div>
       )}
     </button>
-  );
-}
-// Session row in the admin list. "Share link" opens the sharing details right inside the card.
-function SessionCard({ session: e, progress: t, onShowUrls: a, onEdit: r }) {
-  let [shareOpen, setShareOpen] = useState(false);
-  let o = e.created_at ? new Date(e.created_at).toLocaleString() : "";
-  let s = e.created_at ? timeAgo(e.created_at) : "";
-  let l = (e.testers || []).length;
-  let i = (e.developers || []).length;
-  let u = t || {
-    total: 0,
-    tested: 0,
-    failed: 0,
-    loaded: false,
-  };
-  return (
-    <div className={`bg-gray-900/60 border rounded-sm transition-colors ${shareOpen ? "border-gray-700" : "border-gray-800 hover:border-gray-700"}`}>
-    <div className="flex items-center gap-4 p-4">
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-gray-100 truncate">{e.name}</div>
-        <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span title={o}>{s}</span>
-          <span className="text-gray-700">·</span>
-          <span>
-            {l} tester{l === 1 ? "" : "s"}
-          </span>
-          <span className="text-gray-700">·</span>
-          <span>
-            {i} dev{i === 1 ? "" : "s"}
-          </span>
-          {u.loaded && u.total > 0 && (
-            <Fragment>
-              <span className="text-gray-700">·</span>
-              <span>
-                <span className="text-gray-300">{u.tested}</span>/{u.total} tested
-              </span>
-              {u.failed > 0 && (
-                <Fragment>
-                  <span className="text-gray-700">·</span>
-                  <span className="text-red-400">{u.failed} failed</span>
-                </Fragment>
-              )}
-            </Fragment>
-          )}
-        </div>
-      </div>
-      <button
-        onClick={r}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-gray-100 bg-gray-800/60 hover:bg-gray-950 border border-gray-800 rounded-sm"
-        title="Edit session name and add testers/developers"
-      >
-        <Pencil className="w-3.5 h-3.5" /> Edit
-      </button>
-      <button
-        onClick={() => setShareOpen(!shareOpen)}
-        aria-expanded={shareOpen}
-        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-sm transition-colors ${shareOpen ? "bg-gray-800 border-gray-600 text-gray-100" : "text-gray-300 hover:text-gray-100 bg-gray-800/60 hover:bg-gray-950 border-gray-800"}`}
-        title={shareOpen ? "Hide sharing details" : "Show the session link and access codes"}
-      >
-        <ExternalLink className="w-3.5 h-3.5" /> Share link
-        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${shareOpen ? "rotate-90" : ""}`} />
-      </button>
-    </div>
-    {shareOpen && (
-      <div className="border-t border-gray-800 px-4 py-4">
-        <ShareLinksPanel
-          url={sessionUrl(e.id)}
-          testerCode={e.tester_code}
-          devCode={e.developer_code}
-          testerCodeOff={!testerCodeOn(e)}
-          devCodeOff={!devCodeOn(e)}
-          testers={e.testers || []}
-          developers={e.developers || []}
-        />
-        <div className="mt-4">
-          <div className="text-xs text-gray-400 mb-2">Direct role links (skip the role picker)</div>
-          <div className="space-y-2">
-            <CopyUrlRow label="Tester link" url={portalUrl("tester", e.id)} />
-            <CopyUrlRow label="Developer link" url={portalUrl("dev", e.id)} />
-          </div>
-        </div>
-      </div>
-    )}
-    </div>
   );
 }
 // Import from a Google Sheets link. Only works for sheets shared as "Anyone with the link can view".
@@ -5930,18 +5810,6 @@ var downloadBlob = (e, t) => {
   r.remove();
   setTimeout(() => URL.revokeObjectURL(a), 4000);
 };
-// Right rail (desktop) / floating stack (phones): icon-only buttons; hovering shows a pop-out label.
-// Something waiting (unread pings, an unread Read me, sample files not yet looked at) shows as a badge or dot instead,
-// so the stack stays one button wide and never covers the page.
-function BarLabel({ show, children }) {
-  return (
-    <span
-      className={`overflow-hidden whitespace-nowrap transition-all duration-200 ease-out ${show ? "max-w-[180px] opacity-100 ml-1.5" : "max-w-0 opacity-0 ml-0"}`}
-    >
-      {children}
-    </span>
-  );
-}
 // Right rail button label: pops out to the left on hover (desktop), in place of a browser-style tooltip.
 function RailLabel({ children }) {
   return (
@@ -7065,6 +6933,12 @@ function LiveReportButton({ url }) {
   let ref = useRef(null);
   let btnRef = useRef(null);
   // Lines up with the side panel: same width, inset 8px on each side.
+  useEffect(() => {
+    if (!open) return;
+    let close = () => setOpen(false);
+    window.addEventListener("resize", close);
+    return () => window.removeEventListener("resize", close);
+  }, [open]);
   let toggle = () => {
     if (!open && btnRef.current) {
       let r = btnRef.current.getBoundingClientRect();
@@ -7230,9 +7104,6 @@ function ReportLinkSection({ session }) {
   };
   return (
     <div>
-      <div className="text-xs font-medium text-gray-400 mb-1.5">
-        Findings report and Test Overview links <span className="font-normal text-gray-500">(optional)</span>
-      </div>
       {key ? (
         <div className="space-y-2">
           <div className="text-[11px] text-gray-400">For AI assistants (plain text report)</div>
@@ -7274,10 +7145,23 @@ function ReportLinkSection({ session }) {
 }
 // Admin → right-hand panel for the selected session, grouped into cards.
 // Details and People need the Save bar; the other cards save as you change them.
-function SessionEditor({ session: e, onSaved: a }) {
+function SessionEditor({ session: e, onSaved: a, progress = null }) {
   let t = () => {};
   let [resyncOpen, setResyncOpen] = useState(false);
   let [removedTests, setRemovedTests] = useState([]);
+  let [activeTests, setActiveTests] = useState(null);
+  useEffect(() => {
+    let live = true;
+    supabase
+      .from("test_cases")
+      .select("*")
+      .eq("session_id", e.id)
+      .is("removed_at", null)
+      .then(({ data }) => live && setActiveTests(data || []));
+    return () => {
+      live = false;
+    };
+  }, [e.id]);
   let [restoringId, setRestoringId] = useState(null);
   let loadRemovedTests = async () => {
     let { data: E, error: D } = await supabase
@@ -7402,129 +7286,43 @@ function SessionEditor({ session: e, onSaved: a }) {
     <div className="flex flex-col gap-4">
       <div>
         <h2 className="text-lg font-semibold text-gray-100 break-words">{e.name}</h2>
-        <div className="text-xs text-gray-500 mt-0.5">
-          Created {e.created_at ? new Date(e.created_at).toLocaleDateString() : ""} · {(e.testers || []).length} testers · {(e.developers || []).length} developers
+        <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap gap-x-1.5">
+          <span>Created {e.created_at ? new Date(e.created_at).toLocaleDateString() : ""}</span>
+          {progress && progress.loaded && progress.total > 0 && (
+            <Fragment>
+              <span className="text-gray-700">·</span>
+              <span>
+                <span className="text-gray-300">{progress.tested}</span>/{progress.total} tested
+              </span>
+              {progress.failed > 0 && (
+                <Fragment>
+                  <span className="text-gray-700">·</span>
+                  <span className="text-red-400">{progress.failed} failed</span>
+                </Fragment>
+              )}
+            </Fragment>
+          )}
         </div>
       </div>
-      <AdminCard title="Share" desc="One link for everyone. People pick their role when they open it and enter the matching code.">
-        <ShareLinksPanel
-          url={sessionUrl(e.id)}
-          testerCode={e.tester_code}
-          devCode={e.developer_code}
-          testerCodeOff={!testerCodeOn(e)}
-          devCodeOff={!devCodeOn(e)}
-          testers={e.testers || []}
-          developers={e.developers || []}
-        />
+      <AdminCard title="Invite people" desc="Share one link. People pick their role when they open it, and enter the code if it’s on." unsaved={V || codesChanged}>
         <div>
-          <div className="text-xs text-gray-400 mb-2">Direct role links (skip the role picker)</div>
-          <div className="space-y-2">
-            <CopyUrlRow label="Tester link" url={portalUrl("tester", e.id)} />
-            <CopyUrlRow label="Developer link" url={portalUrl("dev", e.id)} />
-          </div>
+          <div className="text-xs font-medium text-gray-400 mb-1.5">Session link</div>
+          <CopyField value={sessionUrl(e.id)} label="Copy link" />
         </div>
-      </AdminCard>
-      <AdminCard title="Reports" desc="Live, read-only views of every result. Changes here save straight away.">
-        <ReportLinkSection session={e} />
-      </AdminCard>
-      <AdminCard title="Details">
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                  Session name
-                </label>
-                <input
-                  type="text"
-                  value={r}
-                  onChange={(E) => o(E.target.value)}
-                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
-                />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="border border-gray-800 rounded-sm p-3.5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-gray-100">
+                Testers <span className="font-normal text-gray-500">({v.length + i.length})</span>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                  Short name <span className="normal-case font-normal text-gray-500">(optional, for the browser tab)</span>
-                </label>
-                <input
-                  type="text"
-                  value={shortName}
-                  maxLength={24}
-                  onChange={(E) => setShortName(E.target.value)}
-                  placeholder={sessionShortName({ name: r })}
-                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
-                />
-                <div className="text-[11px] text-gray-500 mt-1">
-                  Tabs will read “{shortName.trim() || sessionShortName({ name: r })} · Tester – {APP_NAME}”. Leave empty to use the first word of the session name.
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                  Google Sheet link <span className="normal-case font-normal text-gray-500">(optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={sheetUrl}
-                  onChange={(E) => setSheetUrl(E.target.value)}
-                  placeholder="https://docs.google.com/spreadsheets/d/…"
-                  className={`w-full px-3 py-2 bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500 ${sheetUrlBad ? "border-red-600" : "border-gray-800"}`}
-                />
-                <div className={`text-[11px] mt-1 ${sheetUrlBad ? "text-red-400" : "text-gray-500"}`}>
-                  {sheetUrlBad
-                    ? "Paste the full link, starting with https://"
-                    : "Testers and developers get an “Open Google Sheet” link in the Focus tests window. Filled in automatically when you import from a link."}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                  Path chip prefix <span className="normal-case font-normal text-gray-500">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={s}
-                  onChange={(E) => l(E.target.value)}
-                  placeholder="https://localhost:3000"
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  spellCheck="false"
-                  className={`w-full px-3 py-2 text-sm font-mono bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:border-emerald-500 ${s.trim() ? "border-emerald-800" : "border-gray-800"}`}
-                />
-                <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-                  Default for both portals. Testers and developers can still override this in their own Options —
-                  their overrides take precedence.
-                </div>
-              </div>
-      </AdminCard>
-      <AdminCard title="People and access">
-              <div>
-                <div className="text-xs font-medium text-gray-400 mb-1.5">Access codes</div>
-                <div className="border border-gray-800 rounded-sm divide-y divide-gray-800">
-                  {[
-                    { label: "Testers", code: e.tester_code, on: testerReq, set: setTesterReq },
-                    { label: "Developers", code: e.developer_code, on: devReq, set: setDevReq },
-                  ].map((E) => (
-                    <div key={E.label} className="flex items-center gap-3 px-3 py-2.5">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-gray-100">{E.label} need a code to sign in</div>
-                        <div className="text-[11px] text-gray-500">
-                          {E.on ? (
-                            <Fragment>
-                              Code <span className="font-mono text-gray-300 tracking-wider">{E.code}</span>
-                            </Fragment>
-                          ) : (
-                            "Off, they just pick their name"
-                          )}
-                        </div>
-                      </div>
-                      <CodeSwitch on={E.on} onChange={E.set} label={`${E.label} need a code`} />
-                    </div>
-                  ))}
-                </div>
-                <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-                  If you switch a code back on, anyone who signed in while it was off will be asked for it on their next visit.
-                </div>
-              </div>
-              <div>
-                <div className="text-xs font-medium text-gray-400 mb-1.5">
-                  Testers <span className="normal-case font-normal text-gray-500">({v.length + i.length})</span>
-                </div>
+              <CodeSwitch on={testerReq} onChange={setTesterReq} label="Testers need a code" />
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1">{testerReq ? "Access code" : "Code off: they just pick their name"}</div>
+              {testerReq && <CopyField value={String(e.tester_code || "")} label="Copy" />}
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1.5">People</div>
                 {v.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {v.map((E) => (
@@ -7578,12 +7376,25 @@ function SessionEditor({ session: e, onSaved: a }) {
                     Add
                   </button>
                 </div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1">Direct link (skips the role picker)</div>
+              <CopyField value={portalUrl("tester", e.id)} label="Copy" />
+            </div>
+          </div>
+          <div className="border border-gray-800 rounded-sm p-3.5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-gray-100">
+                Developers <span className="font-normal text-gray-500">({k.length + d.length})</span>
               </div>
-              <div>
-                <div className="text-xs font-medium text-gray-400 mb-1.5">
-                  Developers{" "}
-                  <span className="normal-case font-normal text-gray-500">({k.length + d.length})</span>
-                </div>
+              <CodeSwitch on={devReq} onChange={setDevReq} label="Developers need a code" />
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1">{devReq ? "Access code" : "Code off: they just pick their name"}</div>
+              {devReq && <CopyField value={String(e.developer_code || "")} label="Copy" />}
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1.5">People</div>
                 {k.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {k.map((E) => (
@@ -7637,19 +7448,40 @@ function SessionEditor({ session: e, onSaved: a }) {
                     Add
                   </button>
                 </div>
-              </div>
-              <div className="text-[10px] text-gray-500 pt-2 border-t border-gray-800">
-                Existing testers and developers can't be removed here — only added. Their findings stay
-                regardless.
-              </div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-500 mb-1">Direct link (skips the role picker)</div>
+              <CopyField value={portalUrl("dev", e.id)} label="Copy" />
+            </div>
+          </div>
+        </div>
+        <div className="text-[11px] text-gray-500 leading-relaxed">
+          People can only be added here, not removed; their results stay either way. If you switch a code back on, anyone who signed in while it was off is asked for it on their next visit.
+        </div>
       </AdminCard>
-      <AdminCard title="For testers" desc="What testers see when they open the session. Changes here save straight away.">
-        <ReadmeEditor session={e} />
-        <SampleFilesManager session={e} />
+      <AdminCard title="Reports" desc="Live, read-only views of every result. Changes here save straight away.">
+        <ReportLinkSection session={e} />
       </AdminCard>
-      <AdminCard title="Test cases">
+      <AdminCard title="Test cases" unsaved={sheetUrlChanged}>
               <div>
-                <div className="text-xs font-medium text-gray-400 mb-1.5">Test cases</div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Google Sheet link <span className="normal-case font-normal text-gray-500">(optional)</span>
+                </label>
+                <input
+                  type="url"
+                  value={sheetUrl}
+                  onChange={(E) => setSheetUrl(E.target.value)}
+                  placeholder="https://docs.google.com/spreadsheets/d/…"
+                  className={`w-full px-3 py-2 bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500 ${sheetUrlBad ? "border-red-600" : "border-gray-800"}`}
+                />
+                <div className={`text-[11px] mt-1 ${sheetUrlBad ? "text-red-400" : "text-gray-500"}`}>
+                  {sheetUrlBad
+                    ? "Paste the full link, starting with https://"
+                    : "Testers and developers get an “Open Google Sheet” link in the Focus tests window. Filled in automatically when you import from a link."}
+                </div>
+              </div>
+        <div>
+          <div className="text-xs font-medium text-gray-400 mb-1.5">Update tests</div>
                 <button
                   onClick={() => setResyncOpen(true)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-sm transition-colors"
@@ -7685,6 +7517,64 @@ function SessionEditor({ session: e, onSaved: a }) {
                     </div>
                   </details>
                 )}
+        </div>
+        {activeTests && activeTests.length > 0 && (
+          <ImportedDataSection
+            testCases={activeTests}
+            fixHint="To add something that’s missing, add the column to the sheet and use Upload updated sheet."
+          />
+        )}
+      </AdminCard>
+      <AdminCard title="Tester guide" desc="What testers see when they open the session. Changes here save straight away.">
+        <ReadmeEditor session={e} />
+        <SampleFilesManager session={e} />
+      </AdminCard>
+      <AdminCard title="Settings" unsaved={M || shortChanged || W}>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Session name
+                </label>
+                <input
+                  type="text"
+                  value={r}
+                  onChange={(E) => o(E.target.value)}
+                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Short name <span className="normal-case font-normal text-gray-500">(optional, for the browser tab)</span>
+                </label>
+                <input
+                  type="text"
+                  value={shortName}
+                  maxLength={24}
+                  onChange={(E) => setShortName(E.target.value)}
+                  placeholder={sessionShortName({ name: r })}
+                  className="w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+                />
+                <div className="text-[11px] text-gray-500 mt-1">
+                  Tabs will read “{shortName.trim() || sessionShortName({ name: r })} · Tester – {APP_NAME}”. Leave empty to use the first word of the session name.
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Path chip prefix <span className="normal-case font-normal text-gray-500">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={s}
+                  onChange={(E) => l(E.target.value)}
+                  placeholder="https://localhost:3000"
+                  autoCapitalize="off"
+                  autoComplete="off"
+                  spellCheck="false"
+                  className={`w-full px-3 py-2 text-sm font-mono bg-gray-950 border text-gray-100 placeholder-gray-500 rounded-sm focus:outline-none focus:border-emerald-500 ${s.trim() ? "border-emerald-800" : "border-gray-800"}`}
+                />
+                <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+                  Default for both portals. Testers and developers can still override this in their own Options —
+                  their overrides take precedence.
+                </div>
               </div>
       </AdminCard>
           {x && (
@@ -7694,7 +7584,7 @@ function SessionEditor({ session: e, onSaved: a }) {
           )}
       {(dirty || S || x) && (
         <div className="sticky bottom-0 z-10 -mx-1 px-4 py-3 flex items-center gap-3 bg-gray-900 border border-gray-700 rounded-sm shadow-2xl">
-          <span className="flex-1 text-sm text-gray-300">{sheetUrlBad ? "Fix the Google Sheet link to save." : "You have unsaved changes in Details or People and access."}</span>
+          <span className="flex-1 text-sm text-gray-300">{sheetUrlBad ? "Fix the Google Sheet link to save." : "You have unsaved changes. Cards with changes are marked Unsaved."}</span>
           <button onClick={discard} disabled={S} className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-200">
             Discard
           </button>
@@ -7722,11 +7612,14 @@ function SessionEditor({ session: e, onSaved: a }) {
     </div>
   );
 }
-function AdminCard({ title, desc, children }) {
+function AdminCard({ title, desc, children, unsaved = false }) {
   return (
-    <section className="bg-gray-900 border border-gray-800 rounded-sm">
+    <section className={`bg-gray-900 border rounded-sm ${unsaved ? "border-gray-600" : "border-gray-800"}`}>
       <div className="px-5 pt-4 pb-3 border-b border-gray-800">
-        <h3 className="text-sm font-semibold text-gray-100">{title}</h3>
+        <h3 className="text-sm font-semibold text-gray-100 flex items-center gap-2">
+          {title}
+          {unsaved && <span className="px-1.5 py-0.5 rounded-sm bg-yellow-500/15 text-yellow-300 text-[11px] font-medium">Unsaved</span>}
+        </h3>
         {desc && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{desc}</p>}
       </div>
       <div className="px-5 py-4 space-y-5">{children}</div>
@@ -9123,7 +9016,6 @@ var TESTER_STATUSES = [
     badge: "bg-yellow-900/40 text-yellow-300 border-yellow-700",
   },
 ];
-var PRIORITIES = ["P0", "P1", "P2"];
 // Bug severity (stored in findings.bug_severity). Older findings saved P0/P1/P2 are read as Blocker/Major/Minor.
 var SEVERITIES = [
   {
@@ -9157,18 +9049,6 @@ var severityRank = (e) => {
   let t = getSeverity(e);
   return t ? SEVERITIES.indexOf(t) : 99;
 };
-function SeverityBadge({ value: e, size: t = "sm" }) {
-  let a = getSeverity(e);
-  if (!a) return null;
-  return (
-    <span
-      className={`inline-flex items-center border rounded-sm font-bold flex-shrink-0 ${t === "xs" ? "text-[9px] px-1 tracking-wider" : "text-xs px-2.5 py-1"} ${a.badge}`}
-      title={`Severity: ${a.value} — ${a.description}`}
-    >
-      {a.value}
-    </span>
-  );
-}
 var PRO_CSV_PROMPT = `You are generating a User Acceptance Testing (UAT) test plan as a CSV that will be uploaded into a UAT collaboration tool.
 
 Fill these placeholders with your project context first, then proceed:
@@ -10684,7 +10564,6 @@ function TesterSidebar({
           onResetRequested={s ? () => se(true) : undefined}
           resetDescription="Delete every status, severity, note, observation, step check, recording, and screenshot in your own tab. Other testers' tabs are not affected."
           onClose={() => D(false)}
-          testCases={l}
         />
       )}
       {W && (
@@ -10725,9 +10604,6 @@ var STATUS_UI = {
 };
 var isTypingTarget = (t) => !!(t && t.closest && t.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]'));
 var anyModalOpen = () => !!document.querySelector('[role="dialog"][aria-modal="true"], .fixed.inset-0.z-50');
-function KeyHint({ k }) {
-  return <kbd className="hidden sm:inline ml-0.5 px-1 rounded-sm border border-current text-[10px] leading-[14px] font-mono opacity-60">{k}</kbd>;
-}
 function StatusPill({ status }) {
   let st = status || "Not Tested";
   let cfg = getTesterStatus(st);
@@ -10771,33 +10647,6 @@ function TestCrumb({ tc: e }) {
         </span>
       )}
     </div>
-  );
-}
-// Copy-link icon right after the test title, like a heading anchor: faint until you hover the
-// title (always visible on touch screens and when focused with the keyboard).
-function TitleLinkButton({ tc }) {
-  let mk = useContext(TestLinkContext);
-  let [done, setDone] = useState(false);
-  if (!mk || !tc?.test_id) return null;
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        let u = mk(tc);
-        try {
-          await navigator.clipboard.writeText(u);
-        } catch {
-          window.prompt("Copy this link:", u);
-        }
-        setDone(true);
-        setTimeout(() => setDone(false), 1800);
-      }}
-      title={done ? "Link copied" : "Copy a link that opens this test"}
-      aria-label="Copy link to this test"
-      className={`ml-1 inline-flex items-center justify-center w-6 h-6 align-[-1px] rounded-sm transition-all ${done ? "text-green-400 opacity-100" : "text-gray-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 hover:bg-gray-800 hover:text-gray-100"}`}
-    >
-      {done ? <Check className="w-4 h-4" strokeWidth={3} /> : <Link className="w-4 h-4" />}
-    </button>
   );
 }
 // Options menu at the right of the test header (after a divider): share link + clear entry.
@@ -11271,7 +11120,10 @@ function TesterTestDetail({
                   onClear={
                     ro
                       ? null
-                      : () =>
+                      : () => {
+                          // Delete this entry's screenshot files (and annotated copies) so nothing is left behind in storage.
+                          let paths = (p.screenshots || []).flatMap((z) => [z.path, z.annotated_path]).filter(Boolean);
+                          if (paths.length) supabase.storage.from("screenshots").remove(paths).catch(() => {});
                           l({
                             status: "Not Tested",
                             bug_severity: "",
@@ -11281,7 +11133,8 @@ function TesterTestDetail({
                             step_notes: {},
                             recordings: [],
                             screenshots: [],
-                          })
+                          });
+                        }
                   }
                 />
               }
@@ -13326,7 +13179,6 @@ function DevSidebar({
           onResetRequested={s ? () => F(true) : undefined}
           resetDescription="Delete every In Progress / Fixed mark you've made in this session, along with any notes you wrote. Other developers' work is not affected."
           onClose={() => E(false)}
-          testCases={l}
         />
       )}
       {M && (
@@ -13426,18 +13278,6 @@ function MarkRetestReadyModal({ tests: e, onClose: t, onConfirm: a }) {
     </div>
   );
 }
-function summarizeDevMarks(e) {
-  let t = e.filter((o) => o.status === "fixed").map((o) => o.developer_name + (isNotMerged(o) ? " (not ready to retest yet)" : ""));
-  let a = e.filter((o) => o.status === "in_progress").map((o) => o.developer_name);
-  let r = [];
-  if (t.length) {
-    r.push(`Fixed by ${t.join(", ")}`);
-  }
-  if (a.length) {
-    r.push(`In progress: ${a.join(", ")}`);
-  }
-  return r.join(" · ");
-}
 // Priority / focus-area helpers (values come straight from the imported sheet, e.g. "P0", "Security").
 var priorityRank = (e) => {
   let t = String(e || "").match(/\d+/);
@@ -13451,17 +13291,6 @@ var priorityBadgeClass = (e) => {
   if (t === 2) return "bg-sky-950/50 text-sky-300 border-sky-800";
   return "bg-gray-800 text-gray-300 border-gray-700";
 };
-function PriorityBadge({ value: e, size: t = "sm" }) {
-  if (!e) return null;
-  return (
-    <span
-      className={`inline-flex items-center border rounded-sm font-mono font-bold flex-shrink-0 ${t === "xs" ? "text-[9px] px-1 py-px" : "text-[10px] px-1.5 py-0.5"} ${priorityBadgeClass(e)}`}
-      title={`Priority: ${e}`}
-    >
-      {e}
-    </span>
-  );
-}
 function FilterSelect({ value: e, onChange: t, children: a, active: r }) {
   return (
     <select
@@ -13477,59 +13306,6 @@ function FilterSelect({ value: e, onChange: t, children: a, active: r }) {
     >
       {a}
     </select>
-  );
-}
-function Breadcrumb({ tc: e }) {
-  return (
-    <div className="flex items-center gap-2 text-xs text-gray-400 font-mono mb-1.5">
-      {e.row_num && (
-        <span className="bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded-sm text-[10px]">
-          Row {e.row_num}
-        </span>
-      )}
-      <span className="text-emerald-400">{e.test_id || "—"}</span>
-      {e.module && (
-        <Fragment>
-          <ChevronRight className="w-3 h-3 text-gray-700 flex-shrink-0" />
-          <span>{e.module}</span>
-        </Fragment>
-      )}
-      {e.feature && e.feature !== "—" && (
-        <Fragment>
-          <ChevronRight className="w-3 h-3 text-gray-700 flex-shrink-0" />
-          <span>{e.feature}</span>
-        </Fragment>
-      )}
-      {e.priority && <PriorityBadge value={e.priority} />}
-      {e.focus && (
-        <span
-          className="bg-gray-800 text-gray-300 border border-gray-700 px-1.5 py-0.5 rounded-sm text-[10px] font-sans"
-          title={`Focus area: ${e.focus}`}
-        >
-          {e.focus}
-        </span>
-      )}
-      {e.dev_branch_name && (
-        <span
-          className="inline-flex items-center gap-1 bg-emerald-950/50 text-emerald-300 border border-emerald-900 px-1.5 py-0.5 rounded-sm text-[10px] normal-case"
-          title={`Dev branch: ${e.dev_branch_name}`}
-        >
-          <GitBranch className="w-3 h-3" />
-          <span className="font-mono">{e.dev_branch_name}</span>
-        </span>
-      )}
-      <CopyTestLink tc={e} />
-    </div>
-  );
-}
-function TabButton({ active: e, onClick: t, children: a }) {
-  return (
-    <button
-      onClick={t}
-      className={`px-2 py-1 text-[11px] font-medium rounded-sm transition-colors ${e ? "bg-emerald-600 text-gray-950" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"}`}
-    >
-      {a}
-    </button>
   );
 }
 function SaveIndicator({ saving: e }) {
@@ -13787,7 +13563,6 @@ function SettingsModal({
   onResetRequested: i,
   resetDescription: u,
   onClose: d,
-  testCases = null,
 }) {
   useEffect(() => {
     let c = (p) => {
