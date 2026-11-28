@@ -72,6 +72,9 @@ import {
   Ellipsis,
   FileUp,
   Globe,
+  ChevronUp,
+  ChevronDown,
+  Info,
 } from "lucide-react";
 var EDITION = "Pro";
 var SUPABASE_URL = "https://badylykbhmujmeaysixg.supabase.co";
@@ -2652,7 +2655,7 @@ function LightApp() {
   let Kg = Ht.filter((L, R) => xi(R) === "done").length;
   let _c = Ht.filter((L, R) => xi(R) === "blocked").length;
   return (
-    <div className="h-screen flex bg-gray-950 overflow-hidden text-gray-100 relative">
+    <div className="app-vh flex bg-gray-950 overflow-hidden text-gray-100 relative">
       <style>{`
         ::-webkit-scrollbar { width: 10px; height: 10px; }
         ::-webkit-scrollbar-track { background: #0a0a0f; }
@@ -4550,7 +4553,7 @@ function ManagerView({ sessionId, accessKey }) {
   let th = "px-3 py-2 text-left text-xs font-medium text-gray-400 whitespace-nowrap border-b border-r border-gray-800 bg-gray-900";
   let td = "px-3 py-2 align-top border-b border-r border-gray-800 text-[13px]";
   return (
-    <div className="h-screen bg-gray-950 flex flex-col">
+    <div className="app-vh bg-gray-950 flex flex-col">
       <header className="flex-shrink-0 bg-gray-900 border-b border-gray-800">
         <div className="px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap">
           <div className="flex-1 min-w-0">
@@ -4613,7 +4616,7 @@ function ManagerView({ sessionId, accessKey }) {
         <table className="border-separate border-spacing-0 min-w-full">
           <thead className="sticky top-0 z-20">
             <tr>
-              <th className={`${th} sticky left-0 z-10 min-w-[300px]`}>Test</th>
+              <th className={`${th} sticky left-0 z-10 w-[150px] min-w-[150px] sm:w-auto sm:min-w-[300px]`}>Test</th>
               <th className={`${th} min-w-[280px]`}>Steps</th>
               <th className={th}>Priority</th>
               <th className={th} title="The worst result across all testers">Overall</th>
@@ -4646,9 +4649,10 @@ function ManagerView({ sessionId, accessKey }) {
                   let o = overall(t);
                   return (
                     <tr key={t.id} className="hover:bg-gray-900/60">
-                      <td className={`${td} sticky left-0 z-10 bg-gray-950 min-w-[300px] max-w-[380px]`}>
-                        <div className="flex items-start gap-2">
-                          <span className="font-mono text-[11px] text-gray-500 mt-0.5 flex-shrink-0">{t.test_id || "—"}</span>
+                      <td className={`${td} sticky left-0 z-10 bg-gray-950 w-[150px] min-w-[150px] max-w-[150px] sm:w-auto sm:min-w-[300px] sm:max-w-[380px]`}>
+                        {/* On phones the ID sits above the title, so the pinned column can stay narrow. */}
+                        <div className="flex flex-col sm:flex-row items-start gap-0.5 sm:gap-2">
+                          <span className="font-mono text-[11px] text-gray-500 sm:mt-0.5 flex-shrink-0">{t.test_id || "—"}</span>
                           <div className="min-w-0">
                             <a
                               href={testLinkUrl(sessionId, t.test_id)}
@@ -5818,7 +5822,208 @@ function RailLabel({ children }) {
     </span>
   );
 }
-function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = "tester", testCases = [], onOpenPing = () => {}, overviewUrl = undefined }) {
+// ---- Phone layout (under 640px) ----
+// Bottom sheet: slides up to open and down to close, over a dimmed backdrop. Esc or the backdrop closes it.
+function BottomSheet({ open, onClose, title, desc, children }) {
+  useEffect(() => {
+    if (!open) return;
+    let k = (ev) => ev.key === "Escape" && onClose();
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [open, onClose]);
+  return (
+    <Fragment>
+      <div
+        className={`fixed inset-0 z-[48] bg-black/50 transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        role="dialog"
+        aria-label={title}
+        aria-hidden={!open}
+        className={`fixed inset-x-0 bottom-0 z-[49] max-h-[85dvh] flex flex-col bg-gray-900 border-t border-gray-700 rounded-t-[6px] shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-y-0" : "translate-y-full pointer-events-none"}`}
+      >
+        <div className="flex-shrink-0 pt-2 pb-1">
+          <div className="w-9 h-1 rounded-full bg-gray-700 mx-auto" />
+        </div>
+        {title && (
+          <div className="flex-shrink-0 flex items-start gap-3 px-4 pt-1 pb-3 border-b border-gray-800">
+            <div className="flex-1 min-w-0">
+              <div className="text-base font-semibold text-gray-100">{title}</div>
+              {desc && <div className="text-xs text-gray-500">{desc}</div>}
+            </div>
+            <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-200" aria-label="Close">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+        <div className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">{children}</div>
+      </div>
+    </Fragment>
+  );
+}
+// Phone top bar: list, test position (tap to search for a test), whose results, previous / next, More.
+function PhoneTopBar({ testId, pos, total, viewing, onList, onJump, onPrev, onNext, onPickTester, onMore, moreDot }) {
+  let ib = "w-9 h-9 flex items-center justify-center rounded-sm border border-gray-800 text-gray-300 active:bg-gray-800 disabled:opacity-40";
+  return (
+    <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 bg-gray-900 border-b border-gray-800">
+      <button onClick={onList} className={ib} aria-label="Test list">
+        <List className="w-5 h-5" />
+      </button>
+      <div className="flex-1 min-w-0 px-1">
+        <button onClick={onJump} className="block max-w-full text-left text-xs font-mono text-gray-400 truncate" aria-label="Find a test">
+          {testId || "—"} · {pos} of {total} <Search className="inline w-3 h-3 -mt-0.5" />
+        </button>
+        {viewing && (
+          <button onClick={onPickTester} className="block max-w-full text-left text-[13px] text-gray-200 truncate" aria-label="Switch tester">
+            {viewing} <ChevronDown className="inline w-3.5 h-3.5 -mt-0.5 text-gray-500" />
+          </button>
+        )}
+      </div>
+      <button onClick={onPrev} disabled={!onPrev} className={ib} aria-label="Previous test">
+        <ChevronUp className="w-5 h-5" />
+      </button>
+      <button onClick={onNext} disabled={!onNext} className={ib} aria-label="Next test">
+        <ChevronDown className="w-5 h-5" />
+      </button>
+      <button onClick={onMore} className={`${ib} relative`} aria-label="More">
+        <Ellipsis className="w-5 h-5" />
+        {moreDot && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-gray-900" />}
+      </button>
+    </div>
+  );
+}
+// Phone: pick whose results to view (replaces the tester tabs bar).
+function PhoneTesterSheet({ open, onClose, names, active, me, stats, onSelect }) {
+  return (
+    <BottomSheet open={open} onClose={onClose} title="Whose results" desc="Pick a tester to see their results.">
+      <div className="py-1">
+        {names.map((n) => {
+          let st = stats[n] || { done: 0, total: 0, issues: 0 };
+          let on = n === active;
+          return (
+            <button
+              key={n}
+              onClick={() => {
+                onSelect(n);
+                onClose();
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left ${on ? "bg-gray-800" : "active:bg-gray-800"}`}
+            >
+              <span className={`flex-1 text-[15px] ${on ? "font-semibold text-gray-100" : "text-gray-200"}`}>
+                {n} {n === me && <span className="text-gray-500 font-normal">(you)</span>}
+              </span>
+              <span className="text-xs tabular-nums text-gray-400">
+                {st.done}/{st.total}
+              </span>
+              {st.issues > 0 && <span className="min-w-[18px] h-[18px] px-1 rounded-sm bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">{st.issues}</span>}
+              {on && <Check className="w-4 h-4 text-gray-100" />}
+            </button>
+          );
+        })}
+      </div>
+    </BottomSheet>
+  );
+}
+// Phone: the More sheet (Pings, Read me, Sample files, About, Test Overview, Options).
+function PhoneMoreSheet({ open, onClose, attention, hasReadme, hasFiles, overviewUrl, onOpen, onOptions }) {
+  let tile = "relative flex flex-col items-center justify-center gap-1.5 h-20 rounded-sm border border-gray-800 text-[13px] text-gray-200 active:bg-gray-800";
+  let dot = <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-gray-100" />;
+  let go = (k) => {
+    onClose();
+    setTimeout(() => onOpen(k), 120);
+  };
+  return (
+    <BottomSheet open={open} onClose={onClose} title="More">
+      <div className="grid grid-cols-3 gap-2 p-4">
+        <button className={tile} onClick={() => go("pings")}>
+          <Bell className="w-5 h-5" />
+          Pings
+          {attention.unread > 0 && (
+            <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-sm bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">{attention.unread}</span>
+          )}
+        </button>
+        {hasReadme && (
+          <button className={tile} onClick={() => go("readme")}>
+            <BookOpen className="w-5 h-5" />
+            Read me
+            {attention.readme && dot}
+          </button>
+        )}
+        {hasFiles && (
+          <button className={tile} onClick={() => go("files")}>
+            <Paperclip className="w-5 h-5" />
+            Sample files
+            {attention.files && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500" />}
+          </button>
+        )}
+        <button className={tile} onClick={() => go("about")}>
+          <Info className="w-5 h-5" />
+          About
+        </button>
+        {overviewUrl ? (
+          <a className={tile} href={overviewUrl} target="_blank" rel="noopener noreferrer" onClick={onClose}>
+            <Globe className="w-5 h-5" />
+            Test Overview
+          </a>
+        ) : (
+          <div className={`${tile} text-gray-600`} title="Turned off by your admin">
+            <Globe className="w-5 h-5" />
+            Overview off
+          </div>
+        )}
+        <button
+          className={tile}
+          onClick={() => {
+            onClose();
+            setTimeout(onOptions, 120);
+          }}
+        >
+          <SlidersHorizontal className="w-5 h-5" />
+          Options
+        </button>
+      </div>
+    </BottomSheet>
+  );
+}
+// Phone: the test's title, labels and "Last edit · Saved", at the top of the scrolling content, with the ⋯ test menu.
+// Phone: status buttons in a row at the bottom, within thumb reach. Tapping the current one clears it.
+function PhoneActionBar({ options }) {
+  return (
+    <div className="flex-shrink-0 grid gap-1.5 px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] bg-gray-900 border-t border-gray-800" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+      {options.map((o) => {
+        let Icon = o.icon;
+        return (
+          <button
+            key={o.key}
+            onClick={o.onClick}
+            aria-pressed={o.on}
+            className={`h-11 flex flex-col items-center justify-center gap-0.5 rounded-sm border text-[12px] leading-none transition-colors ${o.on ? `${o.onCls} font-medium` : "border-gray-800 text-gray-300 active:bg-gray-800"}`}
+          >
+            <Icon className={`w-4 h-4 ${o.on ? "" : o.ic || ""}`} />
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+function PhoneTitle({ tc, meta, menu }) {
+  return (
+    <div className="mb-4">
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          <TestCrumb tc={tc} />
+          <h1 className="mt-0.5 text-lg font-semibold leading-snug text-gray-100">{tc.title || "Untitled"}</h1>
+        </div>
+        {menu}
+      </div>
+      {meta && <div className="mt-1 flex items-center gap-x-3 gap-y-1 flex-wrap text-xs text-gray-500">{meta}</div>}
+    </div>
+  );
+}
+function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = "tester", testCases = [], onOpenPing = () => {}, overviewUrl = undefined, lowered = false, phone = false, openRequest = null, onRequestHandled = () => {}, onAttention = () => {} }) {
   let isDevBar = role === "developer";
   // ---- Pings for me (bell) ----
   let [pings, setPings] = useState([]);
@@ -5958,10 +6163,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       let { data: b, error: _ } = await supabase.from("sessions").select("sample_files").eq("id", e).single();
       if (h || _) return;
       r(b?.sample_files || []);
-      // Only auto-open the sample files drawer when there are files to show.
-      if (!s && !isDevBar && (b?.sample_files || []).length > 0) {
-        requestAnimationFrame(() => u(true));
-      }
+      // New sample files no longer open the panel by themselves: the button is highlighted with a red dot instead.
       c(true);
     })();
     return () => {
@@ -6007,6 +6209,25 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
   }, [pingsOpen]);
   let hasFiles = !isDevBar && d && a.length > 0;
   let filesOpen = hasFiles && i;
+  // Phone: panels are opened from the More sheet, and what's waiting is reported back for its dot.
+  useEffect(() => {
+    if (!openRequest) return;
+    u(false);
+    setPingsOpen(false);
+    setReadmeOpen(false);
+    setAboutOpen(false);
+    if (openRequest === "pings") setPingsOpen(true);
+    if (openRequest === "readme") {
+      setReadmeOpen(true);
+      markReadmeSeen();
+    }
+    if (openRequest === "files") u(true);
+    if (openRequest === "about") setAboutOpen(true);
+    onRequestHandled();
+  }, [openRequest]);
+  useEffect(() => {
+    onAttention({ unread, readme: !!readme && !readmeSeen, files: hasFiles && !s, hasReadme: !!readme, hasFiles });
+  }, [unread, readme, readmeSeen, hasFiles, s]);
   let sidePanelOpen = readmeOpen || pingsOpen || aboutOpen;
   let p = () => {
     l(true);
@@ -6056,13 +6277,13 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           />
           <aside
             ref={aboutPanelRef}
-            className={`fixed z-40 top-0 bottom-0 right-0 sm:right-14 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${aboutOpen ? "translate-x-0" : "translate-x-[calc(100%+120px)] pointer-events-none"}`}
+            className={`fixed z-40 bottom-0 right-0 sm:top-0 sm:right-11 w-full sm:w-[28rem] max-sm:h-[88dvh] max-sm:rounded-t-[6px] max-sm:border-t max-sm:border-l-0 flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${aboutOpen ? "translate-x-0" : "max-sm:translate-y-[105%] sm:translate-x-[calc(100%+120px)] pointer-events-none"}`}
             role="dialog"
             aria-label="About this session"
             aria-hidden={!aboutOpen}
           >
             <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-800">
-              <CircleHelp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-base font-semibold text-gray-100">About this session</div>
                 <div className="text-xs text-gray-500">What this session shows, and anything the sheet didn’t include.</div>
@@ -6096,7 +6317,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           />
           <aside
             ref={readmePanelRef}
-            className={`fixed z-40 top-0 bottom-0 right-0 sm:right-14 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${readmeOpen ? "translate-x-0" : "translate-x-[calc(100%+120px)] pointer-events-none"}`}
+            className={`fixed z-40 bottom-0 right-0 sm:top-0 sm:right-11 w-full sm:w-[28rem] max-sm:h-[88dvh] max-sm:rounded-t-[6px] max-sm:border-t max-sm:border-l-0 flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${readmeOpen ? "translate-x-0" : "max-sm:translate-y-[105%] sm:translate-x-[calc(100%+120px)] pointer-events-none"}`}
             role="dialog"
             aria-label="Read me"
             aria-hidden={!readmeOpen}
@@ -6130,7 +6351,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       />
       <aside
         ref={filesPanelRef}
-        className={`fixed z-40 top-0 bottom-0 right-0 sm:right-14 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${i ? "translate-x-0" : "translate-x-[calc(100%+120px)] pointer-events-none"}`}
+        className={`fixed z-40 bottom-0 right-0 sm:top-0 sm:right-11 w-full sm:w-[28rem] max-sm:h-[88dvh] max-sm:rounded-t-[6px] max-sm:border-t max-sm:border-l-0 flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${i ? "translate-x-0" : "max-sm:translate-y-[105%] sm:translate-x-[calc(100%+120px)] pointer-events-none"}`}
         role="dialog"
         aria-label="Sample files"
         aria-hidden={!i}
@@ -6203,7 +6424,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       />
       <aside
         ref={pingsPanelRef}
-        className={`fixed z-40 top-0 bottom-0 right-0 sm:right-14 w-full sm:w-[28rem] flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${pingsOpen ? "translate-x-0" : "translate-x-[calc(100%+120px)] pointer-events-none"}`}
+        className={`fixed z-40 bottom-0 right-0 sm:top-0 sm:right-11 w-full sm:w-[28rem] max-sm:h-[88dvh] max-sm:rounded-t-[6px] max-sm:border-t max-sm:border-l-0 flex flex-col bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${pingsOpen ? "translate-x-0" : "max-sm:translate-y-[105%] sm:translate-x-[calc(100%+120px)] pointer-events-none"}`}
         role="dialog"
         aria-label="Pings"
         aria-hidden={!pingsOpen}
@@ -6325,7 +6546,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
       )}
       <div
         ref={barRef}
-        className={`fixed z-30 sm:z-[45] bottom-14 right-4 flex flex-col items-end gap-2 transition-all duration-300 ease-out sm:top-0 sm:bottom-0 sm:right-0 sm:w-14 sm:items-center sm:justify-end sm:pb-2.5 sm:border-l sm:border-gray-800 sm:bg-gray-900 ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : ""}`}
+        className={`${phone ? "max-sm:hidden " : ""}fixed z-30 sm:z-[45] bottom-14 right-4 flex flex-col items-end gap-2 transition-all duration-300 ease-out sm:top-0 sm:bottom-0 sm:right-0 sm:w-11 sm:items-center sm:justify-end sm:pt-1.5 sm:pb-1.5 sm:gap-1 sm:border-l sm:border-gray-800 sm:bg-gray-900 ${filesOpen || sidePanelOpen ? "max-sm:translate-y-6 max-sm:opacity-0 max-sm:pointer-events-none" : lowered ? "max-sm:translate-y-[46px]" : ""}`}
       >
         <button
           onClick={() => {
@@ -6336,16 +6557,16 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           }}
           aria-pressed={pingsOpen}
           aria-label={unread ? `Pings, ${unread} unread` : "Pings"}
-          className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${!pingsOpen && unread > 0 ? "uat-ping-flash" : ""} ${pingsOpen ? "bg-gray-900 border-amber-600 text-amber-200" : unread > 0 ? "bg-amber-950/80 border-amber-500 text-amber-300 hover:bg-amber-900/80" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+          className={`group relative inline-flex items-center justify-center w-8 h-8 rounded-sm transition-colors sm:mb-auto ${!pingsOpen && unread > 0 ? "uat-ping-flash" : ""} ${pingsOpen ? "bg-gray-700 text-gray-100" : unread > 0 ? "bg-gray-800 text-gray-100" : "text-gray-400 hover:bg-gray-800 hover:text-gray-100"}`}
         >
           <style>{`
             @keyframes uat-bell-ring { 0%,100% { transform: rotate(0) } 10% { transform: rotate(16deg) } 20% { transform: rotate(-14deg) } 30% { transform: rotate(11deg) } 40% { transform: rotate(-8deg) } 50% { transform: rotate(5deg) } 60% { transform: rotate(-2deg) } 70% { transform: rotate(0) } }
             @keyframes uat-bell-nudge { 0%,82%,100% { transform: rotate(0) } 85% { transform: rotate(14deg) } 88% { transform: rotate(-12deg) } 91% { transform: rotate(8deg) } 94% { transform: rotate(-5deg) } 97% { transform: rotate(2deg) } }
             .uat-bell-ring { animation: uat-bell-ring 0.9s ease-in-out 2; transform-origin: 50% 10%; }
-            @keyframes uat-ping-flash { 0%,100% { border-color: rgb(var(--gray-50)) } 50% { border-color: transparent } }
+            @keyframes uat-ping-flash { 0%,100% { background-color: rgb(var(--gray-700)) } 50% { background-color: transparent } }
             .uat-ping-flash { animation: uat-ping-flash 0.8s steps(1, end) infinite; }
             .uat-bell-nudge { animation: uat-bell-nudge 4s ease-in-out infinite; transform-origin: 50% 10%; }
-            @media (prefers-reduced-motion: reduce) { .uat-bell-ring, .uat-bell-nudge { animation: none; } .uat-ping-flash { animation: none; border-color: rgb(var(--gray-50)); } }
+            @media (prefers-reduced-motion: reduce) { .uat-bell-ring, .uat-bell-nudge { animation: none; } .uat-ping-flash { animation: none; background-color: rgb(var(--gray-700)); } }
           `}</style>
           <Bell
             key={ringBurst}
@@ -6353,14 +6574,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             onAnimationEnd={(r) => r.animationName === "uat-bell-ring" && setRingBurst(0)}
           />
           <RailLabel>Pings{unread > 0 ? ` · ${unread} unread` : ""}</RailLabel>
-          {unread > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px]">
-              {!pingsOpen && <span className="absolute inset-0 bg-gray-100 rounded-sm animate-ping opacity-40" />}
-              <span className="relative min-w-[18px] h-[18px] px-1 bg-gray-100 text-gray-950 text-[10px] font-bold rounded-sm flex items-center justify-center">
-                {unread > 99 ? "99+" : unread}
-              </span>
-            </span>
-          )}
+          {unread > 0 && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-gray-900" />}
         </button>
         {readme && (
           <button
@@ -6372,12 +6586,12 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
               markReadmeSeen();
             }}
             aria-pressed={readmeOpen}
-            className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium border rounded-sm shadow-lg transition-colors ${readmeOpen ? "bg-gray-900 border-amber-600 text-amber-200" : !readmeSeen ? "bg-emerald-600 border-emerald-500 text-gray-950 hover:bg-emerald-500" : "bg-gray-900 border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            className={`group relative inline-flex items-center justify-center w-8 h-8 rounded-sm transition-colors ${readmeOpen ? "bg-gray-700 text-gray-100" : !readmeSeen ? "bg-gray-800 text-gray-100" : "text-gray-400 hover:bg-gray-800 hover:text-gray-100"}`}
             aria-label="Read me"
           >
             <BookOpen className="w-4 h-4" />
             <RailLabel>Read me</RailLabel>
-            {!readmeSeen && !readmeOpen && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-gray-100 ring-2 ring-gray-950" aria-label="Not read yet" />}
+            {!readmeSeen && !readmeOpen && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-gray-900" aria-label="Not read yet" />}
           </button>
         )}
         {hasFiles && (
@@ -6390,12 +6604,12 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
               else u(true);
             }}
             aria-pressed={i}
-            className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${i ? "border-amber-600 text-amber-200" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            className={`group relative inline-flex items-center justify-center w-8 h-8 rounded-sm transition-colors ${i ? "bg-gray-700 text-gray-100" : !s ? "bg-gray-800 text-gray-100" : "text-gray-400 hover:bg-gray-800 hover:text-gray-100"}`}
             aria-label="Sample files"
           >
             <Paperclip className="w-4 h-4" />
             <RailLabel>Sample files ({a.length})</RailLabel>
-            {!s && !i && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-gray-100 ring-2 ring-gray-950" aria-label="Not looked at yet" />}
+            {!s && !i && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-gray-900" aria-label="Not looked at yet" />}
           </button>
         )}
         {testCases.length > 0 && (
@@ -6407,10 +6621,10 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
               setAboutOpen(!aboutOpen);
             }}
             aria-pressed={aboutOpen}
-            className={`group relative inline-flex items-center h-[34px] px-[9px] text-xs font-medium bg-gray-900 border rounded-sm shadow-lg transition-colors ${aboutOpen ? "border-gray-500 text-gray-100" : "border-gray-700 text-gray-300 hover:text-gray-100 hover:border-gray-600"}`}
+            className={`group relative inline-flex items-center justify-center w-8 h-8 rounded-sm transition-colors ${aboutOpen ? "bg-gray-700 text-gray-100" : "text-gray-400 hover:bg-gray-800 hover:text-gray-100"}`}
             aria-label="About this session"
           >
-            <CircleHelp className="w-4 h-4" />
+            <Info className="w-[18px] h-[18px]" />
             <RailLabel>About</RailLabel>
           </button>
         )}
@@ -6421,7 +6635,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Open Test Overview (new tab)"
-              className="group relative inline-flex items-center h-[34px] px-[9px] bg-gray-900 border border-gray-700 rounded-sm shadow-lg text-gray-300 hover:text-gray-100 hover:border-gray-600 transition-colors"
+              className="group relative inline-flex items-center justify-center w-8 h-8 rounded-sm transition-colors text-gray-400 hover:bg-gray-800 hover:text-gray-100"
             >
               <Globe className="w-4 h-4" />
               <RailLabel>Test Overview</RailLabel>
@@ -6430,7 +6644,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             <span
               aria-label="Test Overview is turned off"
               tabIndex={0}
-              className="group relative inline-flex items-center h-[34px] px-[9px] bg-gray-900 border border-gray-800 rounded-sm text-gray-600 cursor-default"
+              className="group relative inline-flex items-center justify-center w-8 h-8 rounded-sm transition-colors text-gray-600 cursor-default"
             >
               <Globe className="w-4 h-4" />
               <RailLabel>Test Overview is off · ask your admin</RailLabel>
@@ -8842,6 +9056,11 @@ function TesterEntry({ sessionId: e }) {
         names={r.testers || []}
         onSelect={b}
         onBackToPicker={S}
+        onAddSelf={async (n) => {
+          let res = await addSelfToRoster(e, "testers", n);
+          o({ ...r, testers: res.list });
+          b(res.name);
+        }}
       />
     );
   } else {
@@ -8863,11 +9082,362 @@ function Notice({ children: e, variant: t }) {
     </div>
   );
 }
+// Login screens: a little 8-bit white cat sitting on top of the box, blinking now and then.
+// Outline is near-black in light mode and soft grey in dark mode, so the whiskers always show.
+function PixelCat() {
+  return (
+    <div className="pixel-cat absolute left-1/2 -translate-x-1/2 -top-[64px] pointer-events-none select-none" aria-hidden="true">
+      <style>{`
+        .pixel-cat .o { fill: #15181D; }
+        :root[data-theme="dark"] .pixel-cat .o { fill: #A0A7B2; }
+        @keyframes pixel-cat-blink { 0%, 92%, 100% { opacity: 1; } 94%, 98% { opacity: 0; } }
+        .pixel-cat-open { animation: pixel-cat-blink 4s steps(1, end) infinite; }
+        @media (prefers-reduced-motion: reduce) { .pixel-cat-open { animation: none; } }
+      `}</style>
+      <svg width="69" height="66" viewBox="0 0 23 22" shapeRendering="crispEdges">
+        <rect className="o" x="5" y="0" width="1" height="1" />
+        <rect className="o" x="11" y="0" width="1" height="1" />
+        <rect className="o" x="4" y="1" width="1" height="1" />
+        <rect x="5" y="1" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="6" y="1" width="1" height="1" />
+        <rect className="o" x="10" y="1" width="1" height="1" />
+        <rect x="11" y="1" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="12" y="1" width="1" height="1" />
+        <rect className="o" x="4" y="2" width="1" height="1" />
+        <rect x="5" y="2" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="2" width="1" height="1" fill="#D3D7DC" />
+        <rect className="o" x="7" y="2" width="1" height="1" />
+        <rect className="o" x="8" y="2" width="1" height="1" />
+        <rect className="o" x="9" y="2" width="1" height="1" />
+        <rect x="10" y="2" width="1" height="1" fill="#D3D7DC" />
+        <rect x="11" y="2" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="12" y="2" width="1" height="1" />
+        <rect className="o" x="3" y="3" width="1" height="1" />
+        <rect x="4" y="3" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="3" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="3" width="1" height="1" fill="#D3D7DC" />
+        <rect x="7" y="3" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="3" width="1" height="1" fill="#D3D7DC" />
+        <rect x="9" y="3" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="3" width="1" height="1" fill="#D3D7DC" />
+        <rect x="11" y="3" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="3" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="13" y="3" width="1" height="1" />
+        <rect className="o" x="0" y="4" width="1" height="1" />
+        <rect className="o" x="1" y="4" width="1" height="1" />
+        <rect className="o" x="3" y="4" width="1" height="1" />
+        <rect x="4" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="4" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="13" y="4" width="1" height="1" />
+        <rect className="o" x="15" y="4" width="1" height="1" />
+        <rect className="o" x="16" y="4" width="1" height="1" />
+        <rect className="o" x="2" y="5" width="1" height="1" />
+        <rect x="3" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="5" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="14" y="5" width="1" height="1" />
+        <rect className="o" x="0" y="6" width="1" height="1" />
+        <rect className="o" x="1" y="6" width="1" height="1" />
+        <rect className="o" x="2" y="6" width="1" height="1" />
+        <rect x="3" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="8" y="6" width="1" height="1" />
+        <rect x="9" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="6" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="14" y="6" width="1" height="1" />
+        <rect className="o" x="15" y="6" width="1" height="1" />
+        <rect className="o" x="16" y="6" width="1" height="1" />
+        <rect className="o" x="2" y="7" width="1" height="1" />
+        <rect x="3" y="7" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="7" width="1" height="1" fill="#F4A6B8" />
+        <rect x="5" y="7" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="7" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="7" y="7" width="1" height="1" />
+        <rect x="8" y="7" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="9" y="7" width="1" height="1" />
+        <rect x="10" y="7" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="7" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="7" width="1" height="1" fill="#F4A6B8" />
+        <rect x="13" y="7" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="14" y="7" width="1" height="1" />
+        <rect className="o" x="1" y="8" width="1" height="1" />
+        <rect x="2" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="8" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="15" y="8" width="1" height="1" />
+        <rect className="o" x="1" y="9" width="1" height="1" />
+        <rect x="2" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="9" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="15" y="9" width="1" height="1" />
+        <rect className="o" x="1" y="10" width="1" height="1" />
+        <rect x="2" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="10" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="15" y="10" width="1" height="1" />
+        <rect className="o" x="1" y="11" width="1" height="1" />
+        <rect x="2" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="11" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="15" y="11" width="1" height="1" />
+        <rect className="o" x="0" y="12" width="1" height="1" />
+        <rect x="1" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="2" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect x="15" y="12" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="16" y="12" width="1" height="1" />
+        <rect className="o" x="0" y="13" width="1" height="1" />
+        <rect x="1" y="13" width="1" height="1" fill="#D3D7DC" />
+        <rect x="2" y="13" width="1" height="1" fill="#D3D7DC" />
+        <rect x="3" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="13" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="13" width="1" height="1" fill="#D3D7DC" />
+        <rect x="15" y="13" width="1" height="1" fill="#D3D7DC" />
+        <rect className="o" x="16" y="13" width="1" height="1" />
+        <rect className="o" x="20" y="13" width="1" height="1" />
+        <rect className="o" x="21" y="13" width="1" height="1" />
+        <rect className="o" x="0" y="14" width="1" height="1" />
+        <rect x="1" y="14" width="1" height="1" fill="#D3D7DC" />
+        <rect x="2" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="15" y="14" width="1" height="1" fill="#D3D7DC" />
+        <rect className="o" x="16" y="14" width="1" height="1" />
+        <rect className="o" x="19" y="14" width="1" height="1" />
+        <rect x="20" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect x="21" y="14" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="22" y="14" width="1" height="1" />
+        <rect className="o" x="0" y="15" width="1" height="1" />
+        <rect x="1" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="2" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect x="15" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="16" y="15" width="1" height="1" />
+        <rect className="o" x="19" y="15" width="1" height="1" />
+        <rect x="20" y="15" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="21" y="15" width="1" height="1" />
+        <rect className="o" x="0" y="16" width="1" height="1" />
+        <rect x="1" y="16" width="1" height="1" fill="#D3D7DC" />
+        <rect x="2" y="16" width="1" height="1" fill="#D3D7DC" />
+        <rect x="3" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="4" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="5" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="12" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="13" y="16" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="16" width="1" height="1" fill="#D3D7DC" />
+        <rect x="15" y="16" width="1" height="1" fill="#D3D7DC" />
+        <rect className="o" x="16" y="16" width="1" height="1" />
+        <rect className="o" x="19" y="16" width="1" height="1" />
+        <rect x="20" y="16" width="1" height="1" fill="#D3D7DC" />
+        <rect className="o" x="21" y="16" width="1" height="1" />
+        <rect className="o" x="0" y="17" width="1" height="1" />
+        <rect x="1" y="17" width="1" height="1" fill="#D3D7DC" />
+        <rect x="2" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="4" y="17" width="1" height="1" />
+        <rect x="5" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="6" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="7" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="10" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="11" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="12" y="17" width="1" height="1" />
+        <rect x="13" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect x="15" y="17" width="1" height="1" fill="#D3D7DC" />
+        <rect className="o" x="16" y="17" width="1" height="1" />
+        <rect className="o" x="19" y="17" width="1" height="1" />
+        <rect x="20" y="17" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="21" y="17" width="1" height="1" />
+        <rect className="o" x="0" y="18" width="1" height="1" />
+        <rect x="1" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect x="2" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="4" y="18" width="1" height="1" />
+        <rect x="5" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="6" y="18" width="1" height="1" />
+        <rect x="7" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="10" y="18" width="1" height="1" />
+        <rect x="11" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="12" y="18" width="1" height="1" />
+        <rect x="13" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect x="15" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="16" y="18" width="1" height="1" />
+        <rect className="o" x="17" y="18" width="1" height="1" />
+        <rect className="o" x="18" y="18" width="1" height="1" />
+        <rect x="19" y="18" width="1" height="1" fill="#F5F6F7" />
+        <rect x="20" y="18" width="1" height="1" fill="#D3D7DC" />
+        <rect className="o" x="21" y="18" width="1" height="1" />
+        <rect className="o" x="1" y="19" width="1" height="1" />
+        <rect x="2" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect x="3" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="4" y="19" width="1" height="1" />
+        <rect x="5" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="6" y="19" width="1" height="1" />
+        <rect x="7" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect x="8" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect x="9" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="10" y="19" width="1" height="1" />
+        <rect x="11" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="12" y="19" width="1" height="1" />
+        <rect x="13" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect x="14" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="15" y="19" width="1" height="1" />
+        <rect x="16" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect x="17" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect x="18" y="19" width="1" height="1" fill="#D3D7DC" />
+        <rect x="19" y="19" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="20" y="19" width="1" height="1" />
+        <rect className="o" x="2" y="20" width="1" height="1" />
+        <rect className="o" x="3" y="20" width="1" height="1" />
+        <rect className="o" x="4" y="20" width="1" height="1" />
+        <rect x="5" y="20" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="6" y="20" width="1" height="1" />
+        <rect className="o" x="7" y="20" width="1" height="1" />
+        <rect className="o" x="8" y="20" width="1" height="1" />
+        <rect className="o" x="9" y="20" width="1" height="1" />
+        <rect className="o" x="10" y="20" width="1" height="1" />
+        <rect x="11" y="20" width="1" height="1" fill="#F5F6F7" />
+        <rect className="o" x="12" y="20" width="1" height="1" />
+        <rect className="o" x="13" y="20" width="1" height="1" />
+        <rect className="o" x="14" y="20" width="1" height="1" />
+        <rect className="o" x="15" y="20" width="1" height="1" />
+        <rect className="o" x="16" y="20" width="1" height="1" />
+        <rect className="o" x="17" y="20" width="1" height="1" />
+        <rect className="o" x="18" y="20" width="1" height="1" />
+        <rect className="o" x="19" y="20" width="1" height="1" />
+        <rect className="o" x="4" y="21" width="1" height="1" />
+        <rect className="o" x="5" y="21" width="1" height="1" />
+        <rect className="o" x="6" y="21" width="1" height="1" />
+        <rect className="o" x="10" y="21" width="1" height="1" />
+        <rect className="o" x="11" y="21" width="1" height="1" />
+        <rect className="o" x="12" y="21" width="1" height="1" />
+        <g className="pixel-cat-open">
+          <rect className="o" x="5" y="6" width="1" height="1" />
+          <rect className="o" x="11" y="6" width="1" height="1" />
+        </g>
+      </svg>
+    </div>
+  );
+}
 function AccessCodeGate({ label: e, sessionName: t, onSubmit: a, error: r, onBackToPicker: o }) {
   let [s, l] = useState("");
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
-      <div className="max-w-sm w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7">
+      <div className="relative max-w-sm w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7">
+        <PixelCat />
         {o && (
           <button
             onClick={o}
@@ -8909,7 +9479,54 @@ function AccessCodeGate({ label: e, sessionName: t, onSubmit: a, error: r, onBac
     </div>
   );
 }
-function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToPicker: o }) {
+// Sign-in: someone not on the roster can add their own name. Re-reads the latest roster first so two people
+// joining at once don't overwrite each other, then saves it on the session.
+// Names typed all in lowercase or all in capitals get tidied ("alex tan" / "ALEX TAN" → "Alex Tan").
+// Anything with mixed capitals ("McDonald", "van der Berg", "DJ Lee") is kept exactly as typed.
+function tidyNameCase(n) {
+  let hasLetters = /\p{L}/u.test(n);
+  if (!hasLetters) return n;
+  let allLower = n === n.toLowerCase();
+  let allUpper = n === n.toUpperCase();
+  if (!allLower && !allUpper) return n;
+  return n.toLowerCase().replace(/(^|[\s\-'’])(\p{L})/gu, (m, sep, ch) => sep + ch.toUpperCase());
+}
+async function addSelfToRoster(sessionId, field, name) {
+  let { data, error } = await supabase.from("sessions").select(field).eq("id", sessionId).single();
+  if (error) throw error;
+  let list = Array.isArray(data?.[field]) ? data[field] : [];
+  let existing = list.find((n) => String(n).trim().toLowerCase() === name.toLowerCase());
+  if (existing) return { name: existing, list };
+  let next = [...list, name];
+  let { error: e2 } = await supabase.from("sessions").update({ [field]: next }).eq("id", sessionId);
+  if (e2) throw e2;
+  return { name, list: next };
+}
+function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToPicker: o, onAddSelf = null }) {
+  let [adding, setAdding] = useState(false);
+  let [newName, setNewName] = useState("");
+  let [addErr, setAddErr] = useState("");
+  let [addBusy, setAddBusy] = useState(false);
+  // Desktop: two columns (the admin's list on the left, adding your own name on the right).
+  let wide = !useIsMobile(768) && !!onAddSelf;
+  let submitNew = async () => {
+    let n = tidyNameCase(newName.trim().replace(/\s+/g, " "));
+    if (n.length < 2) return setAddErr("Enter your name (at least 2 letters).");
+    if (n.length > 40) return setAddErr("Keep it under 40 characters.");
+    let match = a.find((x) => String(x).trim().toLowerCase() === n.toLowerCase());
+    if (match) {
+      setAdding(false);
+      return l(match);
+    }
+    setAddBusy(true);
+    setAddErr("");
+    try {
+      await onAddSelf(n);
+    } catch (err) {
+      setAddErr(err?.message || "Couldn’t add your name. Try again.");
+      setAddBusy(false);
+    }
+  };
   let [s, l] = useState(null);
   useEffect(() => {
     if (!s) {
@@ -8925,7 +9542,8 @@ function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToP
   }, [s]);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
-      <div className="max-w-sm w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7">
+      <div className={`relative ${wide && !s ? "max-w-2xl" : "max-w-sm"} w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7`}>
+        <PixelCat />
         {!s && o && (
           <button
             onClick={o}
@@ -8961,10 +9579,13 @@ function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToP
         ) : (
           <Fragment>
             <p className="text-xs text-gray-500 mb-5">Who are you?</p>
+            <div className={wide ? "grid grid-cols-2 gap-6" : ""}>
+            <div>
+            {wide && <div className="text-xs font-medium text-gray-400 mb-2">Pick your name</div>}
             <div className="space-y-1.5">
               {a.length === 0 ? (
                 <div className="text-sm text-gray-400 text-center py-4">
-                  No names on the roster yet. Ask your admin to add you.
+                  {onAddSelf ? "No names on the list yet. Add yours below." : "No names on the roster yet. Ask your admin to add you."}
                 </div>
               ) : (
                 a.map((i) => (
@@ -8977,6 +9598,45 @@ function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToP
                   </button>
                 ))
               )}
+            </div>
+            </div>
+            {onAddSelf && (
+              <div className={wide ? "pl-6 border-l border-gray-800" : "mt-4 pt-4 border-t border-gray-800"}>
+                {wide && <div className="text-xs font-medium text-gray-400 mb-2">Not on the list?</div>}
+                {adding || a.length === 0 || wide ? (
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1.5">{wide ? "Add your name" : "Your name"}</label>
+                    <div className="flex gap-2">
+                      <input
+                        autoFocus={a.length > 0 && !wide}
+                        value={newName}
+                        maxLength={40}
+                        onChange={(ev) => {
+                          setNewName(ev.target.value);
+                          setAddErr("");
+                        }}
+                        onKeyDown={(ev) => ev.key === "Enter" && submitNew()}
+                        placeholder="Alex Tan"
+                        className="flex-1 min-w-0 px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-gray-600"
+                      />
+                      <button
+                        onClick={submitNew}
+                        disabled={addBusy}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-gray-950 text-sm font-medium rounded-sm disabled:opacity-60"
+                      >
+                        {addBusy ? "Adding…" : "Join"}
+                      </button>
+                    </div>
+                    {addErr && <div className="mt-1.5 text-xs text-red-300">{addErr}</div>}
+                    <div className="mt-1.5 text-[11px] text-gray-500">Use the name your team knows you by. It’s added to this session’s list.</div>
+                  </div>
+                ) : (
+                  <button onClick={() => setAdding(true)} className="w-full text-center text-sm text-gray-400 hover:text-gray-100">
+                    Not on the list? Add your name
+                  </button>
+                )}
+              </div>
+            )}
             </div>
           </Fragment>
         )}
@@ -9267,6 +9927,13 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   let [listGrouped, setListGrouped] = useListGrouped();
   let devStepNotes = useDevStepNotes(e.id);
   let isNarrow = useIsMobile(MOBILE_BREAKPOINT);
+  let isPhone = useIsMobile(640);
+  let barHidden = useHideOnScroll(isPhone);
+  // Phone layout: sheets for whose results / More, and panels opened from the More sheet.
+  let [phoneTesterOpen, setPhoneTesterOpen] = useState(false);
+  let [phoneMoreOpen, setPhoneMoreOpen] = useState(false);
+  let [phoneRequest, setPhoneRequest] = useState(null);
+  let [attn, setAttn] = useState({ unread: 0, readme: false, files: false, hasReadme: false, hasFiles: false });
   usePortalTabTitle(e, "Tester");
   useOpenLinkedTest(r, testerTabNames(e.testers, allF), g, setViewTab);
   useSearchShortcut(() => M(true), () => m(true), () => {
@@ -9807,7 +10474,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     <BaseUrlContext.Provider value={b}>
     <PeopleContext.Provider value={{ names: sessionPeople(e), me: t }}>
     <TestLinkContext.Provider value={(tc) => testLinkUrl(e.id, tc.test_id, viewTab)}>
-      <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100 sm:pr-14">
+      <div className="app-vh flex flex-col bg-gray-950 overflow-hidden text-gray-100 sm:pr-11">
       <div className="flex-1 min-h-0 flex">
         <TesterSidebar
           listGrouped={listGrouped}
@@ -9849,11 +10516,34 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           resetBaseUrl={I}
         />
         <div className="flex-1 min-w-0 flex flex-col relative" >
+          {isPhone && (() => {
+            let idx = H.findIndex((z) => z.id === x);
+            let cur = idx >= 0 ? H[idx] : null;
+            return (
+              <PhoneTopBar
+                testId={cur ? cur.test_id : "—"}
+                pos={idx >= 0 ? idx + 1 : "–"}
+                total={H.length}
+                viewing={viewTab ? `${viewTab}${viewTab === t ? " (you)" : ""}` : ""}
+                onList={() => M(true)}
+                onJump={() => {
+                  M(true);
+                  m(true);
+                }}
+                onPrev={idx > 0 ? () => g(H[idx - 1].id) : null}
+                onNext={idx >= 0 && idx < H.length - 1 ? () => g(H[idx + 1].id) : idx < 0 && H.length ? () => g(H[0].id) : null}
+                onPickTester={() => setPhoneTesterOpen(true)}
+                onMore={() => setPhoneMoreOpen(true)}
+                moreDot={attn.unread > 0 || attn.readme || attn.files}
+              />
+            );
+          })()}
           {/* The "Show test list" button sits at the left end of the floating Pings / Read me row. */}
-          {!j && (
+          {!j && !isPhone && (
             <button
               onClick={() => M(true)}
-              className="fixed bottom-14 left-4 z-30 w-9 h-[34px] flex items-center justify-center bg-gray-900 border border-gray-700 rounded-sm shadow-lg text-gray-400 hover:text-gray-100"
+              className="fixed bottom-14 left-4 z-30 w-9 h-[34px] flex items-center justify-center bg-gray-900 border border-gray-700 rounded-sm shadow-lg text-gray-400 hover:text-gray-100 transition-transform duration-200 ease-out"
+              style={{ transform: barHidden ? "translateY(46px)" : undefined }}
               title="Show test list"
             >
               <PanelLeftOpen className="w-4 h-4" />
@@ -9861,6 +10551,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           )}
           {P ? (
             <TesterTestDetail
+              phone={isPhone}
               testCase={P}
               finding={X}
               readOnly={readOnly}
@@ -9881,14 +10572,16 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
               No test case selected.
             </div>
           )}
-          <TesterTabBar
-            names={tabNames}
-            active={viewTab}
-            onSelect={setViewTab}
-            me={t}
-            stats={tabStats}
-            lockOthers={true}
-          />
+          <div className={`flex-shrink-0 transition-[margin] duration-200 ease-out ${isPhone ? "hidden" : ""}`} style={{ marginBottom: barHidden ? -46 : 0 }}>
+            <TesterTabBar
+              names={tabNames}
+              active={viewTab}
+              onSelect={setViewTab}
+              me={t}
+              stats={tabStats}
+              lockOthers={true}
+            />
+          </div>
         </div>
         <FocusModeModal
           open={F}
@@ -9908,6 +10601,11 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
         <TesterSampleFilesBar
           sessionId={e.id}
           overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
+          lowered={barHidden}
+          phone={isPhone}
+          openRequest={phoneRequest}
+          onRequestHandled={() => setPhoneRequest(null)}
+          onAttention={setAttn}
           sessionName={e.name}
           myName={t}
           role="tester"
@@ -9917,6 +10615,29 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
             g(pg.test_case_id);
           }}
         />
+        {isPhone && (
+          <Fragment>
+            <PhoneTesterSheet
+              open={phoneTesterOpen}
+              onClose={() => setPhoneTesterOpen(false)}
+              names={tabNames}
+              active={viewTab}
+              me={t}
+              stats={tabStats}
+              onSelect={setViewTab}
+            />
+            <PhoneMoreSheet
+              open={phoneMoreOpen}
+              onClose={() => setPhoneMoreOpen(false)}
+              attention={attn}
+              hasReadme={attn.hasReadme}
+              hasFiles={attn.hasFiles}
+              overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
+              onOpen={setPhoneRequest}
+              onOptions={() => D(true)}
+            />
+          </Fragment>
+        )}
       </div>
       </div>
     </TestLinkContext.Provider>
@@ -10064,6 +10785,40 @@ function SidebarResizeHandle({ width, setWidth }) {
   );
 }
 // Plain list in sheet order (default) or grouped by module. Remembered on this device.
+// Phones: hide the tester tabs bar while the page is scrolling, and bring it back once scrolling has
+// stopped for a second. The floating buttons move down with it.
+function useHideOnScroll(enabled) {
+  let [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    if (!enabled) {
+      setHidden(false);
+      return;
+    }
+    let timer = null;
+    let quietUntil = 0; // ignore scrolls caused by the bar itself sliding (the content area resizes)
+    let last = new WeakMap();
+    let onScroll = (ev) => {
+      let el = ev.target === document ? document.scrollingElement : ev.target;
+      if (!el || typeof el.scrollTop !== "number") return;
+      let prev = last.get(el);
+      last.set(el, el.scrollTop);
+      if (Date.now() < quietUntil) return;
+      if (prev !== undefined && Math.abs(el.scrollTop - prev) < 2) return; // sideways or tiny moves
+      setHidden(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        quietUntil = Date.now() + 400;
+        setHidden(false);
+      }, 1000);
+    };
+    document.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("scroll", onScroll, true);
+      clearTimeout(timer);
+    };
+  }, [enabled]);
+  return hidden;
+}
 function useListGrouped() {
   let [g, setG] = useState(() => {
     try {
@@ -10909,6 +11664,7 @@ function TesterTestDetail({
   onRemoveScreenshot: u,
   onDismissScreenshotError: d,
   devStepNotes: dsn = [],
+  phone = false,
 }) {
   let c = e;
   let p = t || {
@@ -11092,12 +11848,7 @@ function TesterTestDetail({
   let sev = getSeverity(p.bug_severity);
   let inputCls =
     "w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-gray-600 resize-y";
-  return (
-    <FigureContext.Provider value={{ shots: p.screenshots || [], open: (f) => x(f) }}>
-      <div className="flex-1 min-h-0 flex flex-col">
-        <DetailHeader
-          tc={c}
-          meta={
+  let headerMeta = (
             <Fragment>
               {p.updated_at && cur !== "Not Tested" ? (
                 <span title={new Date(p.updated_at).toLocaleString()}>
@@ -11108,10 +11859,8 @@ function TesterTestDetail({
               )}
               {!ro && <SaveIndicator saving={!!r} />}
             </Fragment>
-          }
-          right={
-            <HeaderRight
-              menu={
+  );
+  let headerMenu = (
                 <TestOptionsMenu
                   tc={c}
                   clearLabel="Clear my entry for this test"
@@ -11137,12 +11886,21 @@ function TesterTestDetail({
                         }
                   }
                 />
-              }
-            >
+  );
+  return (
+    <FigureContext.Provider value={{ shots: p.screenshots || [], open: (f) => x(f) }}>
+      <div className="flex-1 min-h-0 flex flex-col">
+        {!phone && (
+          <DetailHeader
+            tc={c}
+            meta={headerMeta}
+            right={
+              <HeaderRight menu={headerMenu}>
               {statusControls}
-            </HeaderRight>
-          }
-        />
+              </HeaderRight>
+            }
+          />
+        )}
         {ro && (
           <div className="flex-shrink-0 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 px-4 sm:px-6 py-2 bg-gray-100 text-gray-950 text-sm">
             <Lock className="w-4 h-4 flex-shrink-0" />
@@ -11161,7 +11919,8 @@ function TesterTestDetail({
         )}
         <div className="flex-1 overflow-y-auto">
           {/* Extra bottom space so the floating Pings / Read me / Sample files buttons never cover the last section. */}
-          <div className="max-w-[1180px] pl-4 sm:pl-6 pr-16 sm:pr-6 pt-6 pb-24">
+          <div className={`max-w-[1180px] ${phone ? "px-4 pt-4 pb-8" : "pl-4 sm:pl-6 pr-16 sm:pr-6 pt-6 pb-24"}`}>
+            {phone && <PhoneTitle tc={c} meta={headerMeta} menu={headerMenu} />}
             {sheetUpdateUnseen(c, p) && (
               <div className="mb-4">
                 <Callout tone="info" icon={AlertTriangle}>
@@ -11341,6 +12100,19 @@ function TesterTestDetail({
             </div>
           </div>
         </div>
+        {phone && !ro && (
+          <PhoneActionBar
+            options={Object.keys(STATUS_UI).map((st) => ({
+              key: st,
+              label: st === "Needs Review" ? "Review" : getTesterStatus(st).label,
+              icon: STATUS_UI[st].icon,
+              ic: STATUS_UI[st].ic,
+              onCls: STATUS_UI[st].on,
+              on: cur === st,
+              onClick: () => l({ status: cur === st ? "Not Tested" : st }),
+            }))}
+          />
+        )}
         {_ && <RecordingPlayer recordings={_.recordings} startIdx={_.startIdx} onClose={() => S(null)} />}
         {I !== null && (p.screenshots || []).length > 0 && (
           <ScreenshotLightbox
@@ -11695,6 +12467,11 @@ function DevEntry({ sessionId: e }) {
         sessionName={r.name}
         names={r.developers || []}
         onSelect={b}
+        onAddSelf={async (n) => {
+          let res = await addSelfToRoster(e, "developers", n);
+          o({ ...r, developers: res.list });
+          b(res.name);
+        }}
         onBackToPicker={S}
       />
     );
@@ -11734,6 +12511,13 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let [listGrouped, setListGrouped] = useListGrouped();
   let devStepNotes = useDevStepNotes(e.id);
   let isNarrow = useIsMobile(MOBILE_BREAKPOINT);
+  let isPhone = useIsMobile(640);
+  let barHidden = useHideOnScroll(isPhone);
+  // Phone layout: sheets for whose results / More, and panels opened from the More sheet.
+  let [phoneTesterOpen, setPhoneTesterOpen] = useState(false);
+  let [phoneMoreOpen, setPhoneMoreOpen] = useState(false);
+  let [phoneRequest, setPhoneRequest] = useState(null);
+  let [attn, setAttn] = useState({ unread: 0, readme: false, files: false, hasReadme: false, hasFiles: false });
   usePortalTabTitle(e, "Dev");
   useOpenLinkedTest(r, testerTabNames(e.testers, allF), g, setDevTab);
   useSearchShortcut(() => A(true), () => m(true), () => {
@@ -12137,7 +12921,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
     <BaseUrlContext.Provider value={b}>
     <PeopleContext.Provider value={{ names: sessionPeople(e), me: t }}>
     <TestLinkContext.Provider value={(tc) => testLinkUrl(e.id, tc.test_id, devTab)}>
-      <div className="h-screen flex flex-col bg-gray-950 overflow-hidden text-gray-100 sm:pr-14">
+      <div className="app-vh flex flex-col bg-gray-950 overflow-hidden text-gray-100 sm:pr-11">
       <div className="flex-1 min-h-0 flex">
         <DevSidebar
           reportLinkUrl={e.report_key ? reportUrl(e.id, e.report_key) : null}
@@ -12183,11 +12967,34 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           resetBaseUrl={I}
         />
         <div className="flex-1 min-w-0 flex flex-col relative" >
+          {isPhone && (() => {
+            let idx = ie.findIndex((z) => z.id === x);
+            let cur = idx >= 0 ? ie[idx] : null;
+            return (
+              <PhoneTopBar
+                testId={cur ? cur.test_id : "—"}
+                pos={idx >= 0 ? idx + 1 : "–"}
+                total={ie.length}
+                viewing={devTab ? `${"Result: " + devTab}` : ""}
+                onList={() => A(true)}
+                onJump={() => {
+                  A(true);
+                  m(true);
+                }}
+                onPrev={idx > 0 ? () => g(ie[idx - 1].id) : null}
+                onNext={idx >= 0 && idx < ie.length - 1 ? () => g(ie[idx + 1].id) : idx < 0 && ie.length ? () => g(ie[0].id) : null}
+                onPickTester={() => setPhoneTesterOpen(true)}
+                onMore={() => setPhoneMoreOpen(true)}
+                moreDot={attn.unread > 0 || attn.readme || attn.files}
+              />
+            );
+          })()}
           {/* The "Show test list" button sits at the left end of the floating Pings / Read me row. */}
-          {!T && (
+          {!T && !isPhone && (
             <button
               onClick={() => A(true)}
-              className="fixed bottom-14 left-4 z-30 w-9 h-[34px] flex items-center justify-center bg-gray-900 border border-gray-700 rounded-sm shadow-lg text-gray-400 hover:text-gray-100"
+              className="fixed bottom-14 left-4 z-30 w-9 h-[34px] flex items-center justify-center bg-gray-900 border border-gray-700 rounded-sm shadow-lg text-gray-400 hover:text-gray-100 transition-transform duration-200 ease-out"
+              style={{ transform: barHidden ? "translateY(46px)" : undefined }}
               title="Show test list"
             >
               <PanelLeftOpen className="w-4 h-4" />
@@ -12195,6 +13002,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           )}
           {ue ? (
             <DevTestDetail
+              phone={isPhone}
               testCase={ue}
               finding={pe}
               testerName={devTab}
@@ -12215,12 +13023,14 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
               No test case selected.
             </div>
           )}
-          <TesterTabBar
-            names={tabNames}
-            active={devTab}
-            onSelect={setDevTab}
-            stats={tabStats}
-          />
+          <div className={`flex-shrink-0 transition-[margin] duration-200 ease-out ${isPhone ? "hidden" : ""}`} style={{ marginBottom: barHidden ? -46 : 0 }}>
+            <TesterTabBar
+              names={tabNames}
+              active={devTab}
+              onSelect={setDevTab}
+              stats={tabStats}
+            />
+          </div>
         </div>
         <FocusModeModal
           open={W}
@@ -12240,6 +13050,11 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
         <TesterSampleFilesBar
           sessionId={e.id}
           overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
+          lowered={barHidden}
+          phone={isPhone}
+          openRequest={phoneRequest}
+          onRequestHandled={() => setPhoneRequest(null)}
+          onAttention={setAttn}
           sessionName={e.name}
           myName={t}
           role="developer"
@@ -12249,6 +13064,29 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
             g(pg.test_case_id);
           }}
         />
+        {isPhone && (
+          <Fragment>
+            <PhoneTesterSheet
+              open={phoneTesterOpen}
+              onClose={() => setPhoneTesterOpen(false)}
+              names={tabNames}
+              active={devTab}
+              me={null}
+              stats={tabStats}
+              onSelect={setDevTab}
+            />
+            <PhoneMoreSheet
+              open={phoneMoreOpen}
+              onClose={() => setPhoneMoreOpen(false)}
+              attention={attn}
+              hasReadme={attn.hasReadme}
+              hasFiles={attn.hasFiles}
+              overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
+              onOpen={setPhoneRequest}
+              onOptions={() => E(true)}
+            />
+          </Fragment>
+        )}
       </div>
       </div>
     </TestLinkContext.Provider>
@@ -14679,6 +15517,7 @@ function DevTestDetail({
   onSetNote: u,
   devStepNotes: dsn = [],
   onDevStepNote: onDsn = null,
+  phone = false,
 }) {
   let d = e;
   let c = t || {};
@@ -14731,12 +15570,7 @@ function DevTestDetail({
     window.addEventListener("keydown", h2);
     return () => window.removeEventListener("keydown", h2);
   });
-  return (
-    <FigureContext.Provider value={{ shots: c.screenshots || [], open: (f) => v(f) }}>
-      <div className="flex-1 min-h-0 flex flex-col">
-        <DetailHeader
-          tc={d}
-          meta={
+  let headerMeta = (
             <Fragment>
               {c.updated_at && p !== "Not Tested" ? (
                 <span title={new Date(c.updated_at).toLocaleString()}>
@@ -14748,10 +15582,8 @@ function DevTestDetail({
               {/* Saving your Dev status and note. */}
               <SaveIndicator saving={!!l} />
             </Fragment>
-          }
-          right={
-            <HeaderRight
-              menu={
+  );
+  let headerMenu = (
                 <TestOptionsMenu
                   tc={d}
                   clearLabel="Clear my dev status and note"
@@ -14767,14 +15599,24 @@ function DevTestDetail({
                       : null
                   }
                 />
-              }
-            >
+  );
+  return (
+    <FigureContext.Provider value={{ shots: c.screenshots || [], open: (f) => v(f) }}>
+      <div className="flex-1 min-h-0 flex flex-col">
+        {!phone && (
+          <DetailHeader
+            tc={d}
+            meta={headerMeta}
+            right={
+              <HeaderRight menu={headerMenu}>
               <StatusPill status={p} />
-            </HeaderRight>
-          }
-        />
+              </HeaderRight>
+            }
+          />
+        )}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-[1180px] pl-4 sm:pl-6 pr-16 sm:pr-6 pt-6 pb-24">
+          <div className={`max-w-[1180px] ${phone ? "px-4 pt-4 pb-8" : "pl-4 sm:pl-6 pr-16 sm:pr-6 pt-6 pb-24"}`}>
+            {phone && <PhoneTitle tc={d} meta={headerMeta} menu={headerMenu} />}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
               <TestDefinitionColumn c={d} p={c} ro={true} stepsCheckLeft={true} devNotes={dsn} myDevName={r} onDevNote={onDsn} />
               <div className="flex flex-col gap-5 min-w-0">
@@ -14843,7 +15685,7 @@ function DevTestDetail({
                     <div className="text-xs opacity-80">{timeAgo(c.updated_at)}</div>
                   </Callout>
                 )}
-                <div>
+                <div className={phone ? "hidden" : ""}>
                   <SectionLabel>Dev status</SectionLabel>
                   {/* One control for the whole journey of a fix. Clicking the selected option clears your mark. */}
                   <div className="inline-flex flex-wrap gap-0.5 p-0.5 bg-gray-950 border border-gray-700 rounded-sm" role="radiogroup" aria-label="Dev status">
@@ -14906,6 +15748,18 @@ function DevTestDetail({
             </div>
           </div>
         </div>
+        {phone && (
+          <PhoneActionBar
+            options={markOptions.map((m2) => ({
+              key: m2.key,
+              label: m2.key === "ready" ? "Retest" : m2.label,
+              icon: m2.icon,
+              onCls: m2.on,
+              on: myMark === m2.key,
+              onClick: () => pickMark(m2.key),
+            }))}
+          />
+        )}
         {I && <RecordingPlayer recordings={I.recordings} startIdx={I.startIdx} onClose={() => x(null)} />}
         {g !== null && (c.screenshots || []).length > 0 && (
           <ScreenshotLightbox screenshots={c.screenshots || []} startIdx={g} onClose={() => v(null)} />
