@@ -8979,9 +8979,9 @@ function OnePageSignIn({ session, sessionId, onEnter }) {
     <button
       onClick={() => pickRole(r)}
       aria-pressed={role === r}
-      className={`flex items-center gap-3 p-3.5 border rounded-sm text-left transition-colors ${role === r ? "bg-gray-800 border-gray-500" : "bg-gray-950 border-gray-800 hover:border-gray-600"}`}
+      className={`flex items-center gap-3 p-3.5 border rounded-sm text-left transition-colors ${role === r ? "bg-green-500/10 border-green-500" : "bg-gray-950 border-gray-800 hover:border-gray-600"}`}
     >
-      <Icon className={`w-6 h-6 flex-shrink-0 ${role === r ? "text-gray-100" : "text-gray-500"}`} />
+      <Icon className={`w-6 h-6 flex-shrink-0 ${role === r ? "text-green-400" : "text-gray-500"}`} />
       <span className="min-w-0">
         <span className="block text-sm font-medium text-gray-100">{label}</span>
         <span className="block text-[11px] text-gray-500">{sub}</span>
@@ -9024,16 +9024,18 @@ function OnePageSignIn({ session, sessionId, onEnter }) {
                 {names.length === 0 ? (
                   <div className="text-sm text-gray-500 py-2">No names on the list yet. Add yours.</div>
                 ) : (
-                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  // Compact two-column grid so long lists fit without an inner scroll area.
+                  <div className="grid grid-cols-2 gap-1.5">
                     {names.map((n) => (
                       <button
                         key={n}
                         onClick={() => setPicked(n)}
                         aria-pressed={picked === n}
-                        className={`w-full flex items-center gap-2 px-3.5 py-2.5 border rounded-sm text-left text-gray-100 transition-colors ${picked === n ? "bg-gray-800 border-gray-500" : "bg-gray-950 border-gray-800 hover:border-gray-600"}`}
+                        aria-label={n}
+                        className={`min-w-0 flex items-center gap-1.5 px-3 py-2 border rounded-sm text-left text-sm text-gray-100 transition-colors ${picked === n ? "bg-green-500/10 border-green-500 font-medium" : "bg-gray-950 border-gray-800 hover:border-gray-600"}`}
                       >
                         <span className="flex-1 truncate">{n}</span>
-                        {picked === n && <Check className="w-4 h-4" />}
+                        {picked === n && <Check className="w-4 h-4 flex-shrink-0 text-green-400" />}
                       </button>
                     ))}
                   </div>
