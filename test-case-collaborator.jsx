@@ -298,8 +298,12 @@ function PathChipText({ text: e }) {
         href={r}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={(u) => u.stopPropagation()}
-        title={`Open in new tab: ${r}`}
+        onClick={(u) => {
+          u.stopPropagation();
+          // Desktop portals also show the page in the phone-sized preview panel (the new tab still opens).
+          window.dispatchEvent(new CustomEvent("uat-preview", { detail: { url: r } }));
+        }}
+        title={`Open in new tab and the preview panel: ${r}`}
         className="inline-flex items-center gap-1 font-mono text-[12px] border rounded-sm px-1 py-[1px] cursor-pointer transition-colors align-baseline break-all no-underline bg-chip-400/10 text-chip-300 border-chip-400/40 hover:bg-chip-400/20 hover:border-chip-400 hover:text-chip-200"
       >
         <span className="hover:underline underline-offset-2 decoration-chip-400/60">{e}</span>
@@ -6027,6 +6031,76 @@ function PhoneTitle({ tc, meta, menu }) {
     </div>
   );
 }
+// Desktop: phone-sized preview of a page from the site under test, shown in place of the test list.
+// Opened by clicking a path chip (which also opens the page in a new tab).
+function PreviewPanel({ url, onClose, onNavigate }) {
+  let [device, setDevice] = useState("phone");
+  let [addr, setAddr] = useState(url);
+  let [frameKey, setFrameKey] = useState(0);
+  useEffect(() => setAddr(url), [url]);
+  let frameW = device === "phone" ? 390 : 768;
+  let go = () => {
+    let v = addr.trim();
+    if (!v) return;
+    if (!/^https?:\/\//i.test(v)) v = "https://" + v.replace(/^\/+/, "");
+    onNavigate(v);
+  };
+  let ib = "w-8 h-8 flex items-center justify-center rounded-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100";
+  return (
+    <aside className="flex-shrink-0 flex flex-col bg-gray-900 border-r border-gray-800" style={{ width: frameW + 40 }} aria-label="Page preview">
+      <div className="flex-shrink-0 flex items-center gap-1 px-2 py-2 border-b border-gray-800">
+        <button onClick={onClose} className="h-8 px-2 inline-flex items-center gap-1 rounded-sm text-xs text-gray-300 hover:bg-gray-800 hover:text-gray-100" title="Back to the test list">
+          <ArrowLeft className="w-4 h-4" /> Test list
+        </button>
+        <div className="flex-1" />
+        <div className="flex bg-gray-800 p-0.5 rounded-sm text-[11px]" role="group" aria-label="Preview width">
+          {[
+            ["phone", "Phone"],
+            ["tablet", "Tablet"],
+          ].map(([k, l]) => (
+            <button key={k} onClick={() => setDevice(k)} aria-pressed={device === k} className={`px-2 h-7 rounded-sm ${device === k ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-400 hover:text-gray-200"}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setFrameKey((x) => x + 1)} className={ib} title="Reload" aria-label="Reload">
+          <RefreshCw className="w-4 h-4" />
+        </button>
+        <a href={url} target="_blank" rel="noopener noreferrer" className={ib} title="Open in new tab" aria-label="Open in new tab">
+          <ExternalLink className="w-4 h-4" />
+        </a>
+        <button onClick={onClose} className={ib} title="Close preview" aria-label="Close preview">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="flex-shrink-0 px-2 py-2 border-b border-gray-800">
+        <input
+          value={addr}
+          onChange={(ev) => setAddr(ev.target.value)}
+          onKeyDown={(ev) => ev.key === "Enter" && go()}
+          onBlur={() => setAddr(url)}
+          spellCheck="false"
+          autoCapitalize="off"
+          className="w-full h-8 px-2.5 bg-gray-950 border border-gray-800 rounded-sm text-xs font-mono text-gray-300 focus:outline-none focus:border-gray-600"
+          aria-label="Address"
+        />
+      </div>
+      <div className="flex-1 min-h-0 overflow-auto flex justify-center bg-gray-950 py-3">
+        <iframe
+          key={`${url}#${frameKey}`}
+          src={url}
+          aria-label="Page preview"
+          className="h-full bg-white border border-gray-800 rounded-sm"
+          style={{ width: frameW, minHeight: 480 }}
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </div>
+      <div className="flex-shrink-0 px-3 py-2 border-t border-gray-800 text-[11px] text-gray-500 leading-relaxed">
+        Blank or “refused to connect”? The site may not allow previews, or may need you to sign in here. Use the tab that just opened instead.
+      </div>
+    </aside>
+  );
+}
 function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = "tester", testCases = [], onOpenPing = () => {}, overviewUrl = undefined, lowered = false, phone = false, openRequest = null, onRequestHandled = () => {}, onAttention = () => {} }) {
   let isDevBar = role === "developer";
   // ---- Pings for me (bell) ----
@@ -6213,6 +6287,53 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
   }, [pingsOpen]);
   let hasFiles = !isDevBar && d && a.length > 0;
   let filesOpen = hasFiles && i;
+  // First visit: a speech bubble pointing at Read me / Sample files. Goes away with "Got it", or once
+  // the tester opens either one. Remembered per session and person.
+  let coachKey = `uat-pro-coach-${e}-${n}`;
+  let [coachDone, setCoachDone] = useState(() => {
+    try {
+      return localStorage.getItem(coachKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  let dismissCoach = () => {
+    setCoachDone(true);
+    try {
+      localStorage.setItem(coachKey, "1");
+    } catch {}
+  };
+  let coachWaiting = (!!readme && !readmeSeen) || (hasFiles && !s);
+  useEffect(() => {
+    if (!coachDone && (readmeOpen || i)) dismissCoach();
+  }, [readmeOpen, i]);
+  let showCoach = !isDevBar && !coachDone && coachWaiting && (!!readme || hasFiles) && !readmeOpen && !i && !pingsOpen && !aboutOpen;
+  let coachText =
+    readme && hasFiles
+      ? "New here? Open the Read me for details about these tests, and download the sample files you’ll need."
+      : readme
+        ? "New here? Open the Read me for details about these tests before you start."
+        : "New here? Download the sample files you’ll need for these tests.";
+  let coachBubble = (side) => (
+    <div
+      role="status"
+      className={`uat-coach w-64 p-3 rounded-sm bg-gray-100 text-gray-950 shadow-2xl text-[13px] leading-snug ${side === "left" ? "absolute right-full mr-3 top-1/2 -translate-y-1/2" : "fixed top-[54px] right-2 z-[46]"}`}
+    >
+      <span
+        className={`absolute w-2.5 h-2.5 bg-gray-100 rotate-45 ${side === "left" ? "-right-1 top-1/2 -translate-y-1/2" : "-top-1 right-4"}`}
+        aria-hidden="true"
+      />
+      <div className="relative">
+        {coachText}
+        {side === "top" && <span className="text-gray-600"> Tap ⋯ to find them.</span>}
+        <div className="mt-2 flex justify-end">
+          <button onClick={dismissCoach} className="px-2.5 py-1 rounded-sm bg-gray-950 text-gray-100 text-xs font-medium hover:bg-gray-800">
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
+  );
   // Phone: panels are opened from the More sheet, and what's waiting is reported back for its dot.
   useEffect(() => {
     if (!openRequest) return;
@@ -6272,6 +6393,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
   };
   return (
     <>
+      {showCoach && phone && <div className="sm:hidden">{coachBubble("top")}</div>}
       {testCases.length > 0 && (
         <Fragment>
           <div
@@ -6580,6 +6702,8 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
           <RailLabel>Pings{unread > 0 ? ` · ${unread} unread` : ""}</RailLabel>
           {unread > 0 && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-gray-900" />}
         </button>
+        <div className="relative flex flex-col items-center gap-1">
+        {showCoach && !phone && coachBubble("left")}
         {readme && (
           <button
             onClick={() => {
@@ -6616,6 +6740,7 @@ function TesterSampleFilesBar({ sessionId: e, sessionName: t, myName: n, role = 
             {!s && !i && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-gray-900" aria-label="Not looked at yet" />}
           </button>
         )}
+        </div>
         {testCases.length > 0 && (
           <button
             onClick={() => {
@@ -9702,6 +9827,18 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
   let [phoneTesterOpen, setPhoneTesterOpen] = useState(false);
   let [phoneMoreOpen, setPhoneMoreOpen] = useState(false);
   let [phoneRequest, setPhoneRequest] = useState(null);
+  let [optionsSignal, setOptionsSignal] = useState(0);
+  // Desktop: path chip clicks also open the page in the preview panel (in place of the test list).
+  let [previewUrl, setPreviewUrl] = useState(null);
+  useEffect(() => {
+    if (isNarrow) {
+      setPreviewUrl(null);
+      return;
+    }
+    let h = (ev) => ev.detail?.url && setPreviewUrl(ev.detail.url);
+    window.addEventListener("uat-preview", h);
+    return () => window.removeEventListener("uat-preview", h);
+  }, [isNarrow]);
   let [attn, setAttn] = useState({ unread: 0, readme: false, files: false, hasReadme: false, hasFiles: false });
   usePortalTabTitle(e, "Tester");
   useOpenLinkedTest(r, testerTabNames(e.testers, allF), g, setViewTab);
@@ -10245,7 +10382,10 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
     <TestLinkContext.Provider value={(tc) => testLinkUrl(e.id, tc.test_id, viewTab)}>
       <div className="app-vh flex flex-col bg-gray-950 overflow-hidden text-gray-100 sm:pr-11">
       <div className="flex-1 min-h-0 flex">
+        {previewUrl && <PreviewPanel url={previewUrl} onClose={() => setPreviewUrl(null)} onNavigate={setPreviewUrl} />}
+        <div className={previewUrl ? "hidden" : "contents"}>
         <TesterSidebar
+          optionsSignal={optionsSignal}
           listGrouped={listGrouped}
           setListGrouped={setListGrouped}
           open={j}
@@ -10284,6 +10424,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
           hasBaseUrlOverride={S}
           resetBaseUrl={I}
         />
+        </div>
         <div className="flex-1 min-w-0 flex flex-col relative" >
           {isPhone && (() => {
             let idx = H.findIndex((z) => z.id === x);
@@ -10403,7 +10544,7 @@ function TesterPortal({ session: e, myName: t, onLogout: a }) {
               hasFiles={attn.hasFiles}
               overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
               onOpen={setPhoneRequest}
-              onOptions={() => D(true)}
+              onOptions={() => setOptionsSignal((x) => x + 1)}
             />
           </Fragment>
         )}
@@ -10816,10 +10957,15 @@ function TesterSidebar({
   resetBaseUrl: M,
   listGrouped = true,
   setListGrouped = () => {},
+  optionsSignal = 0,
 }) {
   let [W, V] = useState(false);
   let [F, se] = useState(false);
   let [E, D] = useState(false);
+  // Phone: the More sheet's Options tile opens this panel's Options dialog.
+  useEffect(() => {
+    if (optionsSignal) D(true);
+  }, [optionsSignal]);
   let mobile = useIsMobile(MOBILE_BREAKPOINT);
   let [sideW, setSideW] = useSidebarWidth();
   let priorityOptions = sortPriorities(Array.from(new Set(l.map((O) => O.priority).filter(Boolean))));
@@ -12286,6 +12432,18 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
   let [phoneTesterOpen, setPhoneTesterOpen] = useState(false);
   let [phoneMoreOpen, setPhoneMoreOpen] = useState(false);
   let [phoneRequest, setPhoneRequest] = useState(null);
+  let [optionsSignal, setOptionsSignal] = useState(0);
+  // Desktop: path chip clicks also open the page in the preview panel (in place of the test list).
+  let [previewUrl, setPreviewUrl] = useState(null);
+  useEffect(() => {
+    if (isNarrow) {
+      setPreviewUrl(null);
+      return;
+    }
+    let h = (ev) => ev.detail?.url && setPreviewUrl(ev.detail.url);
+    window.addEventListener("uat-preview", h);
+    return () => window.removeEventListener("uat-preview", h);
+  }, [isNarrow]);
   let [attn, setAttn] = useState({ unread: 0, readme: false, files: false, hasReadme: false, hasFiles: false });
   usePortalTabTitle(e, "Dev");
   useOpenLinkedTest(r, testerTabNames(e.testers, allF), g, setDevTab);
@@ -12692,7 +12850,10 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
     <TestLinkContext.Provider value={(tc) => testLinkUrl(e.id, tc.test_id, devTab)}>
       <div className="app-vh flex flex-col bg-gray-950 overflow-hidden text-gray-100 sm:pr-11">
       <div className="flex-1 min-h-0 flex">
+        {previewUrl && <PreviewPanel url={previewUrl} onClose={() => setPreviewUrl(null)} onNavigate={setPreviewUrl} />}
+        <div className={previewUrl ? "hidden" : "contents"}>
         <DevSidebar
+          optionsSignal={optionsSignal}
           reportLinkUrl={e.report_key ? reportUrl(e.id, e.report_key) : null}
           listGrouped={listGrouped}
           setListGrouped={setListGrouped}
@@ -12735,6 +12896,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
           hasBaseUrlOverride={S}
           resetBaseUrl={I}
         />
+        </div>
         <div className="flex-1 min-w-0 flex flex-col relative" >
           {isPhone && (() => {
             let idx = ie.findIndex((z) => z.id === x);
@@ -12852,7 +13014,7 @@ function DevPortal({ session: e, myName: t, onLogout: a }) {
               hasFiles={attn.hasFiles}
               overviewUrl={e.report_key ? managerUrl(e.id, e.report_key) : null}
               onOpen={setPhoneRequest}
-              onOptions={() => E(true)}
+              onOptions={() => setOptionsSignal((x) => x + 1)}
             />
           </Fragment>
         )}
@@ -13429,6 +13591,7 @@ function DevSidebar({
   reportLinkUrl = null,
   listGrouped = true,
   setListGrouped = () => {},
+  optionsSignal = 0,
 }) {
   let [M, W] = useState(false);
   let [batchOpen, setBatchOpen] = useState(false);
@@ -13438,6 +13601,10 @@ function DevSidebar({
   let myNotMerged = l.filter((D) => isNotMerged((u[D.id] || []).find((O) => O.developer_name === r)));
   let [V, F] = useState(false);
   let [se, E] = useState(false);
+  // Phone: the More sheet's Options tile opens this panel's Options dialog.
+  useEffect(() => {
+    if (optionsSignal) E(true);
+  }, [optionsSignal]);
   let [exportOpen, setExportOpen] = useState(false);
   let sevOf = (D) => getSeverity(i[D.id]?.bug_severity)?.value || "";
   // Counts (tabs, filter menus) follow the Focus filter when one is active.
@@ -14672,22 +14839,24 @@ function ScreenshotLightbox({
   };
   if (u) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 modal-overlay" onClick={a}>
-        <div className="w-full max-w-5xl flex flex-col" onClick={(M) => M.stopPropagation()}>
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-950 border border-gray-800 border-b-0 rounded-t-sm flex-shrink-0">
+      <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-0 sm:p-4 modal-overlay" onClick={a}>
+        {/* Phones: full screen, with the drawing tools on their own row and icon-only previous / next. */}
+        <div className="w-full max-sm:h-full max-w-5xl flex flex-col" onClick={(M) => M.stopPropagation()}>
+          <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2.5 bg-gray-950 border-gray-800 sm:border sm:border-b-0 sm:rounded-t-sm flex-shrink-0 max-sm:pt-[max(10px,env(safe-area-inset-top))]">
             <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-emerald-600 text-gray-950 border border-emerald-700 rounded-sm flex-shrink-0">
               Fig. {l + 1}
             </span>
-            <span className="text-xs text-gray-300 truncate min-w-0 flex-1" title={u.name}>
+            <span className="max-sm:hidden text-xs text-gray-300 truncate min-w-0 flex-1" title={u.name}>
               {u.name || `screenshot-${l + 1}`}
             </span>
             {e.length > 1 && (
-              <span className="text-[10px] text-gray-500 flex-shrink-0 tabular-nums">
+              <span className="text-xs sm:text-[10px] text-gray-500 flex-shrink-0 tabular-nums">
                 {l + 1} of {e.length}
               </span>
             )}
+            <span className="sm:hidden flex-1" />
             {r && (
-              <Fragment>
+              <div className="flex items-center gap-2 max-sm:order-last max-sm:w-full max-sm:grid max-sm:grid-cols-4 max-sm:gap-1.5">
                 {[
                   { key: "arrow", label: "Add arrow", Icon: Pencil, hint: "Click + drag on the image to draw arrows" },
                   { key: "circle", label: "Add circle", Icon: CircleIcon, hint: "Click + drag on the image to circle an area" },
@@ -14702,56 +14871,69 @@ function ScreenshotLightbox({
                         S(null);
                       }}
                       aria-pressed={W}
-                      className={`px-2 py-1 text-[11px] rounded-sm border inline-flex items-center gap-1 flex-shrink-0 ${W ? "bg-red-900/50 border-red-700 text-red-100" : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"}`}
+                      className={`px-2 py-1 max-sm:h-10 max-sm:justify-center max-sm:text-[13px] text-[11px] rounded-sm border inline-flex items-center gap-1 flex-shrink-0 ${W ? "bg-red-900/50 border-red-700 text-red-100" : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"}`}
                       title={W ? "Click to finish (or press Esc)" : M.hint}
                     >
-                      {W ? <Check className="w-3 h-3" /> : <M.Icon className="w-3 h-3" />}
-                      {W ? `Done ${M.key === "arrow" ? "arrows" : M.key === "circle" ? "circles" : "text"}` : M.label}
+                      {W ? <Check className="w-3 h-3 max-sm:w-4 max-sm:h-4" /> : <M.Icon className="w-3 h-3 max-sm:w-4 max-sm:h-4" />}
+                      <span className="sm:hidden">{W ? "Done" : M.key === "arrow" ? "Arrow" : M.key === "circle" ? "Circle" : "Text"}</span>
+                      <span className="max-sm:hidden">{W ? `Done ${M.key === "arrow" ? "arrows" : M.key === "circle" ? "circles" : "text"}` : M.label}</span>
                     </button>
                   );
                 })}
-                {d.length > 0 && (
+                {/* With a mark selected: delete just that one (phones have no Delete key). Otherwise: clear all. */}
+                {_ ? (
+                  <button
+                    onClick={() => {
+                      m(d.filter((z) => z.id !== _));
+                      S(null);
+                    }}
+                    className="px-2 py-1 max-sm:h-10 max-sm:justify-center max-sm:text-[13px] text-[11px] rounded-sm bg-gray-950 border border-gray-800 text-red-300 hover:bg-gray-700 inline-flex items-center gap-1 flex-shrink-0"
+                    title="Delete the selected mark"
+                  >
+                    <Trash2 className="w-3 h-3 max-sm:w-4 max-sm:h-4" /> Delete
+                  </button>
+                ) : d.length > 0 ? (
                   <button
                     onClick={() => {
                       m([]);
                       S(null);
                     }}
-                    className="px-2 py-1 text-[11px] rounded-sm bg-gray-950 border border-gray-800 text-gray-300 hover:bg-gray-700 hover:text-red-300 inline-flex items-center gap-1 flex-shrink-0"
+                    className="px-2 py-1 max-sm:h-10 max-sm:justify-center max-sm:text-[13px] text-[11px] rounded-sm bg-gray-950 border border-gray-800 text-gray-300 hover:bg-gray-700 hover:text-red-300 inline-flex items-center gap-1 flex-shrink-0"
                     title="Remove all arrows, circles and text on this screenshot"
                   >
-                    <Trash2 className="w-3 h-3" /> Clear
+                    <Trash2 className="w-3 h-3 max-sm:w-4 max-sm:h-4" /> Clear
                   </button>
+                ) : (
+                  <span className="max-sm:block hidden" />
                 )}
-              </Fragment>
+              </div>
             )}
             <a
               href={u.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 text-gray-400 hover:text-gray-100 flex-shrink-0"
+              className="p-1.5 max-sm:p-2 text-gray-400 hover:text-gray-100 flex-shrink-0"
               title="Open in new tab"
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-4 h-4 max-sm:w-5 max-sm:h-5" />
             </a>
             <button
               onClick={a}
-              className="p-1.5 text-gray-400 hover:text-gray-100 flex-shrink-0"
+              className="p-1.5 max-sm:p-2 text-gray-400 hover:text-gray-100 flex-shrink-0"
               title="Close (Esc)"
+              aria-label="Close"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 max-sm:w-5 max-sm:h-5" />
             </button>
           </div>
           <div
-            className="relative bg-black border border-gray-800 flex items-center justify-center"
-            style={{
-              minHeight: "300px",
-            }}
+            className="relative bg-black sm:border border-gray-800 flex items-center justify-center max-sm:flex-1 max-sm:min-h-0 sm:min-h-[300px]"
           >
             <div ref={g} className="relative inline-block">
               <img
                 src={u.url}
                 alt={u.name || `Screenshot ${l + 1}`}
-                className="max-h-[75vh] max-w-full object-contain block select-none"
+                className="max-h-[75vh] max-sm:max-h-[calc(100dvh-190px)] max-w-full object-contain block select-none"
                 draggable={false}
                 key={u.url}
               />
@@ -14992,21 +15174,35 @@ function ScreenshotLightbox({
             </div>
           </div>
           {(e.length > 1 || r) && (
-            <div className="flex items-center justify-between px-3 py-2.5 bg-gray-950 border border-gray-800 border-t-0 rounded-b-sm flex-shrink-0 gap-3">
+            <div className="flex items-center justify-between px-3 py-2.5 bg-gray-950 border-gray-800 sm:border sm:border-t-0 sm:rounded-b-sm flex-shrink-0 gap-3 max-sm:pb-[max(10px,env(safe-area-inset-bottom))]">
               {e.length > 1 ? (
                 <button
                   onClick={() => i((M) => M - 1)}
                   disabled={!c}
-                  className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-sm text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 max-sm:w-10 max-sm:h-10 max-sm:justify-center max-sm:border max-sm:border-gray-800 max-sm:rounded-sm text-sm text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
                   title="Previous (←)"
+                  aria-label="Previous"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" /> Previous
+                  <ChevronLeft className="w-3.5 h-3.5 max-sm:w-5 max-sm:h-5" /> <span className="max-sm:hidden">Previous</span>
                 </button>
               ) : (
                 <span />
               )}
               {r && (
-                <span className="text-sm text-gray-300 text-center min-w-0">
+                <span className="sm:hidden text-xs text-gray-400 text-center min-w-0 leading-snug">
+                  {h === "arrow"
+                    ? "Drag to draw arrows, then tap Done."
+                    : h === "circle"
+                      ? "Drag to circle an area, then tap Done."
+                      : h === "text"
+                        ? "Tap where the label goes and type."
+                        : _
+                          ? "Drag to move or reshape, or tap Delete."
+                          : "Tap Arrow, Circle or Text to mark up."}
+                </span>
+              )}
+              {r && (
+                <span className="max-sm:hidden text-sm text-gray-300 text-center min-w-0">
                   {h === "arrow"
                     ? "Drag on the image to draw arrows. Add as many as you like, then click Done or press Esc."
                     : h === "circle"
@@ -15024,10 +15220,11 @@ function ScreenshotLightbox({
                 <button
                   onClick={() => i((M) => M + 1)}
                   disabled={!p}
-                  className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-sm text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
+                  className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 max-sm:w-10 max-sm:h-10 max-sm:justify-center max-sm:border max-sm:border-gray-800 max-sm:rounded-sm text-sm text-gray-300 hover:text-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed"
                   title="Next (→)"
+                  aria-label="Next"
                 >
-                  Next <ChevronRight className="w-3.5 h-3.5" />
+                  <span className="max-sm:hidden">Next</span> <ChevronRight className="w-3.5 h-3.5 max-sm:w-5 max-sm:h-5" />
                 </button>
               ) : (
                 <span />
