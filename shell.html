@@ -323,10 +323,44 @@
     @media (prefers-reduced-motion: reduce) {
       .modal-overlay, .modal-overlay > :first-child, .modal-overlay.modal-leaving, .modal-overlay.modal-leaving > :first-child { animation: none; }
     }
+    /* Full-height app screens: fit the VISIBLE area on phones. 100vh is taller than the screen in mobile
+       Safari/Chrome (it ignores the address bar), which pushed the header and tester tabs off-screen. */
+    .app-vh { height: 100vh; height: -webkit-fill-available; height: 100dvh; }
   </style>
 </head>
 <body>
   <div id="root"><div class="boot-splash"><div class="boot-spinner"></div></div></div>
+  <script>
+    // Text boxes grow with what's typed in them (down to their normal size), so long notes are easy to read and edit.
+    // Capped at 60% of the screen height; beyond that the box scrolls.
+    (function () {
+      var fit = function (el) {
+        if (!el || el.tagName !== 'TEXTAREA' || el.hasAttribute('data-fixed-height')) return;
+        // Never smaller than the box's own designed size (remembered the first time we see it).
+        if (!el.dataset.minH) el.dataset.minH = String(el.offsetHeight || 0);
+        var min = +el.dataset.minH;
+        var border = el.offsetHeight - el.clientHeight;
+        el.style.height = 'auto';
+        var max = Math.round(window.innerHeight * 0.6);
+        var h = Math.min(Math.max(el.scrollHeight + border, min), max);
+        el.style.height = h + 'px';
+        el.style.overflowY = el.scrollHeight + 2 > max ? 'auto' : 'hidden';
+      };
+      var fitAll = function (root) { (root.querySelectorAll ? root : document).querySelectorAll('textarea').forEach(fit); };
+      document.addEventListener('input', function (e) { fit(e.target); }, true);
+      document.addEventListener('focusin', function (e) { fit(e.target); }, true);
+      new MutationObserver(function (list) {
+        list.forEach(function (m) {
+          m.addedNodes.forEach(function (n) {
+            if (n.nodeType !== 1) return;
+            if (n.tagName === 'TEXTAREA') requestAnimationFrame(function () { fit(n); });
+            else if (n.querySelector && n.querySelector('textarea')) requestAnimationFrame(function () { fitAll(n); });
+          });
+        });
+      }).observe(document.documentElement, { childList: true, subtree: true });
+      window.addEventListener('resize', function () { fitAll(document); });
+    })();
+  </script>
   <script>
     // Closing animation for every dialog: when one leaves the page, a copy fades out in its place.
     (function () {

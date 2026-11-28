@@ -5872,12 +5872,16 @@ function PhoneTopBar({ testId, pos, total, viewing, onList, onJump, onPrev, onNe
         <List className="w-5 h-5" />
       </button>
       <div className="flex-1 min-w-0 px-1">
-        <button onClick={onJump} className="block max-w-full text-left text-xs font-mono text-gray-400 truncate" aria-label="Find a test">
-          {testId || "—"} · {pos} of {total} <Search className="inline w-3 h-3 -mt-0.5" />
+        <button onClick={onJump} className="flex items-center gap-1 max-w-full h-5 text-left text-xs font-mono text-gray-400" aria-label="Find a test">
+          <span className="truncate">
+            {testId || "—"} · {pos} of {total}
+          </span>
+          <Search className="w-3.5 h-3.5 flex-shrink-0" />
         </button>
         {viewing && (
-          <button onClick={onPickTester} className="block max-w-full text-left text-[13px] text-gray-200 truncate" aria-label="Switch tester">
-            {viewing} <ChevronDown className="inline w-3.5 h-3.5 -mt-0.5 text-gray-500" />
+          <button onClick={onPickTester} className="flex items-center gap-0.5 max-w-full h-5 text-left text-[13px] text-gray-200" aria-label="Switch tester">
+            <span className="truncate">{viewing}</span>
+            <ChevronDown className="w-4 h-4 flex-shrink-0 text-gray-500" />
           </button>
         )}
       </div>
@@ -8916,7 +8920,7 @@ function PortalPicker({ sessionId: e }) {
     return <Notice variant="error">Session not found. Check the link with the admin.</Notice>;
   } else {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6" style={LOGIN_GRID_BG}>
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
             <div className="text-xs text-emerald-400 mb-1">UAT session</div>
@@ -9082,362 +9086,18 @@ function Notice({ children: e, variant: t }) {
     </div>
   );
 }
-// Login screens: a little 8-bit white cat sitting on top of the box, blinking now and then.
-// Outline is near-black in light mode and soft grey in dark mode, so the whiskers always show.
-function PixelCat() {
-  return (
-    <div className="pixel-cat absolute left-1/2 -translate-x-1/2 -top-[64px] pointer-events-none select-none" aria-hidden="true">
-      <style>{`
-        .pixel-cat .o { fill: #15181D; }
-        :root[data-theme="dark"] .pixel-cat .o { fill: #A0A7B2; }
-        @keyframes pixel-cat-blink { 0%, 92%, 100% { opacity: 1; } 94%, 98% { opacity: 0; } }
-        .pixel-cat-open { animation: pixel-cat-blink 4s steps(1, end) infinite; }
-        @media (prefers-reduced-motion: reduce) { .pixel-cat-open { animation: none; } }
-      `}</style>
-      <svg width="69" height="66" viewBox="0 0 23 22" shapeRendering="crispEdges">
-        <rect className="o" x="5" y="0" width="1" height="1" />
-        <rect className="o" x="11" y="0" width="1" height="1" />
-        <rect className="o" x="4" y="1" width="1" height="1" />
-        <rect x="5" y="1" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="6" y="1" width="1" height="1" />
-        <rect className="o" x="10" y="1" width="1" height="1" />
-        <rect x="11" y="1" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="12" y="1" width="1" height="1" />
-        <rect className="o" x="4" y="2" width="1" height="1" />
-        <rect x="5" y="2" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="2" width="1" height="1" fill="#D3D7DC" />
-        <rect className="o" x="7" y="2" width="1" height="1" />
-        <rect className="o" x="8" y="2" width="1" height="1" />
-        <rect className="o" x="9" y="2" width="1" height="1" />
-        <rect x="10" y="2" width="1" height="1" fill="#D3D7DC" />
-        <rect x="11" y="2" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="12" y="2" width="1" height="1" />
-        <rect className="o" x="3" y="3" width="1" height="1" />
-        <rect x="4" y="3" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="3" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="3" width="1" height="1" fill="#D3D7DC" />
-        <rect x="7" y="3" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="3" width="1" height="1" fill="#D3D7DC" />
-        <rect x="9" y="3" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="3" width="1" height="1" fill="#D3D7DC" />
-        <rect x="11" y="3" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="3" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="13" y="3" width="1" height="1" />
-        <rect className="o" x="0" y="4" width="1" height="1" />
-        <rect className="o" x="1" y="4" width="1" height="1" />
-        <rect className="o" x="3" y="4" width="1" height="1" />
-        <rect x="4" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="4" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="13" y="4" width="1" height="1" />
-        <rect className="o" x="15" y="4" width="1" height="1" />
-        <rect className="o" x="16" y="4" width="1" height="1" />
-        <rect className="o" x="2" y="5" width="1" height="1" />
-        <rect x="3" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="5" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="14" y="5" width="1" height="1" />
-        <rect className="o" x="0" y="6" width="1" height="1" />
-        <rect className="o" x="1" y="6" width="1" height="1" />
-        <rect className="o" x="2" y="6" width="1" height="1" />
-        <rect x="3" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="8" y="6" width="1" height="1" />
-        <rect x="9" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="6" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="14" y="6" width="1" height="1" />
-        <rect className="o" x="15" y="6" width="1" height="1" />
-        <rect className="o" x="16" y="6" width="1" height="1" />
-        <rect className="o" x="2" y="7" width="1" height="1" />
-        <rect x="3" y="7" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="7" width="1" height="1" fill="#F4A6B8" />
-        <rect x="5" y="7" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="7" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="7" y="7" width="1" height="1" />
-        <rect x="8" y="7" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="9" y="7" width="1" height="1" />
-        <rect x="10" y="7" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="7" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="7" width="1" height="1" fill="#F4A6B8" />
-        <rect x="13" y="7" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="14" y="7" width="1" height="1" />
-        <rect className="o" x="1" y="8" width="1" height="1" />
-        <rect x="2" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="8" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="15" y="8" width="1" height="1" />
-        <rect className="o" x="1" y="9" width="1" height="1" />
-        <rect x="2" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="9" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="15" y="9" width="1" height="1" />
-        <rect className="o" x="1" y="10" width="1" height="1" />
-        <rect x="2" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="10" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="15" y="10" width="1" height="1" />
-        <rect className="o" x="1" y="11" width="1" height="1" />
-        <rect x="2" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="11" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="15" y="11" width="1" height="1" />
-        <rect className="o" x="0" y="12" width="1" height="1" />
-        <rect x="1" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="2" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect x="15" y="12" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="16" y="12" width="1" height="1" />
-        <rect className="o" x="0" y="13" width="1" height="1" />
-        <rect x="1" y="13" width="1" height="1" fill="#D3D7DC" />
-        <rect x="2" y="13" width="1" height="1" fill="#D3D7DC" />
-        <rect x="3" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="13" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="13" width="1" height="1" fill="#D3D7DC" />
-        <rect x="15" y="13" width="1" height="1" fill="#D3D7DC" />
-        <rect className="o" x="16" y="13" width="1" height="1" />
-        <rect className="o" x="20" y="13" width="1" height="1" />
-        <rect className="o" x="21" y="13" width="1" height="1" />
-        <rect className="o" x="0" y="14" width="1" height="1" />
-        <rect x="1" y="14" width="1" height="1" fill="#D3D7DC" />
-        <rect x="2" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="15" y="14" width="1" height="1" fill="#D3D7DC" />
-        <rect className="o" x="16" y="14" width="1" height="1" />
-        <rect className="o" x="19" y="14" width="1" height="1" />
-        <rect x="20" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect x="21" y="14" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="22" y="14" width="1" height="1" />
-        <rect className="o" x="0" y="15" width="1" height="1" />
-        <rect x="1" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="2" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect x="15" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="16" y="15" width="1" height="1" />
-        <rect className="o" x="19" y="15" width="1" height="1" />
-        <rect x="20" y="15" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="21" y="15" width="1" height="1" />
-        <rect className="o" x="0" y="16" width="1" height="1" />
-        <rect x="1" y="16" width="1" height="1" fill="#D3D7DC" />
-        <rect x="2" y="16" width="1" height="1" fill="#D3D7DC" />
-        <rect x="3" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="4" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="5" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="12" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="13" y="16" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="16" width="1" height="1" fill="#D3D7DC" />
-        <rect x="15" y="16" width="1" height="1" fill="#D3D7DC" />
-        <rect className="o" x="16" y="16" width="1" height="1" />
-        <rect className="o" x="19" y="16" width="1" height="1" />
-        <rect x="20" y="16" width="1" height="1" fill="#D3D7DC" />
-        <rect className="o" x="21" y="16" width="1" height="1" />
-        <rect className="o" x="0" y="17" width="1" height="1" />
-        <rect x="1" y="17" width="1" height="1" fill="#D3D7DC" />
-        <rect x="2" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="4" y="17" width="1" height="1" />
-        <rect x="5" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="6" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="7" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="10" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="11" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="12" y="17" width="1" height="1" />
-        <rect x="13" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect x="15" y="17" width="1" height="1" fill="#D3D7DC" />
-        <rect className="o" x="16" y="17" width="1" height="1" />
-        <rect className="o" x="19" y="17" width="1" height="1" />
-        <rect x="20" y="17" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="21" y="17" width="1" height="1" />
-        <rect className="o" x="0" y="18" width="1" height="1" />
-        <rect x="1" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect x="2" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="4" y="18" width="1" height="1" />
-        <rect x="5" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="6" y="18" width="1" height="1" />
-        <rect x="7" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="10" y="18" width="1" height="1" />
-        <rect x="11" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="12" y="18" width="1" height="1" />
-        <rect x="13" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect x="15" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="16" y="18" width="1" height="1" />
-        <rect className="o" x="17" y="18" width="1" height="1" />
-        <rect className="o" x="18" y="18" width="1" height="1" />
-        <rect x="19" y="18" width="1" height="1" fill="#F5F6F7" />
-        <rect x="20" y="18" width="1" height="1" fill="#D3D7DC" />
-        <rect className="o" x="21" y="18" width="1" height="1" />
-        <rect className="o" x="1" y="19" width="1" height="1" />
-        <rect x="2" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect x="3" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="4" y="19" width="1" height="1" />
-        <rect x="5" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="6" y="19" width="1" height="1" />
-        <rect x="7" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect x="8" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect x="9" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="10" y="19" width="1" height="1" />
-        <rect x="11" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="12" y="19" width="1" height="1" />
-        <rect x="13" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect x="14" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="15" y="19" width="1" height="1" />
-        <rect x="16" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect x="17" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect x="18" y="19" width="1" height="1" fill="#D3D7DC" />
-        <rect x="19" y="19" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="20" y="19" width="1" height="1" />
-        <rect className="o" x="2" y="20" width="1" height="1" />
-        <rect className="o" x="3" y="20" width="1" height="1" />
-        <rect className="o" x="4" y="20" width="1" height="1" />
-        <rect x="5" y="20" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="6" y="20" width="1" height="1" />
-        <rect className="o" x="7" y="20" width="1" height="1" />
-        <rect className="o" x="8" y="20" width="1" height="1" />
-        <rect className="o" x="9" y="20" width="1" height="1" />
-        <rect className="o" x="10" y="20" width="1" height="1" />
-        <rect x="11" y="20" width="1" height="1" fill="#F5F6F7" />
-        <rect className="o" x="12" y="20" width="1" height="1" />
-        <rect className="o" x="13" y="20" width="1" height="1" />
-        <rect className="o" x="14" y="20" width="1" height="1" />
-        <rect className="o" x="15" y="20" width="1" height="1" />
-        <rect className="o" x="16" y="20" width="1" height="1" />
-        <rect className="o" x="17" y="20" width="1" height="1" />
-        <rect className="o" x="18" y="20" width="1" height="1" />
-        <rect className="o" x="19" y="20" width="1" height="1" />
-        <rect className="o" x="4" y="21" width="1" height="1" />
-        <rect className="o" x="5" y="21" width="1" height="1" />
-        <rect className="o" x="6" y="21" width="1" height="1" />
-        <rect className="o" x="10" y="21" width="1" height="1" />
-        <rect className="o" x="11" y="21" width="1" height="1" />
-        <rect className="o" x="12" y="21" width="1" height="1" />
-        <g className="pixel-cat-open">
-          <rect className="o" x="5" y="6" width="1" height="1" />
-          <rect className="o" x="11" y="6" width="1" height="1" />
-        </g>
-      </svg>
-    </div>
-  );
-}
+// Sign-in screens: a faint square grid behind the box (theme-aware, so it suits light and dark mode).
+var LOGIN_GRID_BG = {
+  backgroundImage:
+    "linear-gradient(rgb(var(--gray-800) / 0.7) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--gray-800) / 0.7) 1px, transparent 1px)",
+  backgroundSize: "32px 32px",
+  backgroundPosition: "center center",
+};
 function AccessCodeGate({ label: e, sessionName: t, onSubmit: a, error: r, onBackToPicker: o }) {
   let [s, l] = useState("");
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
-      <div className="relative max-w-sm w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7">
-        <PixelCat />
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6" style={LOGIN_GRID_BG}>
+      <div className="relative max-w-sm w-full bg-gray-900 border border-gray-800 rounded-sm p-7">
         {o && (
           <button
             onClick={o}
@@ -9541,9 +9201,8 @@ function NamePicker({ label: e, sessionName: t, names: a, onSelect: r, onBackToP
     return () => window.removeEventListener("keydown", i);
   }, [s]);
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6">
-      <div className={`relative ${wide && !s ? "max-w-2xl" : "max-w-sm"} w-full bg-gray-900/60 border border-gray-800 rounded-sm p-7`}>
-        <PixelCat />
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6" style={LOGIN_GRID_BG}>
+      <div className={`relative ${wide && !s ? "max-w-2xl" : "max-w-sm"} w-full bg-gray-900 border border-gray-800 rounded-sm p-7`}>
         {!s && o && (
           <button
             onClick={o}
