@@ -8919,54 +8919,162 @@ function PortalPicker({ sessionId: e }) {
   } else if (t === "notfound") {
     return <Notice variant="error">Session not found. Check the link with the admin.</Notice>;
   } else {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6" style={LOGIN_GRID_BG}>
-        <div className="w-full max-w-md">
-          <div className="text-center mb-6">
-            <div className="text-xs text-emerald-400 mb-1">UAT session</div>
-            <h1 className="text-2xl font-bold text-gray-100">{r.name}</h1>
-          </div>
-          <div className="bg-gray-900/70 border border-gray-800 rounded-sm p-5">
-            <div className="text-sm text-gray-300 mb-1">Pick your role to continue</div>
-            <div className="text-xs text-gray-500 mb-4">
-              {testerCodeOn(r) && devCodeOn(r)
-                ? "You'll be asked for an access code next."
-                : !testerCodeOn(r) && !devCodeOn(r)
-                  ? "You'll pick your name next."
-                  : "You may be asked for an access code next."}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => c("tester")}
-                className="flex flex-col items-center gap-2 p-5 bg-gray-800/60 border border-gray-700 rounded-sm hover:bg-emerald-950/40 hover:border-emerald-700 transition-colors group"
-              >
-                <Users className="w-7 h-7 text-gray-400 group-hover:text-emerald-300" />
-                <div className="text-sm font-medium text-gray-100 group-hover:text-emerald-200">
-                  I'm a tester
-                </div>
-                <div className="text-[10px] text-gray-500 leading-tight">
-                  Run the cases and report findings
-                </div>
-              </button>
-              <button
-                onClick={() => c("dev")}
-                className="flex flex-col items-center gap-2 p-5 bg-gray-800/60 border border-gray-700 rounded-sm hover:bg-emerald-950/40 hover:border-emerald-700 transition-colors group"
-              >
-                <GitBranch className="w-7 h-7 text-gray-400 group-hover:text-emerald-300" />
-                <div className="text-sm font-medium text-gray-100 group-hover:text-emerald-200">
-                  I'm a developer
-                </div>
-                <div className="text-[10px] text-gray-500 leading-tight">Review findings, mark fixes</div>
-              </button>
-            </div>
-          </div>
-          <div className="text-center mt-4 text-[10px] text-gray-600">
-            Click <span className="text-gray-400">Switch</span> inside a portal to return here.
-          </div>
-        </div>
-      </div>
-    );
+    return <OnePageSignIn session={r} sessionId={e} onEnter={c} />;
   }
+}
+// One page to sign in: pick your role, enter the code (if it's on), then pick or add your name.
+// Saves the sign-in the same way the separate screens did, then opens the portal.
+function OnePageSignIn({ session, sessionId, onEnter }) {
+  let [role, setRole] = useState(null); // "tester" | "dev"
+  let [code, setCode] = useState("");
+  let [codeErr, setCodeErr] = useState("");
+  let [picked, setPicked] = useState(null);
+  let [newName, setNewName] = useState("");
+  let [addErr, setAddErr] = useState("");
+  let [busy, setBusy] = useState(false);
+  let wide = !useIsMobile(768);
+  let isTester = role === "tester";
+  let codeOn = role ? (isTester ? testerCodeOn(session) : devCodeOn(session)) : false;
+  let realCode = isTester ? session.tester_code : session.developer_code;
+  let field = isTester ? "testers" : "developers";
+  let names = role ? session[field] || [] : [];
+  let storageKey = isTester ? `uat-pro-tester-${sessionId}` : `uat-pro-dev-${sessionId}`;
+  let pickRole = (r) => {
+    setRole(r);
+    setPicked(null);
+    setCode("");
+    setCodeErr("");
+    setAddErr("");
+  };
+  let codeOk = () => {
+    if (!codeOn) return true;
+    if (code.trim() === String(realCode)) return true;
+    setCodeErr(code.trim() ? "Wrong code. Double-check what your admin sent." : "Enter the access code first.");
+    return false;
+  };
+  let enter = (name) => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ code: codeOn ? realCode : null, name }));
+    } catch {}
+    onEnter(role);
+  };
+  let join = async () => {
+    if (!codeOk()) return;
+    let n = tidyNameCase(newName.trim().replace(/\s+/g, " "));
+    if (n.length < 2) return setAddErr("Enter your name (at least 2 letters).");
+    if (n.length > 40) return setAddErr("Keep it under 40 characters.");
+    let match = names.find((x) => String(x).trim().toLowerCase() === n.toLowerCase());
+    if (match) return enter(match);
+    setBusy(true);
+    setAddErr("");
+    try {
+      let res = await addSelfToRoster(sessionId, field, n);
+      enter(res.name);
+    } catch (err) {
+      setAddErr(err?.message || "Couldn’t add your name. Try again.");
+      setBusy(false);
+    }
+  };
+  let roleBtn = (r, label, sub, Icon) => (
+    <button
+      onClick={() => pickRole(r)}
+      aria-pressed={role === r}
+      className={`flex items-center gap-3 p-3.5 border rounded-sm text-left transition-colors ${role === r ? "bg-gray-800 border-gray-500" : "bg-gray-950 border-gray-800 hover:border-gray-600"}`}
+    >
+      <Icon className={`w-6 h-6 flex-shrink-0 ${role === r ? "text-gray-100" : "text-gray-500"}`} />
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-gray-100">{label}</span>
+        <span className="block text-[11px] text-gray-500">{sub}</span>
+      </span>
+    </button>
+  );
+  let inputCls = "w-full px-3 py-2 bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 rounded-sm text-base sm:text-sm focus:outline-none focus:border-gray-600";
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-6" style={LOGIN_GRID_BG}>
+      <div className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} bg-gray-900 border border-gray-800 rounded-sm p-6 sm:p-7`}>
+        <div className="text-xs text-gray-500 mb-1">UAT session</div>
+        <h1 className="text-xl font-bold text-gray-100 mb-5">{session.name}</h1>
+        <div className="text-xs font-medium text-gray-400 mb-2">I’m a…</div>
+        <div className="grid grid-cols-2 gap-2">
+          {roleBtn("tester", "Tester", "Run the tests and report", Users)}
+          {roleBtn("dev", "Developer", "Review findings, mark fixes", GitBranch)}
+        </div>
+        {role && (
+          <div className="mt-5 space-y-5">
+            {codeOn && (
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">Access code</label>
+                <input
+                  value={code}
+                  onChange={(ev) => {
+                    setCode(ev.target.value.replace(/\D/g, "").slice(0, 4));
+                    setCodeErr("");
+                  }}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="4-digit code from your admin"
+                  className={`${inputCls} ${wide ? "max-w-[240px]" : ""} font-mono tracking-widest`}
+                />
+                {codeErr && <div className="mt-1.5 text-xs text-red-300">{codeErr}</div>}
+              </div>
+            )}
+            <div className={wide ? "grid grid-cols-2 gap-6" : "space-y-5"}>
+              <div>
+                <div className="text-xs font-medium text-gray-400 mb-2">Pick your name</div>
+                {names.length === 0 ? (
+                  <div className="text-sm text-gray-500 py-2">No names on the list yet. Add yours.</div>
+                ) : (
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                    {names.map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setPicked(n)}
+                        aria-pressed={picked === n}
+                        className={`w-full flex items-center gap-2 px-3.5 py-2.5 border rounded-sm text-left text-gray-100 transition-colors ${picked === n ? "bg-gray-800 border-gray-500" : "bg-gray-950 border-gray-800 hover:border-gray-600"}`}
+                      >
+                        <span className="flex-1 truncate">{n}</span>
+                        {picked === n && <Check className="w-4 h-4" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {names.length > 0 && (
+                  <button
+                    onClick={() => picked && codeOk() && enter(picked)}
+                    disabled={!picked}
+                    className="mt-3 w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-gray-950 text-sm font-medium rounded-sm disabled:bg-gray-800 disabled:text-gray-500"
+                  >
+                    {picked ? `Continue as ${picked}` : "Pick your name"}
+                  </button>
+                )}
+              </div>
+              <div className={wide ? "pl-6 border-l border-gray-800" : "pt-5 border-t border-gray-800"}>
+                <div className="text-xs font-medium text-gray-400 mb-2">Not on the list? Add your name</div>
+                <div className="flex gap-2">
+                  <input
+                    value={newName}
+                    maxLength={40}
+                    onChange={(ev) => {
+                      setNewName(ev.target.value);
+                      setAddErr("");
+                    }}
+                    onKeyDown={(ev) => ev.key === "Enter" && join()}
+                    placeholder="Alex Tan"
+                    className={`${inputCls} flex-1 min-w-0`}
+                  />
+                  <button onClick={join} disabled={busy} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-100 text-sm font-medium rounded-sm disabled:opacity-60">
+                    {busy ? "Adding…" : "Join"}
+                  </button>
+                </div>
+                {addErr && <div className="mt-1.5 text-xs text-red-300">{addErr}</div>}
+                <div className="mt-1.5 text-[11px] text-gray-500">Use the name your team knows you by. It’s added to this session’s list.</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 function TesterEntry({ sessionId: e }) {
   let [t, a] = useState("loading");
@@ -9089,7 +9197,7 @@ function Notice({ children: e, variant: t }) {
 // Sign-in screens: a faint square grid behind the box (theme-aware, so it suits light and dark mode).
 var LOGIN_GRID_BG = {
   backgroundImage:
-    "linear-gradient(rgb(var(--gray-800) / 0.7) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--gray-800) / 0.7) 1px, transparent 1px)",
+    "linear-gradient(rgb(var(--gray-800) / 0.35) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--gray-800) / 0.35) 1px, transparent 1px)",
   backgroundSize: "32px 32px",
   backgroundPosition: "center center",
 };
